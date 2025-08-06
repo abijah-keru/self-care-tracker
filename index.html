@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Daily Self-Care Anchors</title>
+  <title>🌱 My Daily Self-Care Anchors</title>
   <link rel="stylesheet" href="style.css">
   <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 
@@ -12,39 +12,61 @@
   <meta name="theme-color" content="#4CA7A0">
 </head>
 <body>
-  <h1>Today's Anchors</h1>
+  <nav class="navbar">
+    <a href="#" class="nav-link active" data-section="home">Home</a>
+    <a href="#" class="nav-link" data-section="journal">Journal</a>
+    <a href="#" class="nav-link" data-section="about">About</a>
+  </nav>
 
-  <div class="anchor"><label><input type="checkbox" id="makeBed"> Make bed</label></div>
-  <div class="anchor"><label><input type="checkbox" id="drinkWater"> Take a cup of water</label></div>
-  <div class="anchor"><label><input type="checkbox" id="chooseClothes"> Choose clothes of the day</label></div>
-  <div class="anchor"><label><input type="checkbox" id="bodyMovement"> Body movement</label></div>
-  <div class="anchor"><label><input type="checkbox" id="musicDance"> Music / Dance</label></div>
-  <div class="anchor"><label><input type="checkbox" id="watchShow"> Watch TV show</label></div>
+  <!-- Home Section -->
+  <section id="home" class="page-section active">
+    <h1>Today's Anchors</h1>
 
-  <div class="anchor">
-    <label><input type="checkbox" id="selfCare"> Self-care</label>
-    <select id="selfCareOption">
-      <option value="">--choose--</option>
-      <option>Cook</option>
-      <option>Clean</option>
-      <option>Organize</option>
-      <option>Journal</option>
-    </select>
-  </div>
+    <div class="anchor"><label><input type="checkbox" id="makeBed"> Make bed</label></div>
+    <div class="anchor"><label><input type="checkbox" id="drinkWater"> Take a cup of water</label></div>
+    <div class="anchor"><label><input type="checkbox" id="chooseClothes"> Choose clothes of the day</label></div>
+    <div class="anchor"><label><input type="checkbox" id="bodyMovement"> Body movement</label></div>
+    <div class="anchor"><label><input type="checkbox" id="musicDance"> Music / Dance</label></div>
+    <div class="anchor"><label><input type="checkbox" id="watchShow"> Watch TV show</label></div>
 
-  <div class="buttons">
-    <button id="saveBtn">I'm Crushing It!</button>
-    <button id="resetBtn">Reset Day</button>
-  </div>
+    <div class="anchor">
+      <label><input type="checkbox" id="selfCare"> Self-care</label>
+      <select id="selfCareOption">
+        <option value="">--choose--</option>
+        <option>Cook</option>
+        <option>Clean</option>
+        <option>Organize</option>
+        <option>Journal</option>
+      </select>
+    </div>
 
-  <div id="streakSection">
-    <div id="streakIcons"></div>
-    <div id="streakMessage"></div>
-  </div>  
+    <div class="buttons">
+      <button id="saveBtn">I'm Crushing It!</button>
+      <button id="resetBtn">Reset Day</button>
+    </div>
 
-  <div id="message">🌱 Progress Saved! You’re blooming today! 🌞</div>
+    <div id="streakSection">
+      <div id="streakIcons"></div>
+      <div id="streakMessage"></div>
+    </div>  
+
+    <div id="message">🌱 Progress Saved! You’re blooming today! 🌞</div>
+  </section>
+
+  <!-- Journal Section -->
+  <section id="journal" class="page-section">
+    <h1>Journal</h1>
+    <p>🌿 Coming soon: a gentle space to note down thoughts or wins.</p>
+  </section>
+
+  <!-- About Section -->
+  <section id="about" class="page-section">
+    <h1>About</h1>
+    <p>This is a soft self-care tracker designed to help you bloom day by day 🌸</p>
+  </section>
 
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
+
