@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🌱 My Daily Self-Care Anchors</title>
+  <title>My Daily Self-Care Anchors</title>
   <link rel="stylesheet" href="style.css">
   <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 
@@ -12,14 +12,24 @@
   <meta name="theme-color" content="#4CA7A0">
 </head>
 <body>
+  <!-- Navigation -->
   <nav class="navbar">
-    <a href="#" class="nav-link active" data-section="home">Home</a>
-    <a href="#" class="nav-link" data-section="journal">Journal</a>
-    <a href="#" class="nav-link" data-section="about">About</a>
+    <a href="#" class="nav-link active" data-section="today">
+      <span class="icon">📅</span> Today
+    </a>
+    <a href="#" class="nav-link" data-section="streaks">
+      <span class="icon">⭐</span> Streaks
+    </a>
+    <a href="#" class="nav-link" data-section="journal">
+      <span class="icon">✍️</span> Journal
+    </a>
+    <a href="#" class="nav-link" data-section="tips">
+      <span class="icon">💡</span> Tips
+    </a>
   </nav>
 
-  <!-- Home Section -->
-  <section id="home" class="page-section active">
+  <!-- Today Section -->
+  <section id="today" class="page-section active">
     <h1>Today's Anchors</h1>
 
     <div class="anchor"><label><input type="checkbox" id="makeBed"> Make bed</label></div>
@@ -41,8 +51,8 @@
     </div>
 
     <div class="buttons">
-      <button id="saveBtn">I'm Crushing It!</button>
-      <button id="resetBtn">Reset Day</button>
+      <button id="saveBtn" class="primary-btn">I'm Crushing It!</button>
+      <button id="resetBtn" class="secondary-btn">Reset Day</button>
     </div>
 
     <div id="streakSection">
@@ -53,16 +63,22 @@
     <div id="message">🌱 Progress Saved! You’re blooming today! 🌞</div>
   </section>
 
+  <!-- Streaks Section -->
+  <section id="streaks" class="page-section">
+    <h1>Streaks</h1>
+    <p>Your gentle progress over time will appear here 🌸</p>
+  </section>
+
   <!-- Journal Section -->
   <section id="journal" class="page-section">
     <h1>Journal</h1>
-    <p>🌿 Coming soon: a gentle space to note down thoughts or wins.</p>
+    <p>Coming soon: a soft space for reflection ✍️</p>
   </section>
 
-  <!-- About Section -->
-  <section id="about" class="page-section">
-    <h1>About</h1>
-    <p>This is a soft self-care tracker designed to help you bloom day by day 🌸</p>
+  <!-- Tips Section -->
+  <section id="tips" class="page-section">
+    <h1>Tips</h1>
+    <p>Gentle reminders and encouragement live here 💡</p>
   </section>
 
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
