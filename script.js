@@ -1,203 +1,178 @@
-// ----------------------------
-// Firebase Firestore + Anonymous Auth Setup
-// ----------------------------
-let userId = null;
-let userDocRef = null;
+// 🌱 Self-Care Tracker Script
 
-firebase.auth().onAuthStateChanged(user => {
-  if (user) {
-    userId = user.uid;
-    userDocRef = db.collection("anchors").doc(userId);
-    console.log("Signed in as anonymous user:", userId);
-    loadAnchors();
-  } else {
-    firebase.auth().signInAnonymously().catch(err => {
-      console.error("Anonymous sign-in failed:", err);
+// All anchors (checkboxes)
+const anchors = [
+    "makeBed",
+    "drinkWater",
+    "chooseClothes",
+    "bodyMovement",
+    "musicDance",
+    "watchShow",
+    "selfCare"
+  ];
+  
+  // ----------------------------
+  // Save Progress
+  // ----------------------------
+  function saveProgress() {
+    // Save checkboxes and dropdown
+    anchors.forEach(id => {
+      localStorage.setItem(id, document.getElementById(id).checked);
     });
-  }
-});
-
-// ----------------------------
-// DOM Elements
-// ----------------------------
-const checkboxes = document.querySelectorAll("input[type=checkbox]");
-const selfCareOption = document.getElementById("selfCareOption");
-const saveBtn = document.getElementById("saveBtn");
-const resetBtn = document.getElementById("resetBtn");
-const message = document.getElementById("message");
-const streakIcons = document.getElementById("streakIcons");
-const streakMessage = document.getElementById("streakMessage");
-
-let streakCount = 0;
-let lastCompletionDate = null;
-
-// ----------------------------
-// Checkbox Visual Feedback
-// ----------------------------
-function toggleAnchorStyle(cb) {
-  const parent = cb.closest(".anchor");
-  if (cb.checked) {
-    parent.style.backgroundColor = "#E0F3F2"; // soft green
-    parent.style.boxShadow = "0 0 8px rgba(76,167,160,0.3)";
-  } else {
-    parent.style.backgroundColor = "white";
-    parent.style.boxShadow = "0 2px 6px rgba(0,0,0,0.05)";
-  }
-}
-
-checkboxes.forEach(cb => {
-  cb.addEventListener("change", () => toggleAnchorStyle(cb));
-});
-
-// ----------------------------
-// Load Data from Firestore
-// ----------------------------
-async function loadAnchors() {
-  if (!userDocRef) return;
-  try {
-    const doc = await userDocRef.get();
-    if (doc.exists) {
-      const data = doc.data();
-
-      // Load checkbox states
-      checkboxes.forEach(cb => {
-        cb.checked = !!data[cb.id];
-        toggleAnchorStyle(cb);
-      });
-
-      // Load self-care dropdown
-      if (data.selfCareOption) {
-        selfCareOption.value = data.selfCareOption;
-      }
-
-      // Load streak info
-      streakCount = data.streakCount || 0;
-      lastCompletionDate = data.lastCompletionDate || null;
-      updateStreakDisplay();
+    localStorage.setItem("selfCareOption", document.getElementById("selfCareOption").value);
+    localStorage.setItem("lastSavedDate", new Date().toDateString());
+  
+    // Calculate progress tally
+    const completed = anchors.filter(id => document.getElementById(id).checked).length;
+  
+    // Pick a gentle message
+    let messageText = "";
+    if (completed === 0) {
+      messageText = "You showed up today. That's the first step 🌱";
+    } else if (completed <= 3) {
+      messageText = `You completed ${completed} anchor${completed > 1 ? "s" : ""}. Small steps matter 🌸`;
+    } else if (completed < anchors.length) {
+      messageText = `Great job! ${completed} out of ${anchors.length} anchors done 🌞`;
     } else {
-      console.log("No existing data for this user 🌱");
+      messageText = `Wow! ${completed}/${anchors.length} anchors! You're glowing today! 🌟`;
     }
-  } catch (error) {
-    console.error("Error loading anchors:", error);
+  
+    // Show the message and confetti
+    const msg = document.getElementById("message");
+    msg.textContent = messageText;
+    showMessage();
+    launchConfetti();
+  
+    // Update streak tracker based on today's progress
+    updateStreak(completed > 0);
   }
-}
-
-// ----------------------------
-// Save Anchors to Firestore
-// ----------------------------
-async function saveAnchors() {
-  if (!userDocRef) return;
-
-  const today = new Date().toDateString();
-  let completedCount = 0;
-
-  const dataToSave = {};
-
-  checkboxes.forEach(cb => {
-    dataToSave[cb.id] = cb.checked;
-    if (cb.checked) completedCount++;
-  });
-
-  dataToSave.selfCareOption = selfCareOption.value;
-
-  // Handle streaks
-  if (completedCount > 0) {
-    if (lastCompletionDate !== today) {
-      streakCount++;
-      lastCompletionDate = today;
+  
+  // ----------------------------
+  // Load Progress
+  // ----------------------------
+  function loadProgress() {
+    checkDailyReset(); // Auto-reset if a new day
+    anchors.forEach(id => {
+      document.getElementById(id).checked = localStorage.getItem(id) === "true";
+    });
+    document.getElementById("selfCareOption").value = localStorage.getItem("selfCareOption") || "";
+  }
+  
+  // ----------------------------
+  // Clear Progress (Manual Reset)
+  // ----------------------------
+  function clearAll() {
+    anchors.forEach(id => {
+      document.getElementById(id).checked = false;
+      localStorage.setItem(id, false);
+    });
+    document.getElementById("selfCareOption").value = "";
+    localStorage.removeItem("selfCareOption");
+    localStorage.setItem("lastSavedDate", new Date().toDateString());
+    document.getElementById("message").style.display = "none";
+  }
+  
+  // ----------------------------
+  // Automatic Daily Reset
+  // ----------------------------
+  function checkDailyReset() {
+    const lastDate = localStorage.getItem("lastSavedDate");
+    const today = new Date().toDateString();
+    if (lastDate && lastDate !== today) {
+      clearAll();
     }
-  } else {
-    streakCount = 0; // Break streak if nothing done
   }
-
-  dataToSave.streakCount = streakCount;
-  dataToSave.lastCompletionDate = lastCompletionDate;
-
-  try {
-    await userDocRef.set(dataToSave);
-    triggerConfetti();
-    showMessage(`🌱 Progress Saved! You completed ${completedCount} anchor(s) today 🌞`);
-    updateStreakDisplay();
-  } catch (error) {
-    console.error("Error saving anchors:", error);
-    showMessage("⚠️ Error saving progress, please try again.");
+  
+  // ----------------------------
+  // Show/Hide Friendly Message
+  // ----------------------------
+  function showMessage() {
+    const msg = document.getElementById("message");
+    msg.style.display = "block";
+    setTimeout(() => { msg.style.display = "none"; }, 3000);
   }
-}
-
-// ----------------------------
-// Reset Day (UI + Firestore)
-// ----------------------------
-async function resetDay() {
-  checkboxes.forEach(cb => {
-    cb.checked = false;
-    toggleAnchorStyle(cb);
-  });
-  selfCareOption.value = "";
-  showMessage("Day reset. A fresh start awaits 🌸");
-
-  if (userDocRef) {
-    await userDocRef.set({
-      selfCareOption: "",
-      streakCount, // keep streak
-      lastCompletionDate // keep last completion date
+  
+  // ----------------------------
+  // Confetti Celebration
+  // ----------------------------
+  function launchConfetti() {
+    confetti({
+      particleCount: 120,
+      spread: 70,
+      origin: { y: 0.6 }
     });
   }
-}
-
-// ----------------------------
-// Gentle Message + Confetti
-// ----------------------------
-function showMessage(text) {
-  message.textContent = text;
-  message.style.display = "block";
-  setTimeout(() => (message.style.display = "none"), 3000);
-}
-
-function triggerConfetti() {
-  confetti({
-    particleCount: 80,
-    spread: 70,
-    origin: { y: 0.6 },
-  });
-}
-
-// ----------------------------
-// Streak Display
-// ----------------------------
-function updateStreakDisplay() {
-  streakIcons.innerHTML = "";
-  for (let i = 0; i < streakCount; i++) {
-    const star = document.createElement("span");
-    star.textContent = "⭐";
-    star.style.fontSize = "20px";
-    streakIcons.appendChild(star);
+  
+  // ----------------------------
+  // Streak Tracker
+  // ----------------------------
+  function updateStreak(completedToday) {
+    // Load existing streak array (last 7 days)
+    let streakData = JSON.parse(localStorage.getItem("streakData")) || [];
+  
+    const today = new Date().toDateString();
+    const lastEntry = streakData.length > 0 ? streakData[streakData.length - 1].date : null;
+  
+    if (lastEntry !== today) {
+      // Add today's result
+      streakData.push({ date: today, done: completedToday });
+      // Keep only last 7 days
+      if (streakData.length > 7) streakData.shift();
+      localStorage.setItem("streakData", JSON.stringify(streakData));
+    } else {
+      // Update today's result if already exists
+      streakData[streakData.length - 1].done = completedToday;
+      localStorage.setItem("streakData", JSON.stringify(streakData));
+    }
+  
+    renderStreak(streakData);
   }
-  streakMessage.textContent = streakCount
-    ? `You've kept your gentle streak for ${streakCount} day${streakCount > 1 ? "s" : ""} 🌼`
-    : `Let's begin your gentle journey today 🌱`;
-}
-
-// ----------------------------
-// Navbar Page Switching
-// ----------------------------
-const navLinks = document.querySelectorAll(".nav-link");
-const sections = document.querySelectorAll(".page-section");
-
-navLinks.forEach(link => {
-  link.addEventListener("click", e => {
-    e.preventDefault();
-    navLinks.forEach(l => l.classList.remove("active"));
-    link.classList.add("active");
-
-    const sectionToShow = link.dataset.section;
-    sections.forEach(sec => {
-      sec.classList.toggle("active", sec.id === sectionToShow);
-    });
-  });
-});
-
-// ----------------------------
-// Event Listeners
-// ----------------------------
-saveBtn.addEventListener("click", saveAnchors);
-resetBtn.addEventListener("click", resetDay);
+  
+  function renderStreak(streakData) {
+    const container = document.getElementById("streakIcons");
+    if (!container) return; // Skip if HTML doesn't have streak section
+    container.innerHTML = "";
+  
+    // Render last 7 days as soft dots
+    for (let i = 0; i < 7; i++) {
+      const day = streakData[i] || { done: false };
+      const dot = document.createElement("div");
+      dot.classList.add("streak-day");
+      if (day.done) dot.classList.add("completed");
+      container.appendChild(dot);
+    }
+  
+    // Calculate streak message
+    const currentStreak = calculateCurrentStreak(streakData);
+    const msg = document.getElementById("streakMessage");
+    if (!msg) return;
+    if (currentStreak === 0) {
+      msg.textContent = "Every step counts 🌱";
+    } else if (currentStreak === 1) {
+      msg.textContent = "1-day streak! Small steps 🌿";
+    } else {
+      msg.textContent = `${currentStreak}-day streak! Keep blooming 🌸`;
+    }
+  }
+  
+  function calculateCurrentStreak(streakData) {
+    // Count streak from the end backwards
+    let streak = 0;
+    for (let i = streakData.length - 1; i >= 0; i--) {
+      if (streakData[i].done) streak++;
+      else break;
+    }
+    return streak;
+  }
+  
+  // ----------------------------
+  // Event Listeners
+  // ----------------------------
+  document.getElementById("saveBtn").addEventListener("click", saveProgress);
+  document.getElementById("resetBtn").addEventListener("click", clearAll);
+  
+  // Initial Load
+  loadProgress();
+  const streakData = JSON.parse(localStorage.getItem("streakData")) || [];
+  renderStreak(streakData);
+  
