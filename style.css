@@ -1,0 +1,130 @@
+body {
+    font-family: "Nunito Sans", sans-serif;
+    max-width: 420px;
+    margin: 40px auto;
+    padding: 20px;
+    background: #E9F7F7; /* soothing mint */
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  }
+  
+  h1 { 
+    text-align: center;
+    font-size: 26px;
+    font-weight: 700;
+    color: #333333;
+    margin-bottom: 20px;
+  }
+  
+  .anchor {
+    margin: 12px 0;
+    background: white;
+    padding: 12px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    font-size: 17px;
+    color: #555555;
+  }
+  
+  input[type=checkbox] {
+    width: 20px;
+    height: 20px;
+    accent-color: #4CA7A0; /* calming teal */
+    margin-right: 10px;
+  }
+  
+  select {
+    margin-left: 10px;
+    border-radius: 8px;
+    padding: 4px 8px;
+    font-size: 16px;
+  }
+  
+  .buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+  }
+  
+  button {
+    flex: 1;
+    margin: 5px;
+    padding: 12px;
+    font-size: 16px;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    color: white;
+    transition: 0.2s;
+  }
+  
+  #saveBtn { background: #4CA7A0; } /* calming teal */
+  #saveBtn:hover { background: #43948f; }
+  
+  #resetBtn { background: #E88C82; } /* soft coral */
+  #resetBtn:hover { background: #d87b71; }
+  
+  #message {
+    text-align: center;
+    margin-top: 15px;
+    font-weight: 600;
+    color: #4CA772; /* soft green for positivity */
+    display: none;
+  }
+/* Responsive tweaks for mobile */
+@media (max-width: 480px) {
+    body {
+      max-width: 90%;
+      margin: 20px auto;
+      padding: 15px;
+    }
+    h1 {
+      font-size: 22px;
+    }
+    .anchor {
+      font-size: 16px;
+      padding: 10px;
+    }
+    button {
+      padding: 10px;
+      font-size: 15px;
+    }
+    select {
+      font-size: 15px;
+    }
+  }
+  #streakSection {
+    text-align: center;
+    margin-top: 20px;
+  }
+  
+  #streakIcons {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+  
+  .streak-day {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: inline-block;
+    background-color: #ddd; /* soft gray for missed day */
+    transition: background-color 0.3s;
+  }
+  
+  .streak-day.completed {
+    background-color: #4CA7A0; /* soft teal for success */
+    box-shadow: 0 0 6px rgba(76, 167, 160, 0.4);
+  }
+  
+  #streakMessage {
+    font-size: 15px;
+    color: #555;
+    font-weight: 600;
+  }
+      

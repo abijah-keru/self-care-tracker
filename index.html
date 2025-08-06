@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Daily Self-Care Anchors</title>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#4CA7A0">
+</head>
+<body>
+  <h1>Today's Anchors</h1>
+
+  <div class="anchor"><label><input type="checkbox" id="makeBed"> Make bed</label></div>
+  <div class="anchor"><label><input type="checkbox" id="drinkWater"> Take a cup of water</label></div>
+  <div class="anchor"><label><input type="checkbox" id="chooseClothes"> Choose clothes of the day</label></div>
+  <div class="anchor"><label><input type="checkbox" id="bodyMovement"> Body movement</label></div>
+  <div class="anchor"><label><input type="checkbox" id="musicDance"> Music / Dance</label></div>
+  <div class="anchor"><label><input type="checkbox" id="watchShow"> Watch TV show</label></div>
+
+  <div class="anchor">
+    <label><input type="checkbox" id="selfCare"> Self-care</label>
+    <select id="selfCareOption">
+      <option value="">--choose--</option>
+      <option>Cook</option>
+      <option>Clean</option>
+      <option>Organize</option>
+      <option>Journal</option>
+    </select>
+  </div>
+
+  <div class="buttons">
+    <button id="saveBtn">I'm Crushing It!</button>
+    <button id="resetBtn">Reset Day</button>
+  </div>
+
+  <div id="streakSection">
+    <div id="streakIcons"></div>
+    <div id="streakMessage"></div>
+  </div>  
+
+  <div id="message">🌱 Progress Saved! You’re blooming today! 🌞</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
