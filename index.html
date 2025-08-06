@@ -12,99 +12,39 @@
   <meta name="theme-color" content="#4CA7A0">
 </head>
 <body>
-  <!-- Navigation -->
-  <nav class="navbar">
-    <a href="#" class="nav-link active" data-section="today">
-      <span class="icon">📅</span> Today
-    </a>
-    <a href="#" class="nav-link" data-section="streaks">
-      <span class="icon">⭐</span> Streaks
-    </a>
-    <a href="#" class="nav-link" data-section="journal">
-      <span class="icon">✍️</span> Journal
-    </a>
-    <a href="#" class="nav-link" data-section="tips">
-      <span class="icon">💡</span> Tips
-    </a>
-  </nav>
+  <h1>Today's Anchors</h1>
 
-  <!-- Today Section -->
-  <section id="today" class="page-section active">
-    <h1>Today's Anchors</h1>
+  <div class="anchor"><label><input type="checkbox" id="makeBed"> Make bed</label></div>
+  <div class="anchor"><label><input type="checkbox" id="drinkWater"> Take a cup of water</label></div>
+  <div class="anchor"><label><input type="checkbox" id="chooseClothes"> Choose clothes of the day</label></div>
+  <div class="anchor"><label><input type="checkbox" id="bodyMovement"> Body movement</label></div>
+  <div class="anchor"><label><input type="checkbox" id="musicDance"> Music / Dance</label></div>
+  <div class="anchor"><label><input type="checkbox" id="watchShow"> Watch TV show</label></div>
 
-    <div class="anchor"><label><input type="checkbox" id="makeBed"> Make bed</label></div>
-    <div class="anchor"><label><input type="checkbox" id="drinkWater"> Take a cup of water</label></div>
-    <div class="anchor"><label><input type="checkbox" id="chooseClothes"> Choose clothes of the day</label></div>
-    <div class="anchor"><label><input type="checkbox" id="bodyMovement"> Body movement</label></div>
-    <div class="anchor"><label><input type="checkbox" id="musicDance"> Music / Dance</label></div>
-    <div class="anchor"><label><input type="checkbox" id="watchShow"> Watch TV show</label></div>
+  <div class="anchor">
+    <label><input type="checkbox" id="selfCare"> Self-care</label>
+    <select id="selfCareOption">
+      <option value="">--choose--</option>
+      <option>Cook</option>
+      <option>Clean</option>
+      <option>Organize</option>
+      <option>Journal</option>
+    </select>
+  </div>
 
-    <div class="anchor">
-      <label><input type="checkbox" id="selfCare"> Self-care</label>
-      <select id="selfCareOption">
-        <option value="">--choose--</option>
-        <option>Cook</option>
-        <option>Clean</option>
-        <option>Organize</option>
-        <option>Journal</option>
-      </select>
-    </div>
+  <div class="buttons">
+    <button id="saveBtn">I'm Crushing It!</button>
+    <button id="resetBtn">Reset Day</button>
+  </div>
 
-    <div class="buttons">
-      <button id="saveBtn" class="primary-btn">I'm Crushing It!</button>
-      <button id="resetBtn" class="secondary-btn">Reset Day</button>
-    </div>
+  <div id="streakSection">
+    <div id="streakIcons"></div>
+    <div id="streakMessage"></div>
+  </div>  
 
-    <div id="streakSection">
-      <div id="streakIcons"></div>
-      <div id="streakMessage"></div>
-    </div>  
+  <div id="message">🌱 Progress Saved! You’re blooming today! 🌞</div>
 
-    <div id="message">🌱 Progress Saved! You’re blooming today! 🌞</div>
-  </section>
-
-  <!-- Streaks Section -->
-  <section id="streaks" class="page-section">
-    <h1>Streaks</h1>
-    <p>Your gentle progress over time will appear here 🌸</p>
-  </section>
-
-  <!-- Journal Section -->
-  <section id="journal" class="page-section">
-    <h1>Journal</h1>
-    <p>Coming soon: a soft space for reflection ✍️</p>
-  </section>
-
-  <!-- Tips Section -->
-  <section id="tips" class="page-section">
-    <h1>Tips</h1>
-    <p>Gentle reminders and encouragement live here 💡</p>
-  </section>
-
-  <!-- Confetti animation library -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js"></script>
-
-  <!-- Initialize Firebase -->
-  <script>
-    const firebaseConfig = {
-      apiKey: "REPLACE_WITH_YOUR_KEY",
-      authDomain: "REPLACE_WITH.firebaseapp.com",
-      projectId: "REPLACE_WITH",
-      storageBucket: "REPLACE_WITH.appspot.com",
-      messagingSenderId: "REPLACE_WITH",
-      appId: "REPLACE_WITH"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-    const auth = firebase.auth();
-  </script>
-
-  <!-- Your app logic -->
   <script src="script.js"></script>
 </body>
 </html>
