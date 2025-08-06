@@ -111,4 +111,65 @@ h1 {
 
 .primary-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 5px 12px rgba(0,
+  box-shadow: 0 5px 12px rgba(0,0,0,0.2);
+}
+
+.secondary-btn {
+  background: white;
+  border: 2px solid #4CA7A0;
+  padding: 12px 24px;
+  color: #4CA7A0;
+  font-weight: 600;
+  border-radius: 25px;
+  cursor: pointer;
+  margin: 10px;
+  transition: all 0.3s ease;
+}
+
+.secondary-btn:hover {
+  background: #dff6f3;
+}
+
+/* ----------------------------
+   Message & Streaks
+---------------------------- */
+#message {
+  display: none;
+  margin-top: 20px;
+  font-weight: 600;
+  color: #4CA7A0;
+  font-size: 18px;
+}
+
+#streakSection {
+  margin-top: 20px;
+}
+
+#streakIcons {
+  font-size: 24px;
+  color: gold;
+  margin-bottom: 5px;
+}
+
+#streakMessage {
+  font-weight: 600;
+  color: #4CA7A0;
+  font-size: 16px;
+}
+
+/* ----------------------------
+   Responsive
+---------------------------- */
+@media (max-width: 600px) {
+  .nav-link {
+    font-size: 12px;
+  }
+  .anchor {
+    font-size: 16px;
+  }
+  .primary-btn, .secondary-btn {
+    padding: 10px 18px;
+    font-size: 14px;
+  }
+}
+
