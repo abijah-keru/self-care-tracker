@@ -1,9 +1,7 @@
-/* 🌱 Calming Self-Care App Theme */
-
 body {
   font-family: 'Nunito Sans', sans-serif;
-  background-color: #FDFCF8; /* soft cream */
-  color: #444;
+  background-color: #EFFAF9; /* soothing mint */
+  color: #2d6d68;
   margin: 0;
   padding: 0;
 }
@@ -14,14 +12,17 @@ body {
   justify-content: space-around;
   background-color: #f2f8f7;
   padding: 12px 0;
-  border-bottom: 1px solid #d6ebe8;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  border-bottom: 1px solid #d7edea;
 }
 
 .nav-link {
-  text-decoration: none;
-  font-weight: 600;
   color: #4CA7A0;
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   transition: color 0.3s;
 }
 
@@ -30,114 +31,67 @@ body {
   border-bottom: 2px solid #4CA7A0;
 }
 
+.nav-link .icon {
+  font-size: 20px;
+  margin-bottom: 3px;
+}
+
 /* Sections */
 .page-section {
   display: none;
   padding: 20px;
-  max-width: 480px;
-  margin: auto;
+  text-align: center;
 }
 
 .page-section.active {
   display: block;
 }
 
-h1 {
-  font-weight: 700;
-  color: #4CA7A0;
-  margin-bottom: 16px;
-}
-
-/* Anchors */
+/* Anchor checklist */
 .anchor {
   margin: 12px 0;
   font-size: 18px;
 }
 
-input[type="checkbox"] {
-  transform: scale(1.2);
-  margin-right: 8px;
-}
-
 /* Buttons */
-.buttons {
-  margin-top: 20px;
-  display: flex;
-  gap: 10px;
-}
-
-button {
-  flex: 1;
-  padding: 12px 16px;
-  background-color: #4CA7A0;
-  color: white;
+.primary-btn {
+  background: linear-gradient(135deg, #4CA7A0, #6fd5cb);
   border: none;
-  border-radius: 8px;
+  padding: 12px 24px;
+  color: white;
   font-weight: 600;
+  border-radius: 25px;
   cursor: pointer;
-  transition: background-color 0.3s;
+  margin: 10px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+  transition: all 0.3s ease;
 }
 
-button:hover {
-  background-color: #3b8882;
+.primary-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 12px rgba(0,0,0,0.2);
 }
 
-#resetBtn {
-  background-color: #F9A88E;
+.secondary-btn {
+  background: white;
+  border: 2px solid #4CA7A0;
+  padding: 12px 24px;
+  color: #4CA7A0;
+  font-weight: 600;
+  border-radius: 25px;
+  cursor: pointer;
+  margin: 10px;
+  transition: all 0.3s ease;
 }
 
-#resetBtn:hover {
-  background-color: #e27d5c;
+.secondary-btn:hover {
+  background: #dff6f3;
 }
 
 /* Message */
 #message {
   display: none;
   margin-top: 20px;
-  background-color: #e8f8f6;
-  border-left: 5px solid #4CA7A0;
-  padding: 12px;
-  border-radius: 6px;
   font-weight: 600;
-  text-align: center;
-}
-
-/* Streak Section */
-#streakSection {
-  text-align: center;
-  margin-top: 20px;
-}
-
-#streakIcons {
-  display: flex;
-  justify-content: center;
-  gap: 6px;
-  margin-bottom: 6px;
-}
-
-.streak-day {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  display: inline-block;
-  background-color: #ddd; /* soft gray for missed day */
-  transition: background-color 0.3s;
-}
-
-.streak-day.completed {
-  background-color: #4CA7A0; /* soft teal for success */
-  box-shadow: 0 0 6px rgba(76, 167, 160, 0.4);
-}
-
-#streakMessage {
-  font-size: 15px;
-  color: #555;
-  font-weight: 600;
-}
-
-/* Responsive */
-@media (max-width: 500px) {
-  h1 { font-size: 22px; }
-  .anchor { font-size: 16px; }
-  button { padding: 10px; font-size: 14px; }
+  color: #4CA7A0;
 }
