@@ -1,11 +1,25 @@
 // ----------------------------
-// Firestore Setup (from your HTML)
+// Firebase Firestore + Anonymous Auth Setup
 // ----------------------------
-// We are using the Firebase compat SDK already loaded in HTML:
-// const db = firebase.firestore();
+// Firebase App is initialized in HTML
 
-// Firestore document reference for single-user (can expand later)
-const docRef = db.collection("anchors").doc("defaultUser");
+let userId = null;
+let userDocRef = null;
+
+firebase.auth().onAuthStateChanged(user => {
+  if (user) {
+    // User already signed in anonymously
+    userId = user.uid;
+    userDocRef = db.collection("anchors").doc(userId);
+    console.log("Signed in as anonymous user:", userId);
+    loadAnchors();
+  } else {
+    // Sign in anonymously
+    firebase.auth().signInAnonymously().catch(err => {
+      console.error("Anonymous sign-in failed:", err);
+    });
+  }
+});
 
 // ----------------------------
 // DOM Elements
@@ -25,8 +39,9 @@ let lastCompletionDate = null;
 // Load Data from Firestore
 // ----------------------------
 async function loadAnchors() {
+  if (!userDocRef) return;
   try {
-    const doc = await docRef.get();
+    const doc = await userDocRef.get();
     if (doc.exists) {
       const data = doc.data();
 
@@ -45,7 +60,7 @@ async function loadAnchors() {
       lastCompletionDate = data.lastCompletionDate || null;
       updateStreakDisplay();
     } else {
-      console.log("No existing data, starting fresh 🌱");
+      console.log("No existing data for this user 🌱");
     }
   } catch (error) {
     console.error("Error loading anchors:", error);
@@ -56,6 +71,8 @@ async function loadAnchors() {
 // Save Anchors to Firestore
 // ----------------------------
 async function saveAnchors() {
+  if (!userDocRef) return;
+
   const today = new Date().toDateString();
   let completedCount = 0;
 
@@ -75,14 +92,14 @@ async function saveAnchors() {
       lastCompletionDate = today;
     }
   } else {
-    streakCount = 0; // If nothing completed, streak breaks
+    streakCount = 0; // Break streak if nothing done
   }
 
   dataToSave.streakCount = streakCount;
   dataToSave.lastCompletionDate = lastCompletionDate;
 
   try {
-    await docRef.set(dataToSave);
+    await userDocRef.set(dataToSave);
     triggerConfetti();
     showMessage(`🌱 Progress Saved! You completed ${completedCount} anchor(s) today 🌞`);
     updateStreakDisplay();
@@ -152,8 +169,3 @@ navLinks.forEach(link => {
 // ----------------------------
 saveBtn.addEventListener("click", saveAnchors);
 resetBtn.addEventListener("click", resetDay);
-
-// ----------------------------
-// Initial Load
-// ----------------------------
-loadAnchors();
