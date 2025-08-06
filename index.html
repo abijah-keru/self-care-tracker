@@ -44,7 +44,33 @@
 
   <div id="message">🌱 Progress Saved! You’re blooming today! 🌞</div>
 
+  <!-- Confetti animation -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <!-- Firebase v8 CDN Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+
+  <script>
+    // 🌱 Firebase Configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyDpk63cp1zLv5gvPfYCrFPkvwZt0SXIl4k",
+      authDomain: "selfcare-anchors.firebaseapp.com",
+      projectId: "selfcare-anchors",
+      storageBucket: "selfcare-anchors.firebasestorage.app",
+      messagingSenderId: "775875642015",
+      appId: "1:775875642015:web:eac713043d3a12ad9f98aa",
+      measurementId: "G-TF8GQBZ7XC"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+  </script>
+
+  <!-- Your main app script -->
   <script src="script.js"></script>
 </body>
 </html>
