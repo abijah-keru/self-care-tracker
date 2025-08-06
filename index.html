@@ -81,7 +81,30 @@
     <p>Gentle reminders and encouragement live here 💡</p>
   </section>
 
+  <!-- Confetti animation library -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js"></script>
+
+  <!-- Initialize Firebase -->
+  <script>
+    const firebaseConfig = {
+      apiKey: "REPLACE_WITH_YOUR_KEY",
+      authDomain: "REPLACE_WITH.firebaseapp.com",
+      projectId: "REPLACE_WITH",
+      storageBucket: "REPLACE_WITH.appspot.com",
+      messagingSenderId: "REPLACE_WITH",
+      appId: "REPLACE_WITH"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+  </script>
+
+  <!-- Your app logic -->
   <script src="script.js"></script>
 </body>
 </html>
