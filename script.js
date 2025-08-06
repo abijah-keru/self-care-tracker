@@ -1,20 +1,16 @@
 // ----------------------------
 // Firebase Firestore + Anonymous Auth Setup
 // ----------------------------
-// Firebase App is initialized in HTML
-
 let userId = null;
 let userDocRef = null;
 
 firebase.auth().onAuthStateChanged(user => {
   if (user) {
-    // User already signed in anonymously
     userId = user.uid;
     userDocRef = db.collection("anchors").doc(userId);
     console.log("Signed in as anonymous user:", userId);
     loadAnchors();
   } else {
-    // Sign in anonymously
     firebase.auth().signInAnonymously().catch(err => {
       console.error("Anonymous sign-in failed:", err);
     });
@@ -36,6 +32,24 @@ let streakCount = 0;
 let lastCompletionDate = null;
 
 // ----------------------------
+// Checkbox Visual Feedback
+// ----------------------------
+function toggleAnchorStyle(cb) {
+  const parent = cb.closest(".anchor");
+  if (cb.checked) {
+    parent.style.backgroundColor = "#E0F3F2"; // soft green
+    parent.style.boxShadow = "0 0 8px rgba(76,167,160,0.3)";
+  } else {
+    parent.style.backgroundColor = "white";
+    parent.style.boxShadow = "0 2px 6px rgba(0,0,0,0.05)";
+  }
+}
+
+checkboxes.forEach(cb => {
+  cb.addEventListener("change", () => toggleAnchorStyle(cb));
+});
+
+// ----------------------------
 // Load Data from Firestore
 // ----------------------------
 async function loadAnchors() {
@@ -48,6 +62,7 @@ async function loadAnchors() {
       // Load checkbox states
       checkboxes.forEach(cb => {
         cb.checked = !!data[cb.id];
+        toggleAnchorStyle(cb);
       });
 
       // Load self-care dropdown
@@ -110,12 +125,23 @@ async function saveAnchors() {
 }
 
 // ----------------------------
-// Reset Day (UI only)
+// Reset Day (UI + Firestore)
 // ----------------------------
-function resetDay() {
-  checkboxes.forEach(cb => (cb.checked = false));
+async function resetDay() {
+  checkboxes.forEach(cb => {
+    cb.checked = false;
+    toggleAnchorStyle(cb);
+  });
   selfCareOption.value = "";
   showMessage("Day reset. A fresh start awaits 🌸");
+
+  if (userDocRef) {
+    await userDocRef.set({
+      selfCareOption: "",
+      streakCount, // keep streak
+      lastCompletionDate // keep last completion date
+    });
+  }
 }
 
 // ----------------------------
@@ -139,9 +165,15 @@ function triggerConfetti() {
 // Streak Display
 // ----------------------------
 function updateStreakDisplay() {
-  streakIcons.innerHTML = "⭐".repeat(streakCount);
+  streakIcons.innerHTML = "";
+  for (let i = 0; i < streakCount; i++) {
+    const star = document.createElement("span");
+    star.textContent = "⭐";
+    star.style.fontSize = "20px";
+    streakIcons.appendChild(star);
+  }
   streakMessage.textContent = streakCount
-    ? `You've kept your gentle streak for ${streakCount} day(s) 🌼`
+    ? `You've kept your gentle streak for ${streakCount} day${streakCount > 1 ? "s" : ""} 🌼`
     : `Let's begin your gentle journey today 🌱`;
 }
 
