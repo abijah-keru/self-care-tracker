@@ -175,4 +175,14 @@ const anchors = [
   loadProgress();
   const streakData = JSON.parse(localStorage.getItem("streakData")) || [];
   renderStreak(streakData);
+  document.getElementById("watchShow").addEventListener("change", function () {
+    if (this.checked) {
+      const showName = prompt("Care to share which TV show? 🙂");
+      if (showName) {
+        localStorage.setItem("watchedShowName", showName);
+      }
+    } else {
+      localStorage.removeItem("watchedShowName");
+    }
+  });
   
