@@ -1,3 +1,20 @@
+
+// Your Firebase config
+const firebaseConfig = {
+  apiKey: "AIzaSyDpk63cp1zLv5gvPfYCrFPkvwZt0SXIl4k",
+  authDomain: "selfcare-anchors.firebaseapp.com",
+  projectId: "selfcare-anchors",
+  storageBucket: "selfcare-anchors.firebasestorage.app",
+  messagingSenderId: "775875642015",
+  appId: "1:775875642015:web:eac713043d3a12ad9f98aa",
+  measurementId: "G-TF8GQBZ7XC"
+};
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+
 // 🌱 Self-Care Tracker Script
 
 // All anchors (checkboxes)
