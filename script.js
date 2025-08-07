@@ -1,4 +1,9 @@
 
+console.log("Script loaded");
+console.log("Firebase version:", firebase.SDK_VERSION);
+console.log("Is Firestore available?", !!firebase.firestore);
+
+
 // Your Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyDpk63cp1zLv5gvPfYCrFPkvwZt0SXIl4k",
@@ -63,6 +68,52 @@ const anchors = [
     // Update streak tracker based on today's progress
     updateStreak(completed > 0);
   }
+
+  function saveProgress() {
+    // Existing localStorage logic...
+    anchors.forEach(id => {
+      localStorage.setItem(id, document.getElementById(id).checked);
+    });
+    localStorage.setItem("selfCareOption", document.getElementById("selfCareOption").value);
+    localStorage.setItem("lastSavedDate", new Date().toDateString());
+  
+    // Gather data to save to Firestore
+    const progressData = {};
+    anchors.forEach(id => {
+      progressData[id] = document.getElementById(id).checked;
+    });
+    progressData.selfCareOption = document.getElementById("selfCareOption").value;
+    progressData.watchShowName = document.getElementById("watchShowInput").value;
+    progressData.timestamp = new Date(); // For tracking time saved
+  
+    // 🔥 Save to Firebase Firestore
+    db.collection("dailyProgress").add(progressData)
+      .then((docRef) => {
+        console.log("Progress saved to Firestore with ID: ", docRef.id);
+      })
+      .catch((error) => {
+        console.error("Error saving to Firestore: ", error);
+      });
+  
+    // Message logic...
+    const completed = anchors.filter(id => document.getElementById(id).checked).length;
+    let messageText = "";
+    if (completed === 0) {
+      messageText = "You showed up today. That's the first step 🌱";
+    } else if (completed <= 3) {
+      messageText = `You completed ${completed} anchor${completed > 1 ? "s" : ""}. Small steps matter 🌸`;
+    } else if (completed < anchors.length) {
+      messageText = `Great job! ${completed} out of ${anchors.length} anchors done 🌞`;
+    } else {
+      messageText = `Wow! ${completed}/${anchors.length} anchors! You're glowing today! 🌟`;
+    }
+  
+    document.getElementById("message").textContent = messageText;
+    showMessage();
+    launchConfetti();
+    updateStreak(completed > 0);
+  }
+  
   
   // ----------------------------
   // Load Progress
