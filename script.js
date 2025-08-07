@@ -57,6 +57,13 @@ const anchors = [
     });
     document.getElementById("selfCareOption").value = localStorage.getItem("selfCareOption") || "";
   }
+  const savedShow = localStorage.getItem("watchedShowName");
+if (savedShow) {
+  document.getElementById("watchShowInput").value = savedShow;
+  document.getElementById("watchShowInput").style.display = "inline-block";
+  document.getElementById("watchShow").checked = true;
+}
+
   
   // ----------------------------
   // Clear Progress (Manual Reset)
@@ -175,14 +182,20 @@ const anchors = [
   loadProgress();
   const streakData = JSON.parse(localStorage.getItem("streakData")) || [];
   renderStreak(streakData);
-  document.getElementById("watchShow").addEventListener("change", function () {
-    if (this.checked) {
-      const showName = prompt("Care to share which TV show? 🙂");
-      if (showName) {
-        localStorage.setItem("watchedShowName", showName);
-      }
-    } else {
-      localStorage.removeItem("watchedShowName");
-    }
-  });
-  
+  // When the checkbox is checked, show the input next to it
+document.getElementById("watchShow").addEventListener("change", function () {
+  const input = document.getElementById("watchShowInput");
+  if (this.checked) {
+    input.style.display = "inline-block";
+    input.focus();
+  } else {
+    input.style.display = "none";
+    input.value = "";
+    localStorage.removeItem("watchedShowName");
+  }
+});
+
+// Save the text whenever the user types it
+document.getElementById("watchShowInput").addEventListener("input", function () {
+  localStorage.setItem("watchedShowName", this.value);
+});
