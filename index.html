@@ -13,6 +13,37 @@
 </head>
 <body>
   <h1>Today's Anchors</h1>
+  <!-- Authentication Section -->
+<div id="authSection" style="display: none;">
+  <h2>Sign In to Your Self-Care Journey 🌱</h2>
+  
+  <div class="auth-container">
+    <input type="email" id="emailInput" placeholder="Email" />
+    <input type="password" id="passwordInput" placeholder="Password" />
+    
+    <div class="auth-buttons">
+      <button id="signInBtn">Sign In</button>
+      <button id="signUpBtn">Sign Up</button>
+    </div>
+    
+    <div class="auth-divider">— or —</div>
+    
+    <div class="social-auth">
+      <button id="googleSignInBtn">🔍 Sign in with Google</button>
+      <button id="guestSignInBtn">👤 Continue as Guest</button>
+    </div>
+  </div>
+</div>
+
+<!-- App Section -->
+<div id="appSection" style="display: none;">
+  <div id="userInfo"></div>
+  <button id="signOutBtn" style="display: none; float: right;">Sign Out</button>
+  
+  <!-- Your existing content goes here -->
+  <div class="anchor"><label><input type="checkbox" id="makeBed"> Make bed</label></div>
+  <!-- ... rest of your checkboxes ... -->
+</div>
 
   <div class="anchor"><label><input type="checkbox" id="makeBed"> Make bed</label></div>
   <div class="anchor"><label><input type="checkbox" id="drinkWater"> Take water</label></div>
@@ -54,6 +85,7 @@
   <!-- Firebase SDKs -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 
 
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>

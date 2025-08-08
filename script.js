@@ -1,6 +1,7 @@
 console.log("Script loaded");
 console.log("Firebase version:", firebase.SDK_VERSION);
 console.log("Is Firestore available?", !!firebase.firestore);
+console.log("Is Auth available?", !!firebase.auth);
 
 // Your Firebase config
 const firebaseConfig = {
@@ -16,42 +17,134 @@ const firebaseConfig = {
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
+const auth = firebase.auth();
 
-// 🌱 Self-Care Tracker Script with Enhanced Firebase Sync
+// 🌱 Self-Care Tracker with Authentication
 
-// All anchors (checkboxes) - Updated to match your HTML
+// All anchors (checkboxes)
 const anchors = [
     "makeBed",
-    "drinkWater",
+    "drinkWater", 
     "chooseClothes",
     "bodyMovement",
     "musicDance",
     "watchShow",
-    "journalAboutApp",  // Added this one from your HTML
     "selfCare"
 ];
 
-// User ID for multi-device sync (you might want to implement proper auth later)
-const userId = localStorage.getItem("userId") || generateUserId();
+// Current user
+let currentUser = null;
 
-function generateUserId() {
-  const id = "user_" + Math.random().toString(36).substr(2, 9);
-  localStorage.setItem("userId", id);
-  return id;
+// ----------------------------
+// Authentication Functions
+// ----------------------------
+
+function showAuthUI() {
+  document.getElementById("authSection").style.display = "block";
+  document.getElementById("appSection").style.display = "none";
+}
+
+function showAppUI() {
+  document.getElementById("authSection").style.display = "none";
+  document.getElementById("appSection").style.display = "block";
+}
+
+function updateUserInfo() {
+  const userInfo = document.getElementById("userInfo");
+  if (currentUser) {
+    userInfo.textContent = `Welcome, ${currentUser.email || 'Anonymous User'}!`;
+    document.getElementById("signOutBtn").style.display = "inline-block";
+  }
+}
+
+// Sign up with email/password
+async function signUp() {
+  const email = document.getElementById("emailInput").value;
+  const password = document.getElementById("passwordInput").value;
+  
+  if (!email || !password) {
+    alert("Please enter email and password");
+    return;
+  }
+  
+  try {
+    await auth.createUserWithEmailAndPassword(email, password);
+    console.log("User signed up successfully");
+  } catch (error) {
+    console.error("Sign up error:", error);
+    alert("Sign up failed: " + error.message);
+  }
+}
+
+// Sign in with email/password
+async function signIn() {
+  const email = document.getElementById("emailInput").value;
+  const password = document.getElementById("passwordInput").value;
+  
+  if (!email || !password) {
+    alert("Please enter email and password");
+    return;
+  }
+  
+  try {
+    await auth.signInWithEmailAndPassword(email, password);
+    console.log("User signed in successfully");
+  } catch (error) {
+    console.error("Sign in error:", error);
+    alert("Sign in failed: " + error.message);
+  }
+}
+
+// Sign in with Google
+async function signInWithGoogle() {
+  try {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    await auth.signInWithPopup(provider);
+    console.log("Google sign in successful");
+  } catch (error) {
+    console.error("Google sign in error:", error);
+    alert("Google sign in failed: " + error.message);
+  }
+}
+
+// Sign in anonymously (for guests)
+async function signInAnonymously() {
+  try {
+    await auth.signInAnonymously();
+    console.log("Anonymous sign in successful");
+  } catch (error) {
+    console.error("Anonymous sign in error:", error);
+    alert("Anonymous sign in failed: " + error.message);
+  }
+}
+
+// Sign out
+async function signOut() {
+  try {
+    await auth.signOut();
+    console.log("User signed out");
+  } catch (error) {
+    console.error("Sign out error:", error);
+  }
 }
 
 // ----------------------------
-// Firebase Sync Functions
+// Firebase Data Functions (Updated for Auth)
 // ----------------------------
 
 async function loadFromFirebase() {
+  if (!currentUser) {
+    console.log("No user signed in");
+    return false;
+  }
+  
   try {
-    console.log("Loading from Firebase...");
+    console.log("Loading from Firebase for user:", currentUser.uid);
     const today = new Date().toDateString();
     
-    // Query for today's progress
+    // Query for today's progress for this specific user
     const querySnapshot = await db.collection("dailyProgress")
-      .where("userId", "==", userId)
+      .where("userId", "==", currentUser.uid)
       .where("date", "==", today)
       .orderBy("timestamp", "desc")
       .limit(1)
@@ -84,10 +177,10 @@ async function loadFromFirebase() {
       }
       
       console.log("Firebase data loaded successfully");
-      return true; // Data was loaded from Firebase
+      return true;
     } else {
       console.log("No Firebase data found for today");
-      return false; // No data found
+      return false;
     }
   } catch (error) {
     console.error("Error loading from Firebase:", error);
@@ -96,19 +189,25 @@ async function loadFromFirebase() {
 }
 
 async function saveToFirebase(progressData) {
+  if (!currentUser) {
+    console.log("No user signed in, cannot save to Firebase");
+    return false;
+  }
+  
   try {
     const today = new Date().toDateString();
     
-    // Check if we already have a document for today
+    // Check if we already have a document for today for this user
     const querySnapshot = await db.collection("dailyProgress")
-      .where("userId", "==", userId)
+      .where("userId", "==", currentUser.uid)
       .where("date", "==", today)
       .limit(1)
       .get();
 
     const dataToSave = {
       ...progressData,
-      userId: userId,
+      userId: currentUser.uid,
+      userEmail: currentUser.email || "anonymous",
       date: today,
       timestamp: new Date()
     };
@@ -132,9 +231,14 @@ async function saveToFirebase(progressData) {
 }
 
 // ----------------------------
-// Enhanced Save Progress with Sync
+// Enhanced Save Progress with Auth
 // ----------------------------
 async function saveProgress() {
+  if (!currentUser) {
+    alert("Please sign in to save your progress");
+    return;
+  }
+  
   // Gather all form data
   const progressData = {};
   
@@ -158,22 +262,22 @@ async function saveProgress() {
     progressData.watchShowName = watchShowInput.value;
   }
 
-  // Save to localStorage (for offline access)
+  // Save to localStorage (for offline access) - using user-specific keys
+  const userPrefix = `user_${currentUser.uid}_`;
   anchors.forEach(id => {
     if (progressData[id] !== undefined) {
-      localStorage.setItem(id, progressData[id]);
+      localStorage.setItem(userPrefix + id, progressData[id]);
     }
   });
   
-  localStorage.setItem("selfCareOption", progressData.selfCareOption || "");
-  localStorage.setItem("watchedShowName", progressData.watchShowName || "");
-  localStorage.setItem("lastSavedDate", new Date().toDateString());
+  localStorage.setItem(userPrefix + "selfCareOption", progressData.selfCareOption || "");
+  localStorage.setItem(userPrefix + "watchedShowName", progressData.watchShowName || "");
+  localStorage.setItem(userPrefix + "lastSavedDate", new Date().toDateString());
 
   // Save to Firebase
   const firebaseSaved = await saveToFirebase(progressData);
   
   if (!firebaseSaved) {
-    // If Firebase save failed, you might want to queue it for later
     console.log("Firebase save failed, data saved locally only");
   }
 
@@ -182,10 +286,15 @@ async function saveProgress() {
 }
 
 // ----------------------------
-// Enhanced Load Progress with Sync
+// Enhanced Load Progress with Auth
 // ----------------------------
 async function loadProgress() {
-  checkDailyReset(); // Auto-reset if a new day
+  if (!currentUser) {
+    console.log("No user signed in, cannot load progress");
+    return;
+  }
+  
+  checkDailyReset();
   
   // Try to load from Firebase first
   const firebaseLoaded = await loadFromFirebase();
@@ -193,19 +302,21 @@ async function loadProgress() {
   if (!firebaseLoaded) {
     // Fallback to localStorage if Firebase fails or has no data
     console.log("Loading from localStorage...");
+    const userPrefix = `user_${currentUser.uid}_`;
+    
     anchors.forEach(id => {
       const checkbox = document.getElementById(id);
       if (checkbox) {
-        checkbox.checked = localStorage.getItem(id) === "true";
+        checkbox.checked = localStorage.getItem(userPrefix + id) === "true";
       }
     });
     
     const selfCareSelect = document.getElementById("selfCareOption");
     if (selfCareSelect) {
-      selfCareSelect.value = localStorage.getItem("selfCareOption") || "";
+      selfCareSelect.value = localStorage.getItem(userPrefix + "selfCareOption") || "";
     }
     
-    const savedShow = localStorage.getItem("watchedShowName");
+    const savedShow = localStorage.getItem(userPrefix + "watchedShowName");
     const watchShowInput = document.getElementById("watchShowInput");
     const watchShowCheckbox = document.getElementById("watchShow");
     
@@ -217,57 +328,108 @@ async function loadProgress() {
     }
   }
   
-  // Update UI based on loaded data
   updateUIAfterLoad();
 }
 
-function updateUIAfterLoad() {
-  // Update streak display
-  const streakData = JSON.parse(localStorage.getItem("streakData")) || [];
-  renderStreak(streakData);
+// ----------------------------
+// Clear Progress (Updated for Auth)
+// ----------------------------
+async function clearAll() {
+  if (!currentUser) {
+    alert("Please sign in to reset progress");
+    return;
+  }
   
-  // Handle watch show input visibility
-  const watchShowCheckbox = document.getElementById("watchShow");
+  // Clear checkboxes
+  anchors.forEach(id => {
+    const checkbox = document.getElementById(id);
+    if (checkbox) {
+      checkbox.checked = false;
+    }
+  });
+  
+  // Clear other form elements
+  const selfCareSelect = document.getElementById("selfCareOption");
+  if (selfCareSelect) {
+    selfCareSelect.value = "";
+  }
+  
   const watchShowInput = document.getElementById("watchShowInput");
+  if (watchShowInput) {
+    watchShowInput.value = "";
+    watchShowInput.style.display = "none";
+  }
   
-  if (watchShowCheckbox && watchShowInput && watchShowCheckbox.checked) {
-    watchShowInput.style.display = "inline-block";
+  // Clear localStorage with user prefix
+  const userPrefix = `user_${currentUser.uid}_`;
+  anchors.forEach(id => {
+    localStorage.setItem(userPrefix + id, false);
+  });
+  localStorage.removeItem(userPrefix + "selfCareOption");
+  localStorage.removeItem(userPrefix + "watchedShowName");
+  localStorage.setItem(userPrefix + "lastSavedDate", new Date().toDateString());
+  
+  // Hide message
+  const messageEl = document.getElementById("message");
+  if (messageEl) {
+    messageEl.style.display = "none";
+  }
+  
+  // Save the cleared state to Firebase
+  const clearedData = {};
+  anchors.forEach(id => {
+    clearedData[id] = false;
+  });
+  clearedData.selfCareOption = "";
+  clearedData.watchShowName = "";
+  
+  await saveToFirebase(clearedData);
+}
+
+// ----------------------------
+// Daily Reset (Updated for Auth)
+// ----------------------------
+function checkDailyReset() {
+  if (!currentUser) return;
+  
+  const userPrefix = `user_${currentUser.uid}_`;
+  const lastDate = localStorage.getItem(userPrefix + "lastSavedDate");
+  const today = new Date().toDateString();
+  
+  if (lastDate && lastDate !== today) {
+    // Clear localStorage for new day
+    anchors.forEach(id => {
+      localStorage.setItem(userPrefix + id, false);
+    });
+    localStorage.removeItem(userPrefix + "selfCareOption");
+    localStorage.removeItem(userPrefix + "watchedShowName");
+    localStorage.setItem(userPrefix + "lastSavedDate", today);
   }
 }
 
 // ----------------------------
-// Sync All Historical Data to Firebase (One-time migration)
+// Auth State Listener
 // ----------------------------
-async function migrateLocalDataToFirebase() {
-  try {
-    const streakData = JSON.parse(localStorage.getItem("streakData")) || [];
-    
-    for (const dayData of streakData) {
-      // Check if this day's data already exists in Firebase
-      const querySnapshot = await db.collection("dailyProgress")
-        .where("userId", "==", userId)
-        .where("date", "==", dayData.date)
-        .limit(1)
-        .get();
-      
-      if (querySnapshot.empty) {
-        // Migrate this day's data
-        await db.collection("dailyProgress").add({
-          userId: userId,
-          date: dayData.date,
-          completed: dayData.done,
-          timestamp: new Date(dayData.date),
-          migrated: true
-        });
-        console.log(`Migrated data for ${dayData.date}`);
+auth.onAuthStateChanged(async (user) => {
+  currentUser = user;
+  
+  if (user) {
+    console.log("User signed in:", user.email || user.uid);
+    showAppUI();
+    updateUserInfo();
+    await loadProgress();
+  } else {
+    console.log("User signed out");
+    showAuthUI();
+    // Clear any displayed data when signed out
+    anchors.forEach(id => {
+      const checkbox = document.getElementById(id);
+      if (checkbox) {
+        checkbox.checked = false;
       }
-    }
-    
-    console.log("Data migration completed");
-  } catch (error) {
-    console.error("Error migrating data:", error);
+    });
   }
-}
+});
 
 // ----------------------------
 // Display Save Message
@@ -290,69 +452,6 @@ function displaySaveMessage(progressData) {
   showMessage();
   launchConfetti();
   updateStreak(completed > 0);
-}
-
-// ----------------------------
-// Clear Progress (Manual Reset)
-// ----------------------------
-async function clearAll() {
-  // Clear checkboxes
-  anchors.forEach(id => {
-    const checkbox = document.getElementById(id);
-    if (checkbox) {
-      checkbox.checked = false;
-      localStorage.setItem(id, false);
-    }
-  });
-  
-  // Clear other form elements
-  const selfCareSelect = document.getElementById("selfCareOption");
-  if (selfCareSelect) {
-    selfCareSelect.value = "";
-  }
-  
-  const watchShowInput = document.getElementById("watchShowInput");
-  if (watchShowInput) {
-    watchShowInput.value = "";
-    watchShowInput.style.display = "none";
-  }
-  
-  localStorage.removeItem("selfCareOption");
-  localStorage.removeItem("watchedShowName");
-  localStorage.setItem("lastSavedDate", new Date().toDateString());
-  
-  // Hide message
-  const messageEl = document.getElementById("message");
-  if (messageEl) {
-    messageEl.style.display = "none";
-  }
-  
-  // Save the cleared state to Firebase
-  const clearedData = {};
-  anchors.forEach(id => {
-    clearedData[id] = false;
-  });
-  clearedData.selfCareOption = "";
-  clearedData.watchShowName = "";
-  
-  await saveToFirebase(clearedData);
-}
-
-// ----------------------------
-// Automatic Daily Reset
-// ----------------------------
-function checkDailyReset() {
-  const lastDate = localStorage.getItem("lastSavedDate");
-  const today = new Date().toDateString();
-  if (lastDate && lastDate !== today) {
-    // Clear localStorage for new day, but don't clear Firebase
-    anchors.forEach(id => {
-      localStorage.setItem(id, false);
-    });
-    localStorage.removeItem("selfCareOption");
-    localStorage.removeItem("watchedShowName");
-    localStorage.setItem("lastSavedDate", today);
-  }
 }
 
 // ----------------------------
@@ -382,20 +481,24 @@ function launchConfetti() {
 }
 
 // ----------------------------
-// Streak Tracker (Enhanced with Firebase sync)
+// Streak Tracker (Updated for Auth)
 // ----------------------------
 function updateStreak(completedToday) {
-  let streakData = JSON.parse(localStorage.getItem("streakData")) || [];
+  if (!currentUser) return;
+  
+  const userPrefix = `user_${currentUser.uid}_`;
+  let streakData = JSON.parse(localStorage.getItem(userPrefix + "streakData")) || [];
+  
   const today = new Date().toDateString();
   const lastEntry = streakData.length > 0 ? streakData[streakData.length - 1].date : null;
 
   if (lastEntry !== today) {
     streakData.push({ date: today, done: completedToday });
     if (streakData.length > 7) streakData.shift();
-    localStorage.setItem("streakData", JSON.stringify(streakData));
+    localStorage.setItem(userPrefix + "streakData", JSON.stringify(streakData));
   } else {
     streakData[streakData.length - 1].done = completedToday;
-    localStorage.setItem("streakData", JSON.stringify(streakData));
+    localStorage.setItem(userPrefix + "streakData", JSON.stringify(streakData));
   }
 
   renderStreak(streakData);
@@ -436,24 +539,28 @@ function calculateCurrentStreak(streakData) {
   return streak;
 }
 
-// ----------------------------
-// Offline/Online Sync Handler
-// ----------------------------
-function handleOnlineOffline() {
-  window.addEventListener('online', async () => {
-    console.log("Back online! Syncing data...");
-    await loadProgress(); // Re-sync when back online
-  });
+function updateUIAfterLoad() {
+  if (!currentUser) return;
   
-  window.addEventListener('offline', () => {
-    console.log("Offline mode - saving locally only");
-  });
+  // Update streak display
+  const userPrefix = `user_${currentUser.uid}_`;
+  const streakData = JSON.parse(localStorage.getItem(userPrefix + "streakData")) || [];
+  renderStreak(streakData);
+  
+  // Handle watch show input visibility
+  const watchShowCheckbox = document.getElementById("watchShow");
+  const watchShowInput = document.getElementById("watchShowInput");
+  
+  if (watchShowCheckbox && watchShowInput && watchShowCheckbox.checked) {
+    watchShowInput.style.display = "inline-block";
+  }
 }
 
 // ----------------------------
 // Event Listeners
 // ----------------------------
 function setupEventListeners() {
+  // App functionality
   const saveBtn = document.getElementById("saveBtn");
   const resetBtn = document.getElementById("resetBtn");
   const watchShowCheckbox = document.getElementById("watchShow");
@@ -475,13 +582,46 @@ function setupEventListeners() {
       } else {
         watchShowInput.style.display = "none";
         watchShowInput.value = "";
-        localStorage.removeItem("watchedShowName");
+        if (currentUser) {
+          const userPrefix = `user_${currentUser.uid}_`;
+          localStorage.removeItem(userPrefix + "watchedShowName");
+        }
       }
     });
     
     watchShowInput.addEventListener("input", function () {
-      localStorage.setItem("watchedShowName", this.value);
+      if (currentUser) {
+        const userPrefix = `user_${currentUser.uid}_`;
+        localStorage.setItem(userPrefix + "watchedShowName", this.value);
+      }
     });
+  }
+  
+  // Auth functionality
+  const signUpBtn = document.getElementById("signUpBtn");
+  const signInBtn = document.getElementById("signInBtn");
+  const googleSignInBtn = document.getElementById("googleSignInBtn");
+  const guestSignInBtn = document.getElementById("guestSignInBtn");
+  const signOutBtn = document.getElementById("signOutBtn");
+  
+  if (signUpBtn) {
+    signUpBtn.addEventListener("click", signUp);
+  }
+  
+  if (signInBtn) {
+    signInBtn.addEventListener("click", signIn);
+  }
+  
+  if (googleSignInBtn) {
+    googleSignInBtn.addEventListener("click", signInWithGoogle);
+  }
+  
+  if (guestSignInBtn) {
+    guestSignInBtn.addEventListener("click", signInAnonymously);
+  }
+  
+  if (signOutBtn) {
+    signOutBtn.addEventListener("click", signOut);
   }
 }
 
@@ -489,19 +629,13 @@ function setupEventListeners() {
 // Initialize App
 // ----------------------------
 async function initializeApp() {
-  console.log("Initializing Self-Care Tracker with Firebase sync...");
+  console.log("Initializing Self-Care Tracker with Firebase Auth...");
   
   // Set up event listeners
   setupEventListeners();
   
-  // Handle online/offline events
-  handleOnlineOffline();
-  
-  // Load progress (Firebase first, then localStorage fallback)
-  await loadProgress();
-  
-  // Uncomment the next line if you want to migrate existing localStorage data to Firebase
-  // await migrateLocalDataToFirebase();
+  // Initially show auth UI (will change based on auth state)
+  showAuthUI();
   
   console.log("App initialized successfully!");
 }
