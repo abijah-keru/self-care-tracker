@@ -128,3 +128,110 @@ body {
     font-weight: 600;
   }
       
+/* Auth Section Container */
+.auth-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+/* Inputs in Auth */
+.auth-container input[type="email"],
+.auth-container input[type="password"] {
+  width: 100%;
+  max-width: 320px;
+  padding: 12px 16px;
+  font-size: 16px;
+  border: 1.5px solid #4CA7A0;
+  border-radius: 12px;
+  outline-offset: 2px;
+  transition: border-color 0.3s ease;
+}
+
+.auth-container input[type="email"]:focus,
+.auth-container input[type="password"]:focus {
+  border-color: #43948f;
+}
+
+/* Button container to line up sign in/sign up */
+.auth-buttons {
+  display: flex;
+  gap: 16px;
+  width: 100%;
+  max-width: 320px;
+  justify-content: space-between;
+}
+
+/* Style all auth buttons */
+.auth-buttons button,
+.social-auth button {
+  flex: 1;
+  padding: 12px 0;
+  font-size: 16px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  font-weight: 700;
+  transition: background-color 0.3s ease;
+}
+
+/* Sign In Button */
+#signInBtn {
+  background-color: #4CA7A0;
+  color: white;
+}
+
+#signInBtn:hover {
+  background-color: #3b8b86;
+}
+
+/* Sign Up Button */
+#signUpBtn {
+  background-color: #E9F7F7;
+  color: #4CA7A0;
+  border: 2px solid #4CA7A0;
+}
+
+#signUpBtn:hover {
+  background-color: #cde9e8;
+}
+
+/* Divider */
+.auth-divider {
+  width: 320px;
+  text-align: center;
+  margin: 16px 0;
+  color: #777;
+  font-weight: 600;
+}
+
+/* Social auth buttons stacked */
+.social-auth {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 320px;
+}
+
+/* Google Button */
+#googleSignInBtn {
+  background-color: #de5246;
+  color: white;
+}
+
+#googleSignInBtn:hover {
+  background-color: #c1403a;
+}
+
+/* Guest Button */
+#guestSignInBtn {
+  background-color: #999;
+  color: white;
+}
+
+#guestSignInBtn:hover {
+  background-color: #777;
+}
