@@ -14,85 +14,307 @@
   <link rel="apple-touch-icon" href="icons/icon-512.png">
 </head>
 <body>
-  <h1>Today's Anchors</h1>
-  <!-- Authentication Section -->
-<div id="authSection" style="display: none;">
-  <h2>Sign In to Your Self-Care Journey 🌱</h2>
-  
-  <div class="auth-container">
-    <input type="email" id="emailInput" placeholder="Email" />
-    <input type="password" id="passwordInput" placeholder="Password" />
-    
-    <div class="auth-buttons">
-      <button id="signInBtn">Sign In</button>
-      <button id="signUpBtn">Sign Up</button>
+  <!-- Navigation Bar -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="#" class="nav-logo">
+        🌱 Daily Anchors
+      </a>
+      <ul class="nav-menu" id="navMenu">
+        <li><a href="#" class="nav-link active" data-page="home">Home</a></li>
+        <li><a href="#" class="nav-link" data-page="daily-anchors">Daily Anchors</a></li>
+        <li><a href="#" class="nav-link" data-page="dream-life">Dream Life</a></li>
+        <li><a href="#" class="nav-link" data-page="about">About</a></li>
+        <li><a href="#" class="nav-link" data-page="contact">Contact Us</a></li>
+      </ul>
+      <div class="nav-toggle" id="navToggle">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
     </div>
+  </nav>
+
+  <!-- Main Content Container -->
+  <div class="main-content">
     
-    <div class="auth-divider">— or —</div>
-    
-    <div class="social-auth">
-      <button id="googleSignInBtn">🔍 Sign in with Google</button>
-      <button id="guestSignInBtn">👤 Continue as Guest</button>
+    <!-- Home Page -->
+    <div id="home" class="page-section active">
+      <h1>Welcome to Your Daily Self-Care Journey</h1>
+      <p class="welcome-text">
+        Transform your life one anchor at a time. Build sustainable habits that nurture your mind, body, and soul.
+      </p>
+      
+      <div class="feature-grid">
+        <div class="feature-card">
+          <h3>🎯 Daily Anchors</h3>
+          <p>Track your essential daily habits and build consistency in your self-care routine.</p>
+        </div>
+        <div class="feature-card">
+          <h3>✨ Dream Life</h3>
+          <p>Visualize and work towards your ideal lifestyle with intention and purpose.</p>
+        </div>
+        <div class="feature-card">
+          <h3>📈 Progress Tracking</h3>
+          <p>Monitor your growth and celebrate your wins along the self-care journey.</p>
+        </div>
+      </div>
     </div>
+
+    <!-- Daily Anchors Page -->
+    <div id="daily-anchors" class="page-section">
+      <h1>Today's Anchors</h1>
+      
+      <!-- Authentication Section -->
+      <div id="authSection" style="display: none;">
+        <h2>Sign In to Your Self-Care Journey 🌱</h2>
+        
+        <div class="auth-container">
+          <input type="email" id="emailInput" placeholder="Email" />
+          <input type="password" id="passwordInput" placeholder="Password" />
+          
+          <div class="auth-buttons">
+            <button id="signInBtn">Sign In</button>
+            <button id="signUpBtn">Sign Up</button>
+          </div>
+          
+          <div class="auth-divider">— or —</div>
+          
+          <div class="social-auth">
+            <button id="googleSignInBtn">🔍 Sign in with Google</button>
+            <button id="guestSignInBtn">👤 Continue as Guest</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- App Section -->
+      <div id="appSection" style="display: block;">
+        <div id="userInfo"></div>
+        <button id="signOutBtn" style="display: none; float: right; background: #E88C82; color: white; border: none; padding: 8px 16px; border-radius: 12px; cursor: pointer; font-size: 14px;">Sign Out</button>
+        
+        <div class="anchor"><label><input type="checkbox" id="makeBed"> Make bed</label></div>
+        <div class="anchor"><label><input type="checkbox" id="drinkWater"> Take water</label></div>
+        <div class="anchor"><label><input type="checkbox" id="chooseClothes"> Choose clothes of the day</label></div>
+        <div class="anchor"><label><input type="checkbox" id="bodyMovement"> Body movement</label></div>
+        <div class="anchor"><label><input type="checkbox" id="musicDance"> Music / Dance</label></div>
+        <div class="anchor">
+          <label>
+            <input type="checkbox" id="watchShow"> Watch TV show
+          </label>
+          <input type="text" id="watchShowInput" placeholder="Which show?" style="display: none; margin-left: 10px;">
+        </div>
+        
+        <div class="anchor"><label><input type="checkbox" id="journalAboutApp"> Journal About App</label></div>
+
+        <div class="anchor">
+          <label><input type="checkbox" id="selfCare"> Self-care</label>
+          <select id="selfCareOption">
+            <option value="">--choose--</option>
+            <option>Cook</option>
+            <option>Clean</option>
+            <option>Organize</option>
+            <option>Journal</option>
+          </select>
+        </div>
+
+        <div class="buttons">
+          <button id="saveBtn">I'm Crushing It!</button>
+          <button id="resetBtn">Reset Day</button>
+        </div>
+
+        <div id="streakSection">
+          <div id="streakIcons"></div>
+          <div id="streakMessage"></div>
+        </div>  
+
+        <div id="message">🌱 Progress Saved! You're blooming today! 🌞</div>
+      </div>
+    </div>
+
+    <!-- Dream Life Page -->
+    <div id="dream-life" class="page-section">
+      <h1>Your Dream Life Vision</h1>
+      <h2>Visualize Your Ideal Life</h2>
+      <p class="section-description">
+        Take a moment to envision your perfect day, your ideal relationships, career, and lifestyle. 
+        Writing down your dreams makes them more tangible and achievable.
+      </p>
+      
+      <div class="dream-categories">
+        <h3>💭 Dream Categories</h3>
+        <ul class="category-list">
+          <li>🏠 Living Situation & Environment</li>
+          <li>💼 Career & Purpose</li>
+          <li>❤️ Relationships & Social Life</li>
+          <li>🌱 Health & Wellness</li>
+          <li>✨ Personal Growth & Hobbies</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- About Page -->
+    <div id="about" class="page-section">
+      <h1>About Daily Anchors</h1>
+      <div class="about-content">
+        <h2>Our Mission</h2>
+        <p class="section-description">
+          Daily Anchors is designed to help you build sustainable self-care habits that anchor you to your best self. 
+          We believe that small, consistent actions compound into extraordinary transformations.
+        </p>
+
+        <h2>Why Daily Anchors?</h2>
+        <p class="section-description">
+          In our fast-paced world, it's easy to neglect the fundamental practices that keep us grounded, healthy, and happy. 
+          Daily Anchors serves as your gentle reminder and tracking companion, helping you stay connected to what truly matters.
+        </p>
+
+        <div class="features-highlight">
+          <h3>✨ Key Features</h3>
+          <ul class="features-list">
+            <li>🎯 Simple, intuitive habit tracking</li>
+            <li>📱 Progressive Web App - works offline</li>
+            <li>🔄 Sync across all your devices</li>
+            <li>📊 Visual progress tracking</li>
+            <li>🎉 Celebration of wins, big and small</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contact Page -->
+    <div id="contact" class="page-section">
+      <h1>Contact Us</h1>
+      <p class="contact-intro">
+        We'd love to hear from you! Share your feedback, suggestions, or just say hello.
+      </p>
+
+      <div class="contact-form">
+        <form id="contactForm">
+          <div class="form-group">
+            <label for="name">Name</label>
+            <input type="text" id="name" name="name" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="subject">Subject</label>
+            <input type="text" id="subject" name="subject" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="message">Message</label>
+            <textarea id="contactMessage" name="message" placeholder="Tell us how we can help improve your self-care journey..." required></textarea>
+          </div>
+          
+          <div class="form-submit">
+            <button type="submit" class="submit-btn">Send Message</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="contact-info">
+        <h3>Other Ways to Connect</h3>
+        <p>📧 support@dailyanchors.app</p>
+        <p>🌐 Follow us for updates and inspiration</p>
+      </div>
+    </div>
+
   </div>
-</div>
-
-<!-- App Section -->
-<div id="appSection" style="display: none;">
-  <div id="userInfo"></div>
-  <button id="signOutBtn" style="display: none; float: right;">Sign Out</button>
-  
-  <!-- Your existing content goes here -->
-  <div class="anchor"><label><input type="checkbox" id="makeBed"> Make bed</label></div>
-  <!-- ... rest of your checkboxes ... -->
-</div>
-
-  <div class="anchor"><label><input type="checkbox" id="makeBed"> Make bed</label></div>
-  <div class="anchor"><label><input type="checkbox" id="drinkWater"> Take water</label></div>
-  <div class="anchor"><label><input type="checkbox" id="chooseClothes"> Choose clothes of the day</label></div>
-  <div class="anchor"><label><input type="checkbox" id="bodyMovement"> Body movement</label></div>
-  <div class="anchor"><label><input type="checkbox" id="musicDance"> Music / Dance</label></div>
-  <div class="anchor">
-    <label>
-      <input type="checkbox" id="watchShow"> Watch TV show
-    </label>
-    <input type="text" id="watchShowInput" placeholder="Which show?" style="display: none; margin-left: 10px;">
-  </div>
-  
-  <div class="anchor"><label><input type="checkbox" id="journalAboutApp"> Journal About App</label></div>
-
-  <div class="anchor">
-    <label><input type="checkbox" id="selfCare"> Self-care</label>
-    <select id="selfCareOption">
-      <option value="">--choose--</option>
-      <option>Cook</option>
-      <option>Clean</option>
-      <option>Organize</option>
-      <option>Journal</option>
-    </select>
-  </div>
-
-  <div class="buttons">
-    <button id="saveBtn">I'm Crushing It!</button>
-    <button id="resetBtn">Reset Day</button>
-  </div>
-
-  <div id="streakSection">
-    <div id="streakIcons"></div>
-    <div id="streakMessage"></div>
-  </div>  
-
-  <div id="message">🌱 Progress Saved! You’re blooming today! 🌞</div>
 
   <!-- Firebase SDKs -->
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-
-
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <script src="script.js"></script>
+
+  <script>
+    // Navigation functionality
+    document.addEventListener('DOMContentLoaded', function() {
+      const navToggle = document.getElementById('navToggle');
+      const navMenu = document.getElementById('navMenu');
+      const navLinks = document.querySelectorAll('.nav-link');
+      const pageSection = document.querySelectorAll('.page-section');
+
+      // Mobile menu toggle
+      navToggle.addEventListener('click', function() {
+        navMenu.classList.toggle('active');
+        navToggle.classList.toggle('active');
+      });
+
+      // Page navigation
+      navLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+          
+          // Remove active class from all links and sections
+          navLinks.forEach(l => l.classList.remove('active'));
+          pageSection.forEach(s => s.classList.remove('active'));
+          
+          // Add active class to clicked link
+          this.classList.add('active');
+          
+          // Show corresponding page
+          const targetPage = this.getAttribute('data-page');
+          document.getElementById(targetPage).classList.add('active');
+          
+          // Close mobile menu
+          navMenu.classList.remove('active');
+          navToggle.classList.remove('active');
+        });
+      });
+
+      // Contact form submission
+      const contactForm = document.getElementById('contactForm');
+      if (contactForm) {
+        contactForm.addEventListener('submit', function(e) {
+          e.preventDefault();
+          
+          const name = document.getElementById('name').value;
+          alert(`Thank you ${name}! Your message has been sent. We'll get back to you soon!`);
+          contactForm.reset();
+        });
+      }
+
+      // Show/hide TV show input
+      const watchShowCheckbox = document.getElementById('watchShow');
+      const watchShowInput = document.getElementById('watchShowInput');
+      if (watchShowCheckbox && watchShowInput) {
+        watchShowCheckbox.addEventListener('change', function() {
+          watchShowInput.style.display = this.checked ? 'inline-block' : 'none';
+        });
+      }
+
+      // Sample functionality for buttons (you can expand this with your existing script.js logic)
+      const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+      const saveBtn = document.getElementById('saveBtn');
+      const resetBtn = document.getElementById('resetBtn');
+      const messageDiv = document.getElementById('message');
+
+      if (saveBtn) {
+        saveBtn.addEventListener('click', function() {
+          messageDiv.style.display = 'block';
+          setTimeout(() => {
+            messageDiv.style.display = 'none';
+          }, 3000);
+        });
+      }
+
+      if (resetBtn) {
+        resetBtn.addEventListener('click', function() {
+          checkboxes.forEach(checkbox => {
+            checkbox.checked = false;
+          });
+          if (watchShowInput) watchShowInput.style.display = 'none';
+          const selfCareOption = document.getElementById('selfCareOption');
+          if (selfCareOption) selfCareOption.value = '';
+        });
+      }
+    });
+  </script>
 </body>
 </html>
-
-
