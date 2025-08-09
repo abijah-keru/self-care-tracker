@@ -19,6 +19,236 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const auth = firebase.auth();
 
+// ----------------------------
+// PWA Update Detection
+// ----------------------------
+
+let updateAvailable = false;
+let newServiceWorker = null;
+
+function createUpdateNotification() {
+  // Create update notification HTML
+  const updateNotification = document.createElement('div');
+  updateNotification.id = 'updateNotification';
+  updateNotification.innerHTML = `
+    <div style="
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #4CAF50;
+      color: white;
+      padding: 15px 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      z-index: 10000;
+      max-width: 300px;
+      text-align: center;
+      font-family: Arial, sans-serif;
+    ">
+      <div style="margin-bottom: 10px;">
+        📱 New version available!
+      </div>
+      <button id="updateBtn" style="
+        background: white;
+        color: #4CAF50;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: bold;
+        margin-right: 8px;
+      ">
+        Update Now
+      </button>
+      <button id="dismissBtn" style="
+        background: transparent;
+        color: white;
+        border: 1px solid white;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+      ">
+        Later
+      </button>
+    </div>
+  `;
+  
+  document.body.appendChild(updateNotification);
+  
+  // Add event listeners
+  document.getElementById('updateBtn').addEventListener('click', () => {
+    applyUpdate();
+  });
+  
+  document.getElementById('dismissBtn').addEventListener('click', () => {
+    hideUpdateNotification();
+  });
+  
+  // Auto-hide after 10 seconds
+  setTimeout(() => {
+    if (document.getElementById('updateNotification')) {
+      hideUpdateNotification();
+    }
+  }, 10000);
+}
+
+function hideUpdateNotification() {
+  const notification = document.getElementById('updateNotification');
+  if (notification) {
+    notification.remove();
+  }
+}
+
+function applyUpdate() {
+  if (newServiceWorker) {
+    // Tell the new service worker to skip waiting
+    newServiceWorker.postMessage({ action: 'skipWaiting' });
+    
+    // Hide the notification
+    hideUpdateNotification();
+    
+    // Show loading message
+    showUpdateProgress();
+  }
+}
+
+function showUpdateProgress() {
+  const progressNotification = document.createElement('div');
+  progressNotification.id = 'updateProgress';
+  progressNotification.innerHTML = `
+    <div style="
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #2196F3;
+      color: white;
+      padding: 15px 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      z-index: 10000;
+      max-width: 300px;
+      text-align: center;
+      font-family: Arial, sans-serif;
+    ">
+      <div>🔄 Updating app...</div>
+      <div style="margin-top: 8px; font-size: 12px;">This will only take a moment</div>
+    </div>
+  `;
+  
+  document.body.appendChild(progressNotification);
+}
+
+function registerServiceWorker() {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/service-worker.js')
+      .then(registration => {
+        console.log('Service Worker registered successfully:', registration);
+        
+        // Check for updates on registration
+        registration.addEventListener('updatefound', () => {
+          console.log('New service worker found');
+          const newWorker = registration.installing;
+          newServiceWorker = newWorker;
+          
+          newWorker.addEventListener('statechange', () => {
+            console.log('New service worker state:', newWorker.state);
+            
+            if (newWorker.state === 'installed') {
+              if (navigator.serviceWorker.controller) {
+                // New service worker installed, show update notification
+                console.log('Update available');
+                updateAvailable = true;
+                createUpdateNotification();
+              } else {
+                // First time install
+                console.log('Service worker installed for the first time');
+              }
+            }
+          });
+        });
+        
+        // Listen for controller change (when new SW takes control)
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          console.log('New service worker took control');
+          // Hide any update progress messages
+          const progress = document.getElementById('updateProgress');
+          if (progress) {
+            progress.remove();
+          }
+          
+          // Show success message and reload
+          showUpdateSuccess();
+        });
+        
+        // Check for waiting service worker on page load
+        if (registration.waiting) {
+          console.log('Service worker waiting');
+          newServiceWorker = registration.waiting;
+          updateAvailable = true;
+          createUpdateNotification();
+        }
+        
+        // Periodic check for updates (every 10 minutes)
+        setInterval(() => {
+          registration.update();
+        }, 600000); // 10 minutes
+        
+      })
+      .catch(error => {
+        console.log('Service Worker registration failed:', error);
+      });
+  }
+}
+
+function showUpdateSuccess() {
+  const successNotification = document.createElement('div');
+  successNotification.innerHTML = `
+    <div style="
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #4CAF50;
+      color: white;
+      padding: 15px 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      z-index: 10000;
+      max-width: 300px;
+      text-align: center;
+      font-family: Arial, sans-serif;
+    ">
+      <div>✅ App updated successfully!</div>
+      <div style="margin-top: 8px; font-size: 12px;">Refreshing...</div>
+    </div>
+  `;
+  
+  document.body.appendChild(successNotification);
+  
+  // Reload the page after a short delay
+  setTimeout(() => {
+    window.location.reload();
+  }, 1500);
+}
+
+// Check for updates when app becomes visible (user switches back to app)
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && 'serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistration()
+      .then(registration => {
+        if (registration) {
+          registration.update();
+        }
+      });
+  }
+});
+
+function initializeServiceWorker() {
+  registerServiceWorker();
+}
+
 // 🌱 Self-Care Tracker with Authentication
 
 // All anchors (checkboxes)
@@ -630,6 +860,9 @@ function setupEventListeners() {
 // ----------------------------
 async function initializeApp() {
   console.log("Initializing Self-Care Tracker with Firebase Auth...");
+  
+  // Initialize service worker for PWA updates
+  initializeServiceWorker();
   
   // Set up event listeners
   setupEventListeners();
