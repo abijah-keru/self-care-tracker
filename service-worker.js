@@ -1,5 +1,5 @@
 // service-worker.js
-const CACHE_NAME = "selfcare-v3"; // Increment this when you want to force an update
+const CACHE_NAME = "selfcare-v4"; // Increment this when you want to force an update
 const urlsToCache = [
   "/",
   "/index.html", 
