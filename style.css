@@ -9,6 +9,164 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Splash Screen Styles */
+.splash-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #E9F7F7 0%, #B8E8E5 100%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  transition: all 0.5s ease;
+}
+
+.splash-content {
+  text-align: center;
+  animation: splashFadeIn 1s ease-out;
+}
+
+.splash-logo {
+  font-size: 80px;
+  margin-bottom: 20px;
+  animation: bounce 2s infinite;
+}
+
+.splash-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: #4CA7A0;
+  margin-bottom: 20px;
+  font-family: "Nunito Sans", sans-serif;
+}
+
+.splash-message {
+  font-size: 20px;
+  color: #555;
+  margin-bottom: 30px;
+  font-family: "Nunito Sans", sans-serif;
+  font-weight: 600;
+}
+
+.splash-message u {
+  color: #4CA7A0;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+.splash-loader {
+  width: 200px;
+  height: 4px;
+  background: rgba(76, 167, 160, 0.2);
+  border-radius: 2px;
+  overflow: hidden;
+  margin: 0 auto;
+}
+
+.loader-bar {
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(90deg, #4CA7A0, #72B8B2);
+  border-radius: 2px;
+  animation: loadingBar 3s ease-in-out;
+}
+
+/* Auth Screen Styles */
+.auth-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #E9F7F7 0%, #B8E8E5 100%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9998;
+  opacity: 0;
+  transition: all 0.5s ease;
+}
+
+.auth-content {
+  text-align: center;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  padding: 40px;
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  max-width: 400px;
+  width: 90%;
+  animation: authSlideUp 0.6s ease-out;
+}
+
+.auth-logo {
+  font-size: 60px;
+  margin-bottom: 15px;
+}
+
+.auth-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #4CA7A0;
+  margin-bottom: 10px;
+  font-family: "Nunito Sans", sans-serif;
+}
+
+.auth-subtitle {
+  font-size: 18px;
+  color: #555;
+  margin-bottom: 30px;
+  font-family: "Nunito Sans", sans-serif;
+  font-weight: 600;
+}
+
+/* Animations */
+@keyframes splashFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-10px);
+  }
+  60% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes loadingBar {
+  0% {
+    width: 0%;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
+@keyframes authSlideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(50px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Navigation Bar Styles */
 .navbar {
   background: rgba(255, 255, 255, 0.95);
@@ -20,6 +178,8 @@ html {
   right: 0;
   z-index: 1000;
   padding: 0;
+  opacity: 0;
+  transition: opacity 0.5s ease;
 }
 
 .nav-container {
@@ -144,6 +304,8 @@ html {
   margin: 20px auto;
   padding: 20px;
   padding-top: 90px; /* Space for fixed navbar */
+  opacity: 0;
+  transition: opacity 0.5s ease;
 }
 
 .page-section {
@@ -283,77 +445,102 @@ button {
   font-weight: 600;
 }
 
-/* Auth Section - your original design */
+/* Auth Section Styles - Enhanced */
 .auth-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 15px;
   margin-top: 20px;
+  width: 100%;
 }
 
 .auth-container input[type="email"],
 .auth-container input[type="password"] {
   width: 100%;
-  max-width: 320px;
-  padding: 12px 16px;
+  padding: 15px 18px;
   font-size: 16px;
-  border: 1.5px solid #4CA7A0;
+  border: 2px solid rgba(76, 167, 160, 0.3);
   border-radius: 12px;
-  outline-offset: 2px;
-  transition: border-color 0.3s ease;
+  background: rgba(255, 255, 255, 0.9);
+  outline: none;
+  transition: all 0.3s ease;
+  font-family: "Nunito Sans", sans-serif;
 }
 
 .auth-container input[type="email"]:focus,
 .auth-container input[type="password"]:focus {
-  border-color: #43948f;
+  border-color: #4CA7A0;
+  box-shadow: 0 0 0 3px rgba(76, 167, 160, 0.1);
+  transform: translateY(-2px);
 }
 
 .auth-buttons {
   display: flex;
-  gap: 16px;
+  gap: 15px;
   width: 100%;
-  max-width: 320px;
   justify-content: space-between;
+  margin-top: 10px;
 }
 
 .auth-buttons button,
 .social-auth button {
   flex: 1;
-  padding: 12px 0;
+  padding: 15px 20px;
   font-size: 16px;
   border-radius: 12px;
   border: none;
   cursor: pointer;
-  font-weight: 700;
-  transition: background-color 0.3s ease;
+  font-weight: 600;
+  font-family: "Nunito Sans", sans-serif;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-buttons button:hover,
+.social-auth button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 }
 
 #signInBtn {
-  background-color: #4CA7A0;
+  background: linear-gradient(135deg, #4CA7A0, #5BB3AC);
   color: white;
 }
 
 #signInBtn:hover {
-  background-color: #3b8b86;
+  background: linear-gradient(135deg, #3b8b86, #4a9c96);
 }
 
 #signUpBtn {
-  background-color: #E9F7F7;
+  background: rgba(255, 255, 255, 0.9);
   color: #4CA7A0;
   border: 2px solid #4CA7A0;
 }
 
 #signUpBtn:hover {
-  background-color: #cde9e8;
+  background: rgba(76, 167, 160, 0.1);
 }
 
 .auth-divider {
-  width: 320px;
+  width: 100%;
   text-align: center;
-  margin: 16px 0;
+  margin: 25px 0;
   color: #777;
-  font-weight: 600;
+  font-weight: 500;
+  position: relative;
+}
+
+.auth-divider::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(76, 167, 160, 0.2);
+  z-index: 1;
 }
 
 .social-auth {
@@ -361,25 +548,57 @@ button {
   flex-direction: column;
   gap: 12px;
   width: 100%;
-  max-width: 320px;
 }
 
 #googleSignInBtn {
-  background-color: #de5246;
+  background: linear-gradient(135deg, #db4437, #c33d2e);
   color: white;
 }
 
 #googleSignInBtn:hover {
-  background-color: #c1403a;
+  background: linear-gradient(135deg, #c1403a, #b12e20);
 }
 
 #guestSignInBtn {
-  background-color: #999;
+  background: linear-gradient(135deg, #6c757d, #5a6268);
   color: white;
 }
 
 #guestSignInBtn:hover {
-  background-color: #777;
+  background: linear-gradient(135deg, #5a6268, #495057);
+}
+
+/* User Header */
+.user-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 15px;
+  background: rgba(76, 167, 160, 0.1);
+  border-radius: 12px;
+}
+
+#userInfo {
+  font-weight: 600;
+  color: #4CA7A0;
+}
+
+.sign-out-btn {
+  background: #E88C82;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.sign-out-btn:hover {
+  background: #d87b71;
+  transform: translateY(-1px);
 }
 
 /* Home Page Styles */
@@ -557,6 +776,35 @@ button {
       padding: 15px;
       padding-top: 90px;
     }
+    
+    .auth-content {
+      padding: 30px 20px;
+    }
+    
+    .splash-logo {
+      font-size: 60px;
+    }
+    
+    .splash-title {
+      font-size: 28px;
+    }
+    
+    .splash-message {
+      font-size: 18px;
+    }
+    
+    .auth-logo {
+      font-size: 50px;
+    }
+    
+    .auth-title {
+      font-size: 24px;
+    }
+    
+    .auth-subtitle {
+      font-size: 16px;
+    }
+    
     h1 {
       font-size: 22px;
     }

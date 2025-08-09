@@ -249,7 +249,7 @@ function initializeServiceWorker() {
   registerServiceWorker();
 }
 
-// 🌱 Self-Care Tracker with Authentication
+// 🌱 Self-Care Tracker with Authentication and Splash Screen
 
 // All anchors (checkboxes)
 const anchors = [
@@ -259,7 +259,8 @@ const anchors = [
     "bodyMovement",
     "musicDance",
     "watchShow",
-    "selfCare"
+    "selfCare",
+    "journalAboutApp"
 ];
 
 // Current user
@@ -269,21 +270,60 @@ let currentUser = null;
 // Authentication Functions
 // ----------------------------
 
-function showAuthUI() {
-  document.getElementById("authSection").style.display = "block";
-  document.getElementById("appSection").style.display = "none";
+function showAuthScreen() {
+  const authScreen = document.getElementById("authScreen");
+  const mainNavbar = document.getElementById("mainNavbar");
+  const mainContent = document.getElementById("mainContent");
+  
+  if (authScreen) {
+    authScreen.style.display = "flex";
+    authScreen.style.opacity = "1";
+  }
+  
+  if (mainNavbar) {
+    mainNavbar.style.display = "none";
+    mainNavbar.style.opacity = "0";
+  }
+  
+  if (mainContent) {
+    mainContent.style.display = "none";
+    mainContent.style.opacity = "0";
+  }
 }
 
-function showAppUI() {
-  document.getElementById("authSection").style.display = "none";
-  document.getElementById("appSection").style.display = "block";
+function showMainApp() {
+  const authScreen = document.getElementById("authScreen");
+  const mainNavbar = document.getElementById("mainNavbar");
+  const mainContent = document.getElementById("mainContent");
+  
+  if (authScreen) {
+    authScreen.style.opacity = "0";
+    
+    setTimeout(() => {
+      authScreen.style.display = "none";
+      
+      if (mainNavbar) {
+        mainNavbar.style.display = "block";
+        setTimeout(() => {
+          mainNavbar.style.opacity = "1";
+        }, 50);
+      }
+      
+      if (mainContent) {
+        mainContent.style.display = "block";
+        setTimeout(() => {
+          mainContent.style.opacity = "1";
+        }, 50);
+      }
+    }, 500);
+  }
 }
 
 function updateUserInfo() {
   const userInfo = document.getElementById("userInfo");
-  if (currentUser) {
-    userInfo.textContent = `Welcome, ${currentUser.email || 'Anonymous User'}!`;
-    document.getElementById("signOutBtn").style.display = "inline-block";
+  if (currentUser && userInfo) {
+    const displayName = currentUser.email || 'Anonymous User';
+    userInfo.textContent = `Welcome, ${displayName}!`;
   }
 }
 
@@ -294,6 +334,11 @@ async function signUp() {
   
   if (!email || !password) {
     alert("Please enter email and password");
+    return;
+  }
+  
+  if (password.length < 6) {
+    alert("Password must be at least 6 characters long");
     return;
   }
   
@@ -395,14 +440,19 @@ async function loadFromFirebase() {
       
       // Load other form data
       if (data.selfCareOption) {
-        document.getElementById("selfCareOption").value = data.selfCareOption;
+        const selfCareSelect = document.getElementById("selfCareOption");
+        if (selfCareSelect) {
+          selfCareSelect.value = data.selfCareOption;
+        }
       }
       
       if (data.watchShowName) {
         const watchShowInput = document.getElementById("watchShowInput");
-        watchShowInput.value = data.watchShowName;
-        if (data.watchShow) {
-          watchShowInput.style.display = "inline-block";
+        if (watchShowInput) {
+          watchShowInput.value = data.watchShowName;
+          if (data.watchShow) {
+            watchShowInput.style.display = "inline-block";
+          }
         }
       }
       
@@ -645,12 +695,12 @@ auth.onAuthStateChanged(async (user) => {
   
   if (user) {
     console.log("User signed in:", user.email || user.uid);
-    showAppUI();
+    showMainApp();
     updateUserInfo();
     await loadProgress();
   } else {
     console.log("User signed out");
-    showAuthUI();
+    showAuthScreen();
     // Clear any displayed data when signed out
     anchors.forEach(id => {
       const checkbox = document.getElementById(id);
@@ -678,8 +728,11 @@ function displaySaveMessage(progressData) {
     messageText = `Wow! ${completed}/${anchors.length} anchors! You're glowing today! 🌟`;
   }
 
-  document.getElementById("message").textContent = messageText;
-  showMessage();
+  const messageEl = document.getElementById("message");
+  if (messageEl) {
+    messageEl.textContent = messageText;
+    showMessage();
+  }
   launchConfetti();
   updateStreak(completed > 0);
 }
@@ -853,13 +906,28 @@ function setupEventListeners() {
   if (signOutBtn) {
     signOutBtn.addEventListener("click", signOut);
   }
+
+  // Enter key support for auth inputs
+  const emailInput = document.getElementById("emailInput");
+  const passwordInput = document.getElementById("passwordInput");
+  
+  if (emailInput && passwordInput) {
+    const handleEnterKey = (event) => {
+      if (event.key === 'Enter') {
+        signIn();
+      }
+    };
+    
+    emailInput.addEventListener("keypress", handleEnterKey);
+    passwordInput.addEventListener("keypress", handleEnterKey);
+  }
 }
 
 // ----------------------------
 // Initialize App
 // ----------------------------
 async function initializeApp() {
-  console.log("Initializing Self-Care Tracker with Firebase Auth...");
+  console.log("Initializing Self-Care Tracker with Firebase Auth and Splash Screen...");
   
   // Initialize service worker for PWA updates
   initializeServiceWorker();
@@ -867,8 +935,8 @@ async function initializeApp() {
   // Set up event listeners
   setupEventListeners();
   
-  // Initially show auth UI (will change based on auth state)
-  showAuthUI();
+  // The splash screen will show first, then auth screen based on auth state
+  // This is handled by the HTML inline script and auth state listener
   
   console.log("App initialized successfully!");
 }

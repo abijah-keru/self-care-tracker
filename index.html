@@ -14,8 +14,46 @@
   <link rel="apple-touch-icon" href="icons/icon-512.png">
 </head>
 <body>
+  <!-- Splash Screen -->
+  <div class="splash-screen" id="splashScreen">
+    <div class="splash-content">
+      <div class="splash-logo">🌱</div>
+      <h1 class="splash-title">Daily Anchors</h1>
+      <p class="splash-message">Building your <u>best self</u>, one day at a time</p>
+      <div class="splash-loader">
+        <div class="loader-bar"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Authentication Screen -->
+  <div class="auth-screen" id="authScreen" style="display: none;">
+    <div class="auth-content">
+      <div class="auth-logo">🌱</div>
+      <h2 class="auth-title">Daily Anchors</h2>
+      <p class="auth-subtitle">Sign in to your self-care journey</p>
+      
+      <div class="auth-container">
+        <input type="email" id="emailInput" placeholder="Email" />
+        <input type="password" id="passwordInput" placeholder="Password" />
+        
+        <div class="auth-buttons">
+          <button id="signInBtn">Sign In</button>
+          <button id="signUpBtn">Sign Up</button>
+        </div>
+        
+        <div class="auth-divider">— or —</div>
+        
+        <div class="social-auth">
+          <button id="googleSignInBtn">🔍 Sign in with Google</button>
+          <button id="guestSignInBtn">👤 Continue as Guest</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Navigation Bar -->
-  <nav class="navbar">
+  <nav class="navbar" id="mainNavbar" style="display: none;">
     <div class="nav-container">
       <a href="#" class="nav-logo">
         🌱 Daily Anchors
@@ -36,7 +74,7 @@
   </nav>
 
   <!-- Main Content Container -->
-  <div class="main-content">
+  <div class="main-content" id="mainContent" style="display: none;">
     
     <!-- Home Page -->
     <div id="home" class="page-section active">
@@ -65,70 +103,48 @@
     <div id="daily-anchors" class="page-section">
       <h1>Today's Anchors</h1>
       
-      <!-- Authentication Section -->
-      <div id="authSection" style="display: none;">
-        <h2>Sign In to Your Self-Care Journey 🌱</h2>
+      <!-- User Header -->
+      <div class="user-header">
+        <div id="userInfo">Welcome!</div>
+        <button id="signOutBtn" class="sign-out-btn">Sign Out</button>
+      </div>
         
-        <div class="auth-container">
-          <input type="email" id="emailInput" placeholder="Email" />
-          <input type="password" id="passwordInput" placeholder="Password" />
-          
-          <div class="auth-buttons">
-            <button id="signInBtn">Sign In</button>
-            <button id="signUpBtn">Sign Up</button>
-          </div>
-          
-          <div class="auth-divider">— or —</div>
-          
-          <div class="social-auth">
-            <button id="googleSignInBtn">🔍 Sign in with Google</button>
-            <button id="guestSignInBtn">👤 Continue as Guest</button>
-          </div>
-        </div>
+      <div class="anchor"><label><input type="checkbox" id="makeBed"> Make bed</label></div>
+      <div class="anchor"><label><input type="checkbox" id="drinkWater"> Take water</label></div>
+      <div class="anchor"><label><input type="checkbox" id="chooseClothes"> Choose clothes of the day</label></div>
+      <div class="anchor"><label><input type="checkbox" id="bodyMovement"> Body movement</label></div>
+      <div class="anchor"><label><input type="checkbox" id="musicDance"> Music / Dance</label></div>
+      <div class="anchor">
+        <label>
+          <input type="checkbox" id="watchShow"> Watch TV show
+        </label>
+        <input type="text" id="watchShowInput" placeholder="Which show?" style="display: none; margin-left: 10px;">
+      </div>
+      
+      <div class="anchor"><label><input type="checkbox" id="journalAboutApp"> Journal About App</label></div>
+
+      <div class="anchor">
+        <label><input type="checkbox" id="selfCare"> Self-care</label>
+        <select id="selfCareOption">
+          <option value="">--choose--</option>
+          <option>Cook</option>
+          <option>Clean</option>
+          <option>Organize</option>
+          <option>Journal</option>
+        </select>
       </div>
 
-      <!-- App Section -->
-      <div id="appSection" style="display: block;">
-        <div id="userInfo"></div>
-        <button id="signOutBtn" style="display: none; float: right; background: #E88C82; color: white; border: none; padding: 8px 16px; border-radius: 12px; cursor: pointer; font-size: 14px;">Sign Out</button>
-        
-        <div class="anchor"><label><input type="checkbox" id="makeBed"> Make bed</label></div>
-        <div class="anchor"><label><input type="checkbox" id="drinkWater"> Take water</label></div>
-        <div class="anchor"><label><input type="checkbox" id="chooseClothes"> Choose clothes of the day</label></div>
-        <div class="anchor"><label><input type="checkbox" id="bodyMovement"> Body movement</label></div>
-        <div class="anchor"><label><input type="checkbox" id="musicDance"> Music / Dance</label></div>
-        <div class="anchor">
-          <label>
-            <input type="checkbox" id="watchShow"> Watch TV show
-          </label>
-          <input type="text" id="watchShowInput" placeholder="Which show?" style="display: none; margin-left: 10px;">
-        </div>
-        
-        <div class="anchor"><label><input type="checkbox" id="journalAboutApp"> Journal About App</label></div>
-
-        <div class="anchor">
-          <label><input type="checkbox" id="selfCare"> Self-care</label>
-          <select id="selfCareOption">
-            <option value="">--choose--</option>
-            <option>Cook</option>
-            <option>Clean</option>
-            <option>Organize</option>
-            <option>Journal</option>
-          </select>
-        </div>
-
-        <div class="buttons">
-          <button id="saveBtn">I'm Crushing It!</button>
-          <button id="resetBtn">Reset Day</button>
-        </div>
-
-        <div id="streakSection">
-          <div id="streakIcons"></div>
-          <div id="streakMessage"></div>
-        </div>  
-
-        <div id="message">🌱 Progress Saved! You're blooming today! 🌞</div>
+      <div class="buttons">
+        <button id="saveBtn">I'm Crushing It!</button>
+        <button id="resetBtn">Reset Day</button>
       </div>
+
+      <div id="streakSection">
+        <div id="streakIcons"></div>
+        <div id="streakMessage"></div>
+      </div>  
+
+      <div id="message">🌱 Progress Saved! You're blooming today! 🌞</div>
     </div>
 
     <!-- Dream Life Page -->
@@ -232,7 +248,19 @@
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <script src="script.js"></script>
 
+  <!-- Splash Screen Timing Script -->
   <script>
+    // Hide splash screen after loading animation completes
+    setTimeout(() => {
+      const splashScreen = document.getElementById('splashScreen');
+      if (splashScreen) {
+        splashScreen.style.opacity = '0';
+        setTimeout(() => {
+          splashScreen.style.display = 'none';
+        }, 500);
+      }
+    }, 3500); // Show splash for 3.5 seconds (matches your CSS animation)
+
     // Navigation functionality
     document.addEventListener('DOMContentLoaded', function() {
       const navToggle = document.getElementById('navToggle');
@@ -277,41 +305,6 @@
           const name = document.getElementById('name').value;
           alert(`Thank you ${name}! Your message has been sent. We'll get back to you soon!`);
           contactForm.reset();
-        });
-      }
-
-      // Show/hide TV show input
-      const watchShowCheckbox = document.getElementById('watchShow');
-      const watchShowInput = document.getElementById('watchShowInput');
-      if (watchShowCheckbox && watchShowInput) {
-        watchShowCheckbox.addEventListener('change', function() {
-          watchShowInput.style.display = this.checked ? 'inline-block' : 'none';
-        });
-      }
-
-      // Sample functionality for buttons (you can expand this with your existing script.js logic)
-      const checkboxes = document.querySelectorAll('input[type="checkbox"]');
-      const saveBtn = document.getElementById('saveBtn');
-      const resetBtn = document.getElementById('resetBtn');
-      const messageDiv = document.getElementById('message');
-
-      if (saveBtn) {
-        saveBtn.addEventListener('click', function() {
-          messageDiv.style.display = 'block';
-          setTimeout(() => {
-            messageDiv.style.display = 'none';
-          }, 3000);
-        });
-      }
-
-      if (resetBtn) {
-        resetBtn.addEventListener('click', function() {
-          checkboxes.forEach(checkbox => {
-            checkbox.checked = false;
-          });
-          if (watchShowInput) watchShowInput.style.display = 'none';
-          const selfCareOption = document.getElementById('selfCareOption');
-          if (selfCareOption) selfCareOption.value = '';
         });
       }
     });
