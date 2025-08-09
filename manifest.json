@@ -1,6 +1,6 @@
 {
     "name": "My Self-Care Anchors",
-    "short_name": "SelfCare",
+    "short_name": "BadBitch",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#E9F7F7",
@@ -12,8 +12,8 @@
         "type": "image/png"
       },
       {
-        "src": "icons/icon-500.png",
-        "sizes": "500x500",
+        "src": "icons/icon-512.png",
+        "sizes": "512x512",
         "type": "image/png"
       }
     ]
