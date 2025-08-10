@@ -1,5 +1,5 @@
 // service-worker.js (scoped to /self-care-tracker/)
-const CACHE_NAME = "selfcare-tracker-v3"; // Update to invalidate old caches
+const CACHE_NAME = "selfcare-tracker-v7"; // Update to invalidate old caches
 
 // Compute scope-aware base path for this service worker file
 const SCOPE_PATH = new URL('./', self.location).pathname; // e.g., "/self-care-tracker/"
@@ -50,15 +50,47 @@ self.addEventListener("activate", event => {
   );
 });
 
-// Fetch event - serve from cache, fallback to network
-self.addEventListener("fetch", event => {
-  event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        // Return cached version or fetch from network
-        return response || fetch(event.request);
+// Fetch event
+// - HTML (navigation): network-first with cache fallback to ensure updates show without manual cache bump
+// - Static assets (CSS/JS/images): stale-while-revalidate to keep assets fresh in background
+self.addEventListener('fetch', (event) => {
+  const request = event.request;
+  if (request.method !== 'GET') return; // bypass non-GET
+
+  const acceptHeader = request.headers.get('accept') || '';
+  const isHTMLRequest = request.mode === 'navigate' || acceptHeader.includes('text/html');
+
+  if (isHTMLRequest) {
+    event.respondWith((async () => {
+      try {
+        const networkResponse = await fetch(request);
+        const cache = await caches.open(CACHE_NAME);
+        cache.put(request, networkResponse.clone());
+        return networkResponse;
+      } catch (err) {
+        const cached = await caches.match(request);
+        if (cached) return cached;
+        // Fallback to app shell
+        return caches.match(SCOPE_PATH + 'index.html');
+      }
+    })());
+    return;
+  }
+
+  // Stale-while-revalidate for non-HTML
+  event.respondWith((async () => {
+    const cached = await caches.match(request);
+    const fetchPromise = fetch(request)
+      .then((networkResponse) => {
+        // Only cache successful basic responses
+        if (networkResponse && networkResponse.status === 200 && (networkResponse.type === 'basic' || networkResponse.type === 'cors')) {
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, networkResponse.clone()));
+        }
+        return networkResponse;
       })
-  );
+      .catch(() => cached);
+    return cached || fetchPromise;
+  })());
 });
 
 // Listen for skip waiting message from main thread

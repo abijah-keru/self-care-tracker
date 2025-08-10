@@ -1,7 +1,7 @@
 {
     "name": "My Self-Care Anchors",
     "short_name": "DailyAnchors",
-    "start_url": ".",
+  "start_url": "./?source=pwa",
     "display": "standalone",
     "background_color": "#E9F7F7",
     "theme_color": "#4CA7A0",
