@@ -19,6 +19,7 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const auth = firebase.auth();
 
+
 // ----------------------------
 // PWA Update Detection
 // ----------------------------
@@ -265,6 +266,7 @@ const anchors = [
 
 // Current user
 let currentUser = null;
+
 
 // ----------------------------
 // Authentication Functions
