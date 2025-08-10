@@ -842,6 +842,72 @@ function updateUIAfterLoad() {
 }
 
 // ----------------------------
+// Navigation and Splash
+// ----------------------------
+function initializeSplashScreen() {
+  setTimeout(() => {
+    const splashScreen = document.getElementById('splashScreen');
+    if (splashScreen) {
+      splashScreen.style.opacity = '0';
+      setTimeout(() => {
+        splashScreen.style.display = 'none';
+      }, 500);
+    }
+  }, 2500);
+}
+
+function setupNavigation() {
+  const navToggle = document.getElementById('navToggle');
+  const navMenu = document.getElementById('navMenu');
+  const navLinks = document.querySelectorAll('.nav-link');
+  const pageSections = document.querySelectorAll('.page-section');
+
+  if (navToggle && navMenu) {
+    navToggle.addEventListener('click', function() {
+      navMenu.classList.toggle('active');
+      navToggle.classList.toggle('active');
+    });
+  }
+
+  navLinks.forEach(link => {
+    link.addEventListener('click', function(e) {
+      e.preventDefault();
+
+      // Remove active class from all links and sections
+      navLinks.forEach(l => l.classList.remove('active'));
+      pageSections.forEach(s => s.classList.remove('active'));
+
+      // Add active class to clicked link
+      this.classList.add('active');
+
+      // Show corresponding page
+      const targetPage = this.getAttribute('data-page');
+      const targetEl = document.getElementById(targetPage);
+      if (targetEl) targetEl.classList.add('active');
+
+      // Close mobile menu
+      if (navMenu && navToggle) {
+        navMenu.classList.remove('active');
+        navToggle.classList.remove('active');
+      }
+    });
+  });
+}
+
+function setupContactForm() {
+  const contactForm = document.getElementById('contactForm');
+  if (contactForm) {
+    contactForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const nameInput = document.getElementById('name');
+      const name = nameInput ? nameInput.value : '';
+      alert(`Thank you ${name}! Your message has been sent. We'll get back to you soon!`);
+      contactForm.reset();
+    });
+  }
+}
+
+// ----------------------------
 // Event Listeners
 // ----------------------------
 function setupEventListeners() {
@@ -936,6 +1002,11 @@ async function initializeApp() {
   
   // Set up event listeners
   setupEventListeners();
+  
+  // Navigation, splash screen, and contact form
+  initializeSplashScreen();
+  setupNavigation();
+  setupContactForm();
   
   // The splash screen will show first, then auth screen based on auth state
   // This is handled by the HTML inline script and auth state listener
