@@ -305,7 +305,7 @@ function renderCustomAnchors() {
     row.setAttribute('data-custom', 'true');
     row.setAttribute('data-id', item.id);
     row.innerHTML = `<label><input type="checkbox" id="${item.id}"> ${item.label}</label>
-      <button data-action="remove" class="btn-danger" style="margin-left:8px; flex:0 0 auto;">Remove</button>`;
+      <button type="button" class="remove-anchor" aria-label="Remove anchor">✕</button>`;
     page.insertBefore(row, insertBeforeEl);
     // restore state
     const checkbox = row.querySelector('input[type="checkbox"]');
@@ -314,15 +314,14 @@ function renderCustomAnchors() {
       checkbox.checked = localStorage.getItem(prefix + item.id) === 'true';
       checkbox.addEventListener('change', updateProgressIndicator);
     }
-    // remove handler
-    const removeBtn = row.querySelector('button[data-action="remove"]');
-    if (removeBtn) {
-      removeBtn.addEventListener('click', () => {
-        const updated = loadCustomAnchors().filter(c => c.id !== item.id);
-        saveCustomAnchors(updated);
-        renderCustomAnchors();
-        updateProgressIndicator();
-      });
+  });
+
+  // Hide any default anchors the user opted out of
+  defaultAnchors.forEach(id => {
+    const prefix = getUserPrefix();
+    if (prefix && localStorage.getItem(prefix + 'hide_' + id) === 'true') {
+      const row = document.getElementById(id)?.closest('.anchor');
+      if (row) row.style.display = 'none';
     }
   });
 }
@@ -388,6 +387,7 @@ function updateUserInfo() {
   const userInfo = document.getElementById("userInfo");
   const profileNameEl = document.getElementById("profileName");
   const profileEmailEl = document.getElementById("profileEmail");
+  const homeGreeting = document.getElementById('homeGreeting');
   if (currentUser && userInfo) {
     const displayName = currentUser.email || 'Anonymous User';
     userInfo.textContent = `Welcome, ${displayName}!`;
@@ -396,6 +396,12 @@ function updateUserInfo() {
     const displayName = currentUser.displayName || currentUser.email || 'Anonymous User';
     profileNameEl.textContent = displayName;
     profileEmailEl.textContent = currentUser.email || '—';
+  }
+  if (homeGreeting) {
+    const hours = new Date().getHours();
+    const period = hours < 12 ? 'Good morning' : (hours < 18 ? 'Good afternoon' : 'Good evening');
+    const name = currentUser && (currentUser.displayName || currentUser.email) ? (currentUser.displayName || currentUser.email) : '';
+    homeGreeting.textContent = `${period}${name ? ', ' + name : ''}`;
   }
 }
 
@@ -951,6 +957,9 @@ function setupNavigation() {
   const mainContent = document.getElementById('mainContent');
   const auxToggle = document.getElementById('auxMenuToggle');
   const auxMenu = document.getElementById('auxMenu');
+  const bottomNav = document.getElementById('bottomNav');
+  const hamburgerBtn = document.getElementById('hamburgerBtn');
+  const hamburgerSheet = document.getElementById('hamburgerSheet');
 
   if (navToggle && navMenu) {
     navToggle.addEventListener('click', function() {
@@ -986,12 +995,13 @@ function setupNavigation() {
     });
   }
 
+  // Bottom nav + top nav (if any) share .nav-link class
   navLinks.forEach(link => {
     link.addEventListener('click', function(e) {
       e.preventDefault();
 
       // Remove active class from all links and sections
-      navLinks.forEach(l => l.classList.remove('active'));
+      document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
       pageSections.forEach(s => s.classList.remove('active'));
 
       // Add active class to clicked link
@@ -1062,6 +1072,42 @@ function setupNavigation() {
       });
     });
   }
+
+  // Bottom nav visibility when main app is shown
+  if (bottomNav) {
+    bottomNav.style.display = 'grid';
+  }
+
+  // Hamburger sheet
+  if (hamburgerBtn && hamburgerSheet) {
+    const toggleSheet = () => {
+      hamburgerSheet.classList.toggle('active');
+      const hidden = !hamburgerSheet.classList.contains('active');
+      hamburgerSheet.setAttribute('aria-hidden', hidden ? 'true' : 'false');
+    };
+    hamburgerBtn.addEventListener('click', (e) => { e.preventDefault(); toggleSheet(); });
+    document.addEventListener('click', (e) => {
+      if (!hamburgerSheet.contains(e.target) && e.target !== hamburgerBtn) {
+        hamburgerSheet.classList.remove('active');
+        hamburgerSheet.setAttribute('aria-hidden', 'true');
+      }
+    });
+    hamburgerSheet.querySelectorAll('.hamburger-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        e.preventDefault();
+        const page = item.getAttribute('data-page');
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+        document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+        const targetEl = document.getElementById(page);
+        if (targetEl) targetEl.classList.add('active');
+        const correspondingBottomLink = document.querySelector(`.bottom-nav .nav-link[data-page="${page}"]`);
+        if (correspondingBottomLink) correspondingBottomLink.classList.add('active');
+        updateBreadcrumbs(page);
+        hamburgerSheet.classList.remove('active');
+        hamburgerSheet.setAttribute('aria-hidden', 'true');
+      });
+    });
+  }
 }
 
 function updateBreadcrumbs(page) {
@@ -1110,19 +1156,15 @@ function setupContactForm() {
 // ----------------------------
 function applySavedSettings() {
   const theme = localStorage.getItem('settings_theme') || 'system';
-  const accent = localStorage.getItem('settings_accent') || '#4CA7A0';
   const reminder = localStorage.getItem('settings_dailyReminder') || '';
 
   const themeSelect = document.getElementById('themeSelect');
-  const accentInput = document.getElementById('accentColor');
   const reminderInput = document.getElementById('dailyReminder');
 
   if (themeSelect) themeSelect.value = theme;
-  if (accentInput) accentInput.value = accent;
   if (reminderInput && reminder) reminderInput.value = reminder;
 
   applyTheme(theme);
-  applyAccent(accent);
 }
 
 function applyTheme(theme) {
@@ -1142,14 +1184,10 @@ function applyTheme(theme) {
   }
 }
 
-function applyAccent(hex) {
-  const root = document.documentElement;
-  root.style.setProperty('--accent', hex);
-}
+// Removed accent color customization
 
 function setupSettingsHandlers() {
   const themeSelect = document.getElementById('themeSelect');
-  const accentInput = document.getElementById('accentColor');
   const reminderInput = document.getElementById('dailyReminder');
   const exportBtn = document.getElementById('exportDataBtn');
   const clearBtn = document.getElementById('clearDataBtn');
@@ -1159,14 +1197,6 @@ function setupSettingsHandlers() {
       const value = e.target.value;
       localStorage.setItem('settings_theme', value);
       applyTheme(value);
-    });
-  }
-
-  if (accentInput) {
-    accentInput.addEventListener('input', (e) => {
-      const value = e.target.value;
-      localStorage.setItem('settings_accent', value);
-      applyAccent(value);
     });
   }
 
@@ -1205,7 +1235,6 @@ function setupSettingsHandlers() {
 function collectExportData() {
   const payload = { settings: {}, progress: {} };
   payload.settings.theme = localStorage.getItem('settings_theme') || 'system';
-  payload.settings.accent = localStorage.getItem('settings_accent') || '#4CA7A0';
   payload.settings.dailyReminder = localStorage.getItem('settings_dailyReminder') || '';
 
   // If signed in, include user-prefixed items
@@ -1221,7 +1250,6 @@ function collectExportData() {
 function clearLocalData() {
   // Clear settings
   localStorage.removeItem('settings_theme');
-  localStorage.removeItem('settings_accent');
   localStorage.removeItem('settings_dailyReminder');
 
   // Clear user data if signed in
@@ -1270,6 +1298,35 @@ function setupEventListeners() {
     addBtn.addEventListener('click', addHandler);
     addInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') { e.preventDefault(); addHandler(); } });
   }
+
+  // Delegate remove for default and custom anchors using best practice (inline X button)
+  document.addEventListener('click', (e) => {
+    const target = e.target;
+    if (!(target instanceof HTMLElement)) return;
+    if (target.matches('.remove-anchor')) {
+      const row = target.closest('.anchor');
+      if (!row) return;
+      const checkbox = row.querySelector('input[type="checkbox"]');
+      const id = checkbox ? checkbox.id : row.getAttribute('data-id');
+      // Prevent removing protected defaults by mistake
+      if (id && defaultAnchors.includes(id)) {
+        if (!confirm('Remove this default anchor from your view? You can add custom anchors anytime.')) return;
+        // Hide default anchor for this user only
+        if (currentUser) {
+          const prefix = getUserPrefix();
+          localStorage.setItem(prefix + 'hide_' + id, 'true');
+          row.remove();
+          updateProgressIndicator();
+        }
+        return;
+      }
+      // Remove custom anchor permanently for this user
+      const updated = loadCustomAnchors().filter(c => c.id !== id);
+      saveCustomAnchors(updated);
+      renderCustomAnchors();
+      updateProgressIndicator();
+    }
+  });
   
   if (watchShowCheckbox && watchShowInput) {
     watchShowCheckbox.addEventListener("change", function () {
@@ -1424,27 +1481,27 @@ async function initializeApp() {
   // Show onboarding for first-time users (no local streak and no entries)
   try {
     const shown = localStorage.getItem('onboarding_shown') === 'true';
-    const card = document.getElementById('onboardingCard');
-    if (!shown && card) {
-      card.style.display = 'block';
-      const dismiss = document.getElementById('onboardingDismissBtn');
-      const start = document.getElementById('onboardingStartBtn');
-      if (dismiss) dismiss.addEventListener('click', () => {
-        card.style.display = 'none';
+    const overlay = document.getElementById('onboardingOverlay');
+    if (!shown && overlay) {
+      overlay.classList.add('active');
+      overlay.setAttribute('aria-hidden', 'false');
+      const skip = document.getElementById('onboardingSkip');
+      const got = document.getElementById('onboardingGotIt');
+      const complete = () => {
+        overlay.classList.remove('active');
+        overlay.setAttribute('aria-hidden', 'true');
         localStorage.setItem('onboarding_shown', 'true');
-      });
-      if (start) start.addEventListener('click', (e) => {
-        e.preventDefault();
-        localStorage.setItem('onboarding_shown', 'true');
-        // Navigate to daily anchors
-        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-        document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
-        const anchorsSection = document.getElementById('daily-anchors');
-        const anchorsLink = document.querySelector('.nav-link[data-page="daily-anchors"]');
-        if (anchorsSection) anchorsSection.classList.add('active');
-        if (anchorsLink) anchorsLink.classList.add('active');
-        updateBreadcrumbs('daily-anchors');
-      });
+      };
+      if (skip) skip.addEventListener('click', complete);
+      if (got) got.addEventListener('click', complete);
+    }
+  } catch (e) { /* ignore */ }
+
+  // Optional interactive coach tutorial (one-time)
+  try {
+    const coachShown = localStorage.getItem('coach_shown') === 'true';
+    if (!coachShown) {
+      setupCoachTutorial();
     }
   } catch (e) { /* ignore */ }
   
@@ -1452,6 +1509,101 @@ async function initializeApp() {
   // This is handled by the HTML inline script and auth state listener
   
   console.log("App initialized successfully!");
+}
+function setupCoachTutorial() {
+  const overlay = document.getElementById('coachOverlay');
+  if (!overlay) return;
+
+  const steps = [
+    {
+      selector: '.bottom-nav .nav-link[data-page="dashboard"]',
+      text: 'This is your Dashboard. Tap here anytime to view your progress and charts.',
+      position: 'top'
+    },
+    {
+      selector: '.bottom-nav .nav-link[data-page="daily-anchors"]',
+      text: 'Your Daily Anchors live here. Tap to check off today\'s habits.',
+      position: 'top'
+    },
+    {
+      selector: '.bottom-nav .nav-link[data-page="mood-booster"]',
+      text: 'Mood Booster gives you a quick, random anchor to act on right now.',
+      position: 'top'
+    },
+    {
+      selector: '.bottom-nav .nav-link[data-page="dream-life"]',
+      text: 'Dream Life helps you visualize and plan your ideal lifestyle.',
+      position: 'top'
+    }
+  ];
+
+  let current = 0;
+
+  const renderStep = () => {
+    if (current >= steps.length) {
+      overlay.innerHTML = '';
+      overlay.style.display = 'none';
+      overlay.setAttribute('aria-hidden', 'true');
+      localStorage.setItem('coach_shown', 'true');
+      return;
+    }
+    const step = steps[current];
+    const target = document.querySelector(step.selector);
+    if (!target) { current++; renderStep(); return; }
+
+    const rect = target.getBoundingClientRect();
+    overlay.innerHTML = '';
+    overlay.style.display = 'block';
+    overlay.setAttribute('aria-hidden', 'false');
+
+    // Highlight
+    const highlight = document.createElement('div');
+    highlight.className = 'coach-highlight';
+    const size = Math.max(rect.width, rect.height) + 16;
+    highlight.style.width = `${size}px`;
+    highlight.style.height = `${size}px`;
+    highlight.style.left = `${rect.left + rect.width/2 - size/2}px`;
+    highlight.style.top = `${rect.top + rect.height/2 - size/2}px`;
+
+    // Tooltip
+    const tip = document.createElement('div');
+    tip.className = 'coach-tooltip';
+    tip.innerHTML = `
+      <div class="coach-text">${step.text}</div>
+      <div class="coach-actions">
+        <button class="btn-secondary" id="coachSkip">Skip</button>
+        <button class="btn-primary" id="coachNext">Next</button>
+      </div>
+    `;
+
+    // Position tooltip
+    const margin = 10;
+    let tipLeft = rect.left + rect.width/2 - 130;
+    tipLeft = Math.max(10, Math.min(tipLeft, window.innerWidth - 270));
+    let tipTop = step.position === 'top' ? rect.top - 90 : rect.bottom + margin;
+    if (tipTop < 10) tipTop = rect.bottom + margin;
+    if (tipTop > window.innerHeight - 100) tipTop = rect.top - 90;
+    tip.style.left = `${tipLeft}px`;
+    tip.style.top = `${tipTop}px`;
+
+    overlay.appendChild(highlight);
+    overlay.appendChild(tip);
+
+    // Handlers
+    tip.querySelector('#coachSkip').onclick = () => {
+      localStorage.setItem('coach_shown', 'true');
+      overlay.innerHTML = '';
+      overlay.style.display = 'none';
+      overlay.setAttribute('aria-hidden', 'true');
+    };
+    tip.querySelector('#coachNext').onclick = () => {
+      current++;
+      renderStep();
+    };
+  };
+
+  // Render after small delay to ensure layout is ready
+  setTimeout(renderStep, 400);
 }
 
 // Start the app when DOM is loaded
