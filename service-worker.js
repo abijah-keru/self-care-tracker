@@ -1,11 +1,17 @@
-// service-worker.js
-const CACHE_NAME = "selfcare-v5"; // Increment this when you want to force an update
+// service-worker.js (scoped to /self-care-tracker/)
+const CACHE_NAME = "selfcare-tracker-v1"; // Update to invalidate old caches
+
+// Compute scope-aware base path for this service worker file
+const SCOPE_PATH = new URL('./', self.location).pathname; // e.g., "/self-care-tracker/"
+
 const urlsToCache = [
-  "/",
-  "/index.html", 
-  "/style.css",
-  "/script.js",
-  "/manifest.json"
+  SCOPE_PATH,
+  SCOPE_PATH + "index.html",
+  SCOPE_PATH + "style.css",
+  SCOPE_PATH + "script.js",
+  SCOPE_PATH + "manifest.json",
+  SCOPE_PATH + "icons/icon-192.png",
+  SCOPE_PATH + "icons/icon-512.png",
 ];
 
 // Install event - cache resources

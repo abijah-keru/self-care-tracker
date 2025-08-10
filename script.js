@@ -143,7 +143,7 @@ function showUpdateProgress() {
 
 function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/service-worker.js')
+    navigator.serviceWorker.register('service-worker.js')
       .then(registration => {
         console.log('Service Worker registered successfully:', registration);
         
@@ -252,8 +252,8 @@ function initializeServiceWorker() {
 
 // 🌱 Self-Care Tracker with Authentication and Splash Screen
 
-// All anchors (checkboxes)
-const anchors = [
+// Default anchors (checkboxes)
+const defaultAnchors = [
     "makeBed",
     "drinkWater", 
     "chooseClothes",
@@ -263,6 +263,69 @@ const anchors = [
     "selfCare",
     "journalAboutApp"
 ];
+
+// Working anchors list (default + custom)
+let anchors = [...defaultAnchors];
+
+function getUserPrefix() {
+  return currentUser ? `user_${currentUser.uid}_` : '';
+}
+
+function loadCustomAnchors() {
+  const prefix = getUserPrefix();
+  if (!prefix) return [];
+  try {
+    const raw = localStorage.getItem(prefix + 'customAnchors');
+    const list = raw ? JSON.parse(raw) : [];
+    return Array.isArray(list) ? list : [];
+  } catch { return []; }
+}
+
+function saveCustomAnchors(list) {
+  const prefix = getUserPrefix();
+  if (!prefix) return;
+  localStorage.setItem(prefix + 'customAnchors', JSON.stringify(list));
+}
+
+function renderCustomAnchors() {
+  const container = document.getElementById('selfCareOption')?.closest('#daily-anchors');
+  const page = document.getElementById('daily-anchors');
+  if (!page) return;
+  // Remove existing custom anchors before re-render
+  page.querySelectorAll('.anchor[data-custom="true"]').forEach(el => el.remove());
+
+  const custom = loadCustomAnchors();
+  anchors = [...defaultAnchors, ...custom.map(a => a.id)];
+
+  // Insert after the last default anchor and before the self-care select
+  const insertBeforeEl = document.getElementById('selfCare')?.closest('.anchor') || page.querySelector('.buttons');
+  custom.forEach(item => {
+    const row = document.createElement('div');
+    row.className = 'anchor';
+    row.setAttribute('data-custom', 'true');
+    row.setAttribute('data-id', item.id);
+    row.innerHTML = `<label><input type="checkbox" id="${item.id}"> ${item.label}</label>
+      <button data-action="remove" class="btn-danger" style="margin-left:8px; flex:0 0 auto;">Remove</button>`;
+    page.insertBefore(row, insertBeforeEl);
+    // restore state
+    const checkbox = row.querySelector('input[type="checkbox"]');
+    if (checkbox) {
+      const prefix = getUserPrefix();
+      checkbox.checked = localStorage.getItem(prefix + item.id) === 'true';
+      checkbox.addEventListener('change', updateProgressIndicator);
+    }
+    // remove handler
+    const removeBtn = row.querySelector('button[data-action="remove"]');
+    if (removeBtn) {
+      removeBtn.addEventListener('click', () => {
+        const updated = loadCustomAnchors().filter(c => c.id !== item.id);
+        saveCustomAnchors(updated);
+        renderCustomAnchors();
+        updateProgressIndicator();
+      });
+    }
+  });
+}
 
 // Current user
 let currentUser = null;
@@ -323,9 +386,16 @@ function showMainApp() {
 
 function updateUserInfo() {
   const userInfo = document.getElementById("userInfo");
+  const profileNameEl = document.getElementById("profileName");
+  const profileEmailEl = document.getElementById("profileEmail");
   if (currentUser && userInfo) {
     const displayName = currentUser.email || 'Anonymous User';
     userInfo.textContent = `Welcome, ${displayName}!`;
+  }
+  if (currentUser && profileNameEl && profileEmailEl) {
+    const displayName = currentUser.displayName || currentUser.email || 'Anonymous User';
+    profileNameEl.textContent = displayName;
+    profileEmailEl.textContent = currentUser.email || '—';
   }
 }
 
@@ -565,6 +635,9 @@ async function saveProgress() {
 
   // Show success message
   displaySaveMessage(progressData);
+
+  // Update progress indicator
+  updateProgressIndicator();
 }
 
 // ----------------------------
@@ -577,6 +650,8 @@ async function loadProgress() {
   }
   
   checkDailyReset();
+  // Merge in any custom anchors visually before setting states
+  renderCustomAnchors();
   
   // Try to load from Firebase first
   const firebaseLoaded = await loadFromFirebase();
@@ -656,6 +731,7 @@ async function clearAll() {
   if (messageEl) {
     messageEl.style.display = "none";
   }
+  updateProgressIndicator();
   
   // Save the cleared state to Firebase
   const clearedData = {};
@@ -699,6 +775,7 @@ auth.onAuthStateChanged(async (user) => {
     console.log("User signed in:", user.email || user.uid);
     showMainApp();
     updateUserInfo();
+    renderCustomAnchors();
     await loadProgress();
   } else {
     console.log("User signed out");
@@ -815,6 +892,16 @@ function renderStreak(streakData) {
   }
 }
 
+function updateProgressIndicator() {
+  const indicator = document.getElementById('progressIndicator');
+  if (!indicator) return;
+  const completed = anchors.filter(id => {
+    const el = document.getElementById(id);
+    return el && el.checked;
+  }).length;
+  indicator.textContent = `Completed ${completed}/${anchors.length}`;
+}
+
 function calculateCurrentStreak(streakData) {
   let streak = 0;
   for (let i = streakData.length - 1; i >= 0; i--) {
@@ -861,10 +948,38 @@ function setupNavigation() {
   const navMenu = document.getElementById('navMenu');
   const navLinks = document.querySelectorAll('.nav-link');
   const pageSections = document.querySelectorAll('.page-section');
+  const mainContent = document.getElementById('mainContent');
 
   if (navToggle && navMenu) {
     navToggle.addEventListener('click', function() {
-      navMenu.classList.toggle('active');
+      // On mobile, use drawer + overlay
+      const overlay = document.getElementById('navOverlay');
+      let drawer = document.querySelector('.nav-drawer');
+      if (!drawer) {
+        drawer = document.createElement('div');
+        drawer.className = 'nav-drawer';
+        const ul = navMenu.cloneNode(true);
+        ul.id = 'navMenuDrawer';
+        ul.classList.remove('nav-menu');
+        drawer.appendChild(ul);
+        document.body.appendChild(drawer);
+        // Re-bind link clicks inside drawer
+        drawer.querySelectorAll('a.nav-link').forEach(link => {
+          link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const page = link.getAttribute('data-page');
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+            link.classList.add('active');
+            const targetEl = document.getElementById(page);
+            if (targetEl) targetEl.classList.add('active');
+            drawer.classList.remove('active');
+            if (overlay) overlay.classList.remove('active');
+          });
+        });
+      }
+      if (drawer) drawer.classList.toggle('active');
+      if (overlay) overlay.classList.toggle('active');
       navToggle.classList.toggle('active');
     });
   }
@@ -884,13 +999,60 @@ function setupNavigation() {
       const targetPage = this.getAttribute('data-page');
       const targetEl = document.getElementById(targetPage);
       if (targetEl) targetEl.classList.add('active');
+      // Animate in
+      if (targetEl) {
+        targetEl.classList.remove('animate-in');
+        void targetEl.offsetWidth; // reflow
+        targetEl.classList.add('animate-in');
+      }
 
       // Close mobile menu
       if (navMenu && navToggle) {
         navMenu.classList.remove('active');
         navToggle.classList.remove('active');
       }
+      const overlay = document.getElementById('navOverlay');
+      const drawer = document.querySelector('.nav-drawer');
+      if (overlay) overlay.classList.remove('active');
+      if (drawer) drawer.classList.remove('active');
+
+      // Ensure main content visible after navigation
+      if (mainContent && mainContent.style.display !== 'block') {
+        mainContent.style.display = 'block';
+        setTimeout(() => { mainContent.style.opacity = '1'; }, 50);
+      }
+
+      // Update breadcrumbs
+      updateBreadcrumbs(targetPage);
     });
+  });
+}
+
+function updateBreadcrumbs(page) {
+  const map = {
+    'home': ['Dashboard'],
+    'dashboard': ['Dashboard'],
+    'daily-anchors': ['Dashboard', 'Daily Anchors'],
+    'dream-life': ['Dashboard', 'Dream Life'],
+    'about': ['Dashboard', 'About'],
+    'profile': ['Dashboard', 'Profile'],
+    'contact': ['Dashboard', 'Contact']
+  };
+  const crumbs = map[page] || ['Dashboard'];
+  const el = document.getElementById('breadcrumbs');
+  if (!el) return;
+  el.innerHTML = '';
+  crumbs.forEach((c, idx) => {
+    const a = document.createElement('a');
+    a.href = '#';
+    a.textContent = c;
+    el.appendChild(a);
+    if (idx < crumbs.length - 1) {
+      const div = document.createElement('span');
+      div.className = 'divider';
+      div.textContent = '/';
+      el.appendChild(div);
+    }
   });
 }
 
@@ -904,6 +1066,134 @@ function setupContactForm() {
       alert(`Thank you ${name}! Your message has been sent. We'll get back to you soon!`);
       contactForm.reset();
     });
+  }
+}
+
+// ----------------------------
+// Settings: Theme, Accent, Reminders
+// ----------------------------
+function applySavedSettings() {
+  const theme = localStorage.getItem('settings_theme') || 'system';
+  const accent = localStorage.getItem('settings_accent') || '#4CA7A0';
+  const reminder = localStorage.getItem('settings_dailyReminder') || '';
+
+  const themeSelect = document.getElementById('themeSelect');
+  const accentInput = document.getElementById('accentColor');
+  const reminderInput = document.getElementById('dailyReminder');
+
+  if (themeSelect) themeSelect.value = theme;
+  if (accentInput) accentInput.value = accent;
+  if (reminderInput && reminder) reminderInput.value = reminder;
+
+  applyTheme(theme);
+  applyAccent(accent);
+}
+
+function applyTheme(theme) {
+  const root = document.documentElement;
+  if (theme === 'dark') {
+    root.style.setProperty('--bg-color', '#0f1720');
+    root.style.setProperty('--card-bg', '#16222e');
+    root.style.setProperty('--text-color', '#e5eef5');
+    document.body.style.background = 'var(--bg-color)';
+    document.body.style.color = 'var(--text-color)';
+  } else {
+    root.style.setProperty('--bg-color', '#E9F7F7');
+    root.style.setProperty('--card-bg', '#ffffff');
+    root.style.setProperty('--text-color', '#333333');
+    document.body.style.background = 'var(--bg-color)';
+    document.body.style.color = 'var(--text-color)';
+  }
+}
+
+function applyAccent(hex) {
+  const root = document.documentElement;
+  root.style.setProperty('--accent', hex);
+}
+
+function setupSettingsHandlers() {
+  const themeSelect = document.getElementById('themeSelect');
+  const accentInput = document.getElementById('accentColor');
+  const reminderInput = document.getElementById('dailyReminder');
+  const exportBtn = document.getElementById('exportDataBtn');
+  const clearBtn = document.getElementById('clearDataBtn');
+
+  if (themeSelect) {
+    themeSelect.addEventListener('change', (e) => {
+      const value = e.target.value;
+      localStorage.setItem('settings_theme', value);
+      applyTheme(value);
+    });
+  }
+
+  if (accentInput) {
+    accentInput.addEventListener('input', (e) => {
+      const value = e.target.value;
+      localStorage.setItem('settings_accent', value);
+      applyAccent(value);
+    });
+  }
+
+  if (reminderInput) {
+    reminderInput.addEventListener('change', (e) => {
+      const value = e.target.value;
+      localStorage.setItem('settings_dailyReminder', value);
+      // Push notification scheduling would go here if using Notifications API + Service Worker
+    });
+  }
+
+  if (exportBtn) {
+    exportBtn.addEventListener('click', () => {
+      const data = collectExportData();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'daily-anchors-export.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+  }
+
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      if (confirm('This will clear local settings and cached progress for this device. Continue?')) {
+        clearLocalData();
+        applySavedSettings();
+        alert('Local data cleared');
+      }
+    });
+  }
+}
+
+function collectExportData() {
+  const payload = { settings: {}, progress: {} };
+  payload.settings.theme = localStorage.getItem('settings_theme') || 'system';
+  payload.settings.accent = localStorage.getItem('settings_accent') || '#4CA7A0';
+  payload.settings.dailyReminder = localStorage.getItem('settings_dailyReminder') || '';
+
+  // If signed in, include user-prefixed items
+  if (currentUser) {
+    const prefix = `user_${currentUser.uid}_`;
+    const keys = Object.keys(localStorage).filter(k => k.startsWith(prefix));
+    keys.forEach(k => { payload.progress[k] = localStorage.getItem(k); });
+  }
+
+  return payload;
+}
+
+function clearLocalData() {
+  // Clear settings
+  localStorage.removeItem('settings_theme');
+  localStorage.removeItem('settings_accent');
+  localStorage.removeItem('settings_dailyReminder');
+
+  // Clear user data if signed in
+  if (currentUser) {
+    const prefix = `user_${currentUser.uid}_`;
+    Object.keys(localStorage)
+      .filter(k => k.startsWith(prefix))
+      .forEach(k => localStorage.removeItem(k));
   }
 }
 
@@ -924,6 +1214,26 @@ function setupEventListeners() {
   if (resetBtn) {
     resetBtn.addEventListener("click", clearAll);
   }
+
+  // Add custom anchor handlers
+  const addBtn = document.getElementById('addAnchorBtn');
+  const addInput = document.getElementById('newAnchorInput');
+  if (addBtn && addInput) {
+    const addHandler = () => {
+      if (!currentUser) { alert('Please sign in first.'); return; }
+      const label = addInput.value.trim();
+      if (!label) return;
+      const id = 'custom_' + label.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+      const list = loadCustomAnchors();
+      if (list.some(c => c.id === id)) { alert('Anchor already exists.'); return; }
+      list.push({ id, label });
+      saveCustomAnchors(list);
+      addInput.value = '';
+      renderCustomAnchors();
+    };
+    addBtn.addEventListener('click', addHandler);
+    addInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') { e.preventDefault(); addHandler(); } });
+  }
   
   if (watchShowCheckbox && watchShowInput) {
     watchShowCheckbox.addEventListener("change", function () {
@@ -938,6 +1248,7 @@ function setupEventListeners() {
           localStorage.removeItem(userPrefix + "watchedShowName");
         }
       }
+      updateProgressIndicator();
     });
     
     watchShowInput.addEventListener("input", function () {
@@ -954,6 +1265,13 @@ function setupEventListeners() {
   const googleSignInBtn = document.getElementById("googleSignInBtn");
   const guestSignInBtn = document.getElementById("guestSignInBtn");
   const signOutBtn = document.getElementById("signOutBtn");
+  const editProfileBtn = document.getElementById("editProfileBtn");
+  
+  // Mood booster
+  const moodSpinBtn = document.getElementById('moodSpinBtn');
+  const moodSpinAgainBtn = document.getElementById('moodSpinAgainBtn');
+  const moodDoItBtn = document.getElementById('moodDoItBtn');
+  const moodResultEl = document.getElementById('moodResult');
   
   if (signUpBtn) {
     signUpBtn.addEventListener("click", signUp);
@@ -974,6 +1292,58 @@ function setupEventListeners() {
   if (signOutBtn) {
     signOutBtn.addEventListener("click", signOut);
   }
+
+  if (editProfileBtn) {
+    editProfileBtn.addEventListener("click", async () => {
+      if (!currentUser) return;
+      const newName = prompt("Update display name:", currentUser.displayName || "");
+      if (newName && newName.trim()) {
+        try {
+          await currentUser.updateProfile({ displayName: newName.trim() });
+          updateUserInfo();
+          alert("Profile updated");
+        } catch (e) {
+          console.error("Profile update error:", e);
+          alert("Failed to update profile: " + e.message);
+        }
+      }
+    });
+  }
+
+  function spinMood() {
+    // Use current anchors that are not already checked to encourage action; fallback to all
+    const available = anchors.filter(id => {
+      const el = document.getElementById(id);
+      return el && el.type === 'checkbox';
+    });
+    if (available.length === 0) return;
+    const pick = available[Math.floor(Math.random() * available.length)];
+    const labelEl = document.querySelector(`label[for='${pick}']`);
+    let labelText = '';
+    if (labelEl) { labelText = labelEl.textContent.trim(); }
+    else {
+      const input = document.getElementById(pick);
+      if (input && input.closest('label')) {
+        labelText = input.closest('label').textContent.trim();
+      }
+    }
+    if (moodResultEl) moodResultEl.textContent = labelText || 'Do one small thing now';
+    if (moodDoItBtn) {
+      moodDoItBtn.disabled = false;
+      moodDoItBtn.onclick = () => {
+        const cb = document.getElementById(pick);
+        if (cb && cb.type === 'checkbox') {
+          cb.checked = true;
+          const prefix = getUserPrefix();
+          if (prefix) localStorage.setItem(prefix + pick, true);
+          updateProgressIndicator();
+        }
+      };
+    }
+  }
+
+  if (moodSpinBtn) moodSpinBtn.addEventListener('click', spinMood);
+  if (moodSpinAgainBtn) moodSpinAgainBtn.addEventListener('click', spinMood);
 
   // Enter key support for auth inputs
   const emailInput = document.getElementById("emailInput");
@@ -1007,6 +1377,40 @@ async function initializeApp() {
   initializeSplashScreen();
   setupNavigation();
   setupContactForm();
+  setupSettingsHandlers();
+
+  // Apply saved settings
+  applySavedSettings();
+
+  // Initialize breadcrumbs
+  updateBreadcrumbs('dashboard');
+
+  // Show onboarding for first-time users (no local streak and no entries)
+  try {
+    const shown = localStorage.getItem('onboarding_shown') === 'true';
+    const card = document.getElementById('onboardingCard');
+    if (!shown && card) {
+      card.style.display = 'block';
+      const dismiss = document.getElementById('onboardingDismissBtn');
+      const start = document.getElementById('onboardingStartBtn');
+      if (dismiss) dismiss.addEventListener('click', () => {
+        card.style.display = 'none';
+        localStorage.setItem('onboarding_shown', 'true');
+      });
+      if (start) start.addEventListener('click', (e) => {
+        e.preventDefault();
+        localStorage.setItem('onboarding_shown', 'true');
+        // Navigate to daily anchors
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+        document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+        const anchorsSection = document.getElementById('daily-anchors');
+        const anchorsLink = document.querySelector('.nav-link[data-page="daily-anchors"]');
+        if (anchorsSection) anchorsSection.classList.add('active');
+        if (anchorsLink) anchorsLink.classList.add('active');
+        updateBreadcrumbs('daily-anchors');
+      });
+    }
+  } catch (e) { /* ignore */ }
   
   // The splash screen will show first, then auth screen based on auth state
   // This is handled by the HTML inline script and auth state listener
@@ -1020,3 +1424,292 @@ if (document.readyState === 'loading') {
 } else {
   initializeApp();
 }
+
+// ----------------------------
+// Dashboard Rendering
+// ----------------------------
+let completionChartInstance = null;
+let categoryChartInstance = null;
+let dashboardRange = '30d';
+let dashboardBucket = 'daily';
+
+window.addEventListener('error', (event) => {
+  console.error('Global error caught:', event.error || event.message);
+});
+
+async function loadDashboardData() {
+  const loadingEl = document.getElementById('dashboardLoadingState');
+  const emptyEl = document.getElementById('dashboardEmptyState');
+  if (loadingEl) loadingEl.style.display = 'block';
+  if (emptyEl) emptyEl.style.display = 'none';
+  const completionCard = document.getElementById('completionCard');
+  const categoryCard = document.getElementById('categoryCard');
+  if (completionCard) completionCard.classList.add('skeleton');
+  if (categoryCard) categoryCard.classList.add('skeleton');
+
+  // Try to fetch last N days from Firestore if signed in
+  let entries = [];
+  try {
+    if (currentUser && typeof db !== 'undefined') {
+      const days = dashboardRange === '7d' ? 7 : (dashboardRange === '90d' ? 90 : 30);
+      const fromDate = new Date();
+      fromDate.setDate(fromDate.getDate() - days);
+      const snapshot = await db.collection('dailyProgress')
+        .where('userId', '==', currentUser.uid)
+        .where('timestamp', '>=', fromDate)
+        .orderBy('timestamp', 'desc')
+        .get();
+      entries = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+    }
+  } catch (e) {
+    console.warn('Firestore load failed, falling back to local data.', e);
+    const loadingEl = document.getElementById('dashboardLoadingState');
+    if (loadingEl) {
+      loadingEl.textContent = 'Unable to load data right now. Showing placeholders.';
+    }
+  }
+
+  // Fallback: derive minimal entries from localStorage if Firestore empty
+  if (entries.length === 0) {
+    const prefix = currentUser ? `user_${currentUser.uid}_` : '';
+    // We don't store historical dates in localStorage; show empty state if none
+  }
+
+  if (loadingEl) loadingEl.style.display = 'none';
+  if (!entries || entries.length === 0) {
+    if (emptyEl) emptyEl.style.display = 'block';
+    if (completionCard) completionCard.classList.remove('skeleton');
+    if (categoryCard) categoryCard.classList.remove('skeleton');
+    renderDashboardStats([], 0);
+    renderCompletionChart([], []);
+    renderCategoryChart({});
+    renderRecentActivity([]);
+    // Wire empty-state CTA buttons
+    const goBtn = document.getElementById('emptyGoAnchorsBtn');
+    const remBtn = document.getElementById('emptySetReminderBtn');
+    if (goBtn) {
+      goBtn.onclick = () => {
+        document.querySelector('.nav-link[data-page="daily-anchors"]').click();
+      };
+    }
+    if (remBtn) {
+      remBtn.onclick = () => {
+        document.querySelector('.nav-link[data-page="profile"]').click();
+      };
+    }
+    return;
+  }
+
+  // Compute metrics
+  const byDate = new Map();
+  const categoryCounts = { Cook: 0, Clean: 0, Organize: 0, Journal: 0 };
+  let totalCompletedCount = 0;
+
+  entries.forEach(e => {
+    const date = e.date || new Date(e.timestamp.seconds * 1000).toDateString();
+    const completed = Object.entries(e)
+      .filter(([k, v]) => anchors.includes(k) && v === true)
+      .length;
+    totalCompletedCount += completed;
+    byDate.set(date, completed);
+    if (e.selfCareOption && categoryCounts[e.selfCareOption] !== undefined) {
+      categoryCounts[e.selfCareOption] += 1;
+    }
+  });
+
+  // Build time series (fill gaps) based on selected bucket and range
+  const labels = [];
+  const values = [];
+  const days = dashboardRange === '7d' ? 7 : (dashboardRange === '90d' ? 90 : 30);
+  if (dashboardBucket === 'daily') {
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const key = d.toDateString();
+      labels.push(`${d.getMonth()+1}/${d.getDate()}`);
+      values.push(byDate.get(key) || 0);
+    }
+  } else if (dashboardBucket === 'weekly') {
+    // Group by ISO week
+    const weekMap = new Map();
+    entries.forEach(e => {
+      const d = e.date ? new Date(e.date) : new Date(e.timestamp.seconds * 1000);
+      const weekKey = `${d.getFullYear()}-W${getISOWeek(d)}`;
+      const completed = Object.entries(e).filter(([k, v]) => anchors.includes(k) && v === true).length;
+      weekMap.set(weekKey, (weekMap.get(weekKey) || 0) + completed);
+    });
+    // Approximate last N days into weeks (N/7 points)
+    const numWeeks = Math.ceil(days / 7);
+    for (let i = numWeeks - 1; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i * 7);
+      const wk = `${d.getFullYear()}-W${getISOWeek(d)}`;
+      labels.push(wk);
+      values.push(weekMap.get(wk) || 0);
+    }
+  } else {
+    // Monthly grouping
+    const monthMap = new Map();
+    entries.forEach(e => {
+      const d = e.date ? new Date(e.date) : new Date(e.timestamp.seconds * 1000);
+      const monthKey = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+      const completed = Object.entries(e).filter(([k, v]) => anchors.includes(k) && v === true).length;
+      monthMap.set(monthKey, (monthMap.get(monthKey) || 0) + completed);
+    });
+    // Use last 3 months for 90d, 2 months for 30d/7d
+    const numMonths = dashboardRange === '90d' ? 3 : 2;
+    for (let i = numMonths - 1; i >= 0; i--) {
+      const d = new Date();
+      d.setMonth(d.getMonth() - i);
+      const mk = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+      labels.push(mk);
+      values.push(monthMap.get(mk) || 0);
+    }
+  }
+
+  // Stats
+  const totalEntries = entries.length;
+  const completionRate = totalEntries > 0 ? Math.round((totalCompletedCount / (totalEntries * anchors.length)) * 100) : 0;
+
+  // Streak from local streak data if available
+  let currentStreak = 0;
+  if (currentUser) {
+    const userPrefix = `user_${currentUser.uid}_`;
+    const streakData = JSON.parse(localStorage.getItem(userPrefix + 'streakData')) || [];
+    currentStreak = calculateCurrentStreak(streakData);
+  }
+
+  renderDashboardStats(entries, currentStreak, completionRate);
+  renderCompletionChart(labels, values);
+  renderCategoryChart(categoryCounts);
+  renderRecentActivity(entries);
+  if (completionCard) completionCard.classList.remove('skeleton');
+  if (categoryCard) categoryCard.classList.remove('skeleton');
+}
+
+function getISOWeek(date) {
+  const tmp = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = tmp.getUTCDay() || 7;
+  tmp.setUTCDate(tmp.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(tmp.getUTCFullYear(),0,1));
+  return Math.ceil((((tmp - yearStart) / 86400000) + 1)/7);
+}
+
+function renderDashboardStats(entries, currentStreak, completionRatePct = null) {
+  const totalEl = document.getElementById('statTotalEntries');
+  const rateEl = document.getElementById('statCompletionRate');
+  const streakEl = document.getElementById('statCurrentStreak');
+  if (totalEl) totalEl.textContent = entries.length.toString();
+  if (rateEl) rateEl.textContent = (completionRatePct === null ? '—' : `${completionRatePct}%`);
+  if (streakEl) streakEl.textContent = (currentStreak || 0).toString();
+}
+
+function renderCompletionChart(labels, values) {
+  const ctx = document.getElementById('completionChart');
+  if (!ctx || typeof Chart === 'undefined') return;
+  if (completionChartInstance) completionChartInstance.destroy();
+  completionChartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Anchors Completed',
+        data: values,
+        borderColor: '#2563eb',
+        backgroundColor: 'rgba(37,99,235,0.12)',
+        borderWidth: 2,
+        pointRadius: 2,
+        tension: 0.3,
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animations: {
+        tension: { duration: 600, easing: 'easeOutCubic' },
+        x: { duration: 400 },
+        y: { duration: 400 }
+      },
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false } },
+        y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: '#F2F4F7' } }
+      }
+    }
+  });
+}
+
+function renderCategoryChart(categoryCounts) {
+  const ctx = document.getElementById('categoryChart');
+  if (!ctx || typeof Chart === 'undefined') return;
+  const labels = Object.keys(categoryCounts);
+  const values = Object.values(categoryCounts);
+  if (categoryChartInstance) categoryChartInstance.destroy();
+  categoryChartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Days Selected',
+        data: values,
+        backgroundColor: ['#2563eb', '#4CA7A0', '#64748b', '#0ea5e9'],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 500, easing: 'easeOutCubic' },
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false } },
+        y: { beginAtZero: true, grid: { color: '#F2F4F7' } }
+      }
+    }
+  });
+}
+
+function renderRecentActivity(entries) {
+  const list = document.getElementById('recentActivityList');
+  if (!list) return;
+  list.innerHTML = '';
+  const last = entries.slice(0, 10);
+  last.forEach(e => {
+    const dateStr = e.date || (e.timestamp && e.timestamp.toDate ? e.timestamp.toDate().toDateString() : '');
+    const completed = Object.entries(e).filter(([k, v]) => anchors.includes(k) && v === true).length;
+    const li = document.createElement('li');
+    li.innerHTML = `<span>${dateStr}</span><span>${completed}/${anchors.length} completed</span>`;
+    list.appendChild(li);
+  });
+}
+
+// Hook dashboard load when dashboard page is navigated to
+document.addEventListener('click', (e) => {
+  const target = e.target;
+  if (target && target.classList && target.classList.contains('nav-link')) {
+    const page = target.getAttribute('data-page');
+    if (page === 'dashboard') {
+      setTimeout(loadDashboardData, 50);
+    }
+  }
+});
+
+// Load dashboard if initial page is dashboard
+if (window.location.hash && window.location.hash.includes('dashboard')) {
+  setTimeout(loadDashboardData, 200);
+}
+
+// Sidebar filters handlers
+document.addEventListener('change', (e) => {
+  const target = e.target;
+  if (!(target instanceof HTMLElement)) return;
+  if (target.id === 'rangeSelect') {
+    dashboardRange = target.value;
+    loadDashboardData();
+  }
+  if (target.id === 'bucketSelect') {
+    dashboardBucket = target.value;
+    loadDashboardData();
+  }
+});

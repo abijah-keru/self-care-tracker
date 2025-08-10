@@ -34,8 +34,14 @@
       <p class="auth-subtitle">Sign in to your self-care journey</p>
       
       <div class="auth-container">
-        <input type="email" id="emailInput" placeholder="Email" />
-        <input type="password" id="passwordInput" placeholder="Password" />
+        <div class="float-field">
+          <input type="email" id="emailInput" placeholder=" " required />
+          <label for="emailInput">Email</label>
+        </div>
+        <div class="float-field">
+          <input type="password" id="passwordInput" placeholder=" " required />
+          <label for="passwordInput">Password</label>
+        </div>
         
         <div class="auth-buttons">
           <button id="signInBtn">Sign In</button>
@@ -59,10 +65,12 @@
         🌱 Daily Anchors
       </a>
       <ul class="nav-menu" id="navMenu">
-        <li><a href="#" class="nav-link active" data-page="home">Home</a></li>
+        <li><a href="#" class="nav-link active" data-page="dashboard">Dashboard</a></li>
         <li><a href="#" class="nav-link" data-page="daily-anchors">Daily Anchors</a></li>
+        <li><a href="#" class="nav-link" data-page="mood-booster">Mood Booster</a></li>
         <li><a href="#" class="nav-link" data-page="dream-life">Dream Life</a></li>
         <li><a href="#" class="nav-link" data-page="about">About</a></li>
+        <li><a href="#" class="nav-link" data-page="profile">Profile</a></li>
         <li><a href="#" class="nav-link" data-page="contact">Contact Us</a></li>
       </ul>
       <div class="nav-toggle" id="navToggle">
@@ -72,17 +80,33 @@
       </div>
     </div>
   </nav>
+  <div class="nav-overlay" id="navOverlay"></div>
 
   <!-- Main Content Container -->
   <div class="main-content" id="mainContent" style="display: none;">
+    <nav class="breadcrumbs" id="breadcrumbs"></nav>
     
     <!-- Home Page -->
-    <div id="home" class="page-section active">
+    <div id="home" class="page-section">
       <h1>Welcome to Your Daily Self-Care Journey</h1>
       <p class="welcome-text">
         Transform your life one anchor at a time. Build sustainable habits that nurture your mind, body, and soul.
       </p>
       
+      <div class="onboarding-card" id="onboardingCard" style="display:none;">
+        <h3 class="section-header">Getting Started</h3>
+        <p>Welcome! Here are a few quick steps to begin:</p>
+        <ul>
+          <li>Go to Daily Anchors and check what you complete today</li>
+          <li>Set a daily reminder time in Profile → Settings</li>
+          <li>Visit Dashboard to see your progress over time</li>
+        </ul>
+        <div style="margin-top:12px; display:flex; gap:8px;">
+          <button id="onboardingStartBtn" class="btn-secondary">Go to Daily Anchors</button>
+          <button id="onboardingDismissBtn" class="btn-primary">Got it</button>
+        </div>
+      </div>
+
       <div class="feature-grid">
         <div class="feature-card">
           <h3>🎯 Daily Anchors</h3>
@@ -99,14 +123,111 @@
       </div>
     </div>
 
+    <!-- Dashboard Page -->
+    <div id="dashboard" class="page-section active">
+      <h1>Progress Overview</h1>
+      <div class="stats-grid" id="statsGrid">
+        <div class="stat-card">
+          <div class="stat-label">Total Entries</div>
+          <div class="stat-value" id="statTotalEntries">—</div>
+          <div class="stat-subtext">All-time saved days</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Completion Rate</div>
+          <div class="stat-value" id="statCompletionRate">—</div>
+          <div class="stat-subtext">Average per day</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Current Streak</div>
+          <div class="stat-value" id="statCurrentStreak">—</div>
+          <div class="stat-subtext">Consecutive days</div>
+        </div>
+      </div>
+
+      <div class="dashboard-layout">
+        <aside class="dashboard-sidebar">
+          <div class="sidebar-card">
+            <div class="sidebar-title">Filters</div>
+            <div class="sidebar-row">
+              <label for="rangeSelect">Range</label>
+              <select id="rangeSelect">
+                <option value="30d">Last 30 days</option>
+                <option value="7d">Last 7 days</option>
+                <option value="90d">Last 90 days</option>
+              </select>
+            </div>
+            <div class="sidebar-row">
+              <label for="bucketSelect">Granularity</label>
+              <select id="bucketSelect">
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+              </select>
+            </div>
+          </div>
+        </aside>
+
+        <div class="dashboard-grid">
+          <div class="chart-card" id="completionCard">
+          <div class="card-header">
+            <div class="card-title">Daily Completion (Last 30 days)</div>
+            <div class="card-actions"></div>
+          </div>
+          <div class="card-body">
+            <canvas id="completionChart" height="220"></canvas>
+          </div>
+          <div class="card-footer" id="completionChartFooter"></div>
+        </div>
+
+          <div class="chart-card" id="categoryCard">
+          <div class="card-header">
+            <div class="card-title">Category Breakdown</div>
+          </div>
+          <div class="card-body">
+            <canvas id="categoryChart" height="220"></canvas>
+          </div>
+          <div class="card-footer" id="categoryChartFooter"></div>
+        </div>
+        </div>
+      </div>
+
+      <div class="activity-card">
+        <div class="card-header">
+          <div class="card-title">Recent Activity</div>
+        </div>
+        <div class="card-body">
+          <ul class="activity-list" id="recentActivityList"></ul>
+          <div class="empty-state" id="dashboardEmptyState" style="display:none;">
+            <div style="display:flex; align-items:center; gap:12px; justify-content:center; margin-bottom:8px;">
+              <svg class="icon-standalone" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M4 7h16M4 12h10M4 17h7" stroke="#98A2B3" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+              <span>You're just getting started — your progress will show here.</span>
+            </div>
+            <div class="empty-actions" style="display:flex; gap:8px; justify-content:center;">
+              <button class="btn-primary" id="emptyGoAnchorsBtn">Start Today's Anchors</button>
+              <button class="btn-secondary" id="emptySetReminderBtn">Set Daily Reminder</button>
+            </div>
+          </div>
+          <div class="loading-state" id="dashboardLoadingState" style="display:none;">Loading...</div>
+        </div>
+      </div>
+    </div>
+
     <!-- Daily Anchors Page -->
     <div id="daily-anchors" class="page-section">
       <h1>Today's Anchors</h1>
+      <div class="anchor" id="addAnchorRow">
+        <label style="flex:1; display:flex; align-items:center; gap:8px;">
+          <span class="icon-inline">➕</span>
+          <input type="text" id="newAnchorInput" placeholder="Add a custom anchor (e.g., Meditate)" style="flex:1; border:1px solid #D0D5DD; border-radius:8px; padding:8px; font-size:16px;" />
+        </label>
+        <button id="addAnchorBtn" class="btn-primary" style="flex:0 0 auto;">Add</button>
+      </div>
       
-      <!-- User Header -->
+      <!-- User Header (Sign out moved to Profile) -->
       <div class="user-header">
         <div id="userInfo">Welcome!</div>
-        <button id="signOutBtn" class="sign-out-btn">Sign Out</button>
       </div>
         
       <div class="anchor"><label><input type="checkbox" id="makeBed"> Make bed</label></div>
@@ -134,9 +255,11 @@
         </select>
       </div>
 
+      <div class="progress-indicator" id="progressIndicator">Completed 0/7</div>
+
       <div class="buttons">
-        <button id="saveBtn">I'm Crushing It!</button>
-        <button id="resetBtn">Reset Day</button>
+        <button id="saveBtn">Save My Progress</button>
+        <button id="resetBtn">Clear Today</button>
       </div>
 
       <div id="streakSection">
@@ -145,6 +268,22 @@
       </div>  
 
       <div id="message">🌱 Progress Saved! You're blooming today! 🌞</div>
+    </div>
+
+    <!-- Mood Booster Page -->
+    <div id="mood-booster" class="page-section">
+      <h1>Mood Booster</h1>
+      <div class="mood-card">
+        <p class="mood-desc">Need a pick-me-up or a quick nudge? Tap the button to randomly pick one of your anchors to do now. Tap again for another suggestion.</p>
+        <div class="mood-wheel">
+          <button id="moodSpinBtn" class="mood-button" aria-label="Pick a random anchor">Boost</button>
+        </div>
+        <div class="mood-result" id="moodResult">Try me ✨</div>
+        <div class="mood-actions">
+          <button id="moodDoItBtn" class="btn-primary" disabled>Mark as Done</button>
+          <button id="moodSpinAgainBtn" class="btn-secondary">Spin Again</button>
+        </div>
+      </div>
     </div>
 
     <!-- Dream Life Page -->
@@ -197,6 +336,59 @@
       </div>
     </div>
 
+    <!-- Profile Page (with Settings inside) -->
+    <div id="profile" class="page-section">
+      <h1>Your Profile</h1>
+      <div class="profile-card">
+        <div class="profile-header">
+          <div class="avatar" id="profileAvatar">🌱</div>
+          <div class="profile-basic">
+            <div class="profile-name" id="profileName">Anonymous User</div>
+            <div class="profile-email" id="profileEmail">—</div>
+          </div>
+        </div>
+        <div class="profile-actions">
+          <button id="editProfileBtn" class="btn-secondary">Edit Profile</button>
+          <button id="signOutBtn" class="btn-danger">Sign Out</button>
+        </div>
+      </div>
+
+      <h2 style="margin-top: 20px;">Settings</h2>
+      <div class="settings-card">
+        <div class="settings-section">
+          <h3>Appearance</h3>
+          <div class="setting-row">
+            <label for="themeSelect">Theme</label>
+            <select id="themeSelect">
+              <option value="system">System</option>
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+            </select>
+          </div>
+          <div class="setting-row">
+            <label for="accentColor">Accent Color</label>
+            <input type="color" id="accentColor" value="#4CA7A0" />
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>Notifications</h3>
+          <div class="setting-row">
+            <label for="dailyReminder">Daily Reminder</label>
+            <input type="time" id="dailyReminder" />
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>Data</h3>
+          <div class="setting-row">
+            <button id="exportDataBtn" class="btn-secondary">Export Data</button>
+            <button id="clearDataBtn" class="btn-danger">Clear Local Data</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Contact Page -->
     <div id="contact" class="page-section">
       <h1>Contact Us</h1>
@@ -206,24 +398,24 @@
 
       <div class="contact-form">
         <form id="contactForm">
-          <div class="form-group">
+          <div class="form-group float-field">
+            <input type="text" id="name" name="name" placeholder=" " required>
             <label for="name">Name</label>
-            <input type="text" id="name" name="name" required>
           </div>
           
-          <div class="form-group">
+          <div class="form-group float-field">
+            <input type="email" id="email" name="email" placeholder=" " required>
             <label for="email">Email</label>
-            <input type="email" id="email" name="email" required>
           </div>
           
-          <div class="form-group">
+          <div class="form-group float-field">
+            <input type="text" id="subject" name="subject" placeholder=" " required>
             <label for="subject">Subject</label>
-            <input type="text" id="subject" name="subject" required>
           </div>
           
-          <div class="form-group">
-            <label for="message">Message</label>
-            <textarea id="contactMessage" name="message" placeholder="Tell us how we can help improve your self-care journey..." required></textarea>
+          <div class="form-group float-field">
+            <textarea id="contactMessage" name="message" placeholder=" " required></textarea>
+            <label for="contactMessage">Message</label>
           </div>
           
           <div class="form-submit">
@@ -245,6 +437,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <script src="script.js"></script>
 </body>
