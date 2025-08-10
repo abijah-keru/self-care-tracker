@@ -949,6 +949,8 @@ function setupNavigation() {
   const navLinks = document.querySelectorAll('.nav-link');
   const pageSections = document.querySelectorAll('.page-section');
   const mainContent = document.getElementById('mainContent');
+  const auxToggle = document.getElementById('auxMenuToggle');
+  const auxMenu = document.getElementById('auxMenu');
 
   if (navToggle && navMenu) {
     navToggle.addEventListener('click', function() {
@@ -1026,6 +1028,40 @@ function setupNavigation() {
       updateBreadcrumbs(targetPage);
     });
   });
+
+  // Aux hamburger menu handlers (About, Contact, Profile)
+  if (auxToggle && auxMenu) {
+    const closeAux = () => {
+      auxMenu.classList.remove('active');
+      auxToggle.setAttribute('aria-expanded', 'false');
+    };
+    auxToggle.addEventListener('click', (e) => {
+      e.preventDefault();
+      const isOpen = auxMenu.classList.toggle('active');
+      auxToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    });
+    // Click outside to close
+    document.addEventListener('click', (e) => {
+      if (!auxMenu.contains(e.target) && e.target !== auxToggle) {
+        closeAux();
+      }
+    });
+    // Navigate on aux link click and close menu
+    auxMenu.querySelectorAll('.aux-link').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const page = link.getAttribute('data-page');
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+        document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+        const targetEl = document.getElementById(page);
+        if (targetEl) targetEl.classList.add('active');
+        const correspondingTopLink = document.querySelector(`.nav-link[data-page="${page}"]`);
+        if (correspondingTopLink) correspondingTopLink.classList.add('active');
+        updateBreadcrumbs(page);
+        closeAux();
+      });
+    });
+  }
 }
 
 function updateBreadcrumbs(page) {
@@ -1454,12 +1490,69 @@ async function loadDashboardData() {
       const days = dashboardRange === '7d' ? 7 : (dashboardRange === '90d' ? 90 : 30);
       const fromDate = new Date();
       fromDate.setDate(fromDate.getDate() - days);
-      const snapshot = await db.collection('dailyProgress')
-        .where('userId', '==', currentUser.uid)
-        .where('timestamp', '>=', fromDate)
-        .orderBy('timestamp', 'desc')
-        .get();
-      entries = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      // Primary: range by timestamp
+      try {
+        const snapshot = await db.collection('dailyProgress')
+          .where('userId', '==', currentUser.uid)
+          .where('timestamp', '>=', fromDate)
+          .orderBy('timestamp', 'desc')
+          .get();
+        entries = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      } catch (e1) {
+        console.warn('Primary dashboard query failed (timestamp range).', e1);
+      }
+
+      // Fallback 1: latest by timestamp (no range), then filter in-memory
+      if (!entries || entries.length === 0) {
+        try {
+          const snap2 = await db.collection('dailyProgress')
+            .where('userId', '==', currentUser.uid)
+            .orderBy('timestamp', 'desc')
+            .limit(120)
+            .get();
+          const all = snap2.docs.map(d => ({ id: d.id, ...d.data() }));
+          entries = all.filter(e => {
+            if (e.timestamp && e.timestamp.toDate) {
+              return e.timestamp.toDate() >= fromDate;
+            }
+            if (e.date) {
+              const d = new Date(e.date);
+              return d >= fromDate;
+            }
+            return false;
+          });
+        } catch (e2) {
+          console.warn('Fallback query by timestamp (no range) failed.', e2);
+        }
+      }
+
+      // Fallback 2: order by date string if some old docs lack timestamp
+      if (!entries || entries.length === 0) {
+        try {
+          const snap3 = await db.collection('dailyProgress')
+            .where('userId', '==', currentUser.uid)
+            .orderBy('date', 'desc')
+            .limit(180)
+            .get();
+          const allByDate = snap3.docs.map(d => ({ id: d.id, ...d.data() }));
+          const daysBack = days;
+          const cutoff = new Date();
+          cutoff.setDate(cutoff.getDate() - daysBack);
+          entries = allByDate.filter(e => {
+            if (e.timestamp && e.timestamp.toDate) {
+              return e.timestamp.toDate() >= cutoff;
+            }
+            if (e.date) {
+              const d = new Date(e.date);
+              return d >= cutoff;
+            }
+            return false;
+          });
+        } catch (e3) {
+          console.warn('Fallback query by date string failed.', e3);
+        }
+      }
     }
   } catch (e) {
     console.warn('Firestore load failed, falling back to local data.', e);
@@ -1506,12 +1599,21 @@ async function loadDashboardData() {
   let totalCompletedCount = 0;
 
   entries.forEach(e => {
-    const date = e.date || new Date(e.timestamp.seconds * 1000).toDateString();
+    let dateStr = '';
+    if (e.date) {
+      // Support both toDateString outputs and ISO yyyy-mm-dd
+      const d = new Date(e.date);
+      dateStr = isNaN(d.getTime()) ? String(e.date) : d.toDateString();
+    } else if (e.timestamp && e.timestamp.toDate) {
+      dateStr = e.timestamp.toDate().toDateString();
+    } else if (e.timestamp && e.timestamp.seconds) {
+      dateStr = new Date(e.timestamp.seconds * 1000).toDateString();
+    }
     const completed = Object.entries(e)
       .filter(([k, v]) => anchors.includes(k) && v === true)
       .length;
     totalCompletedCount += completed;
-    byDate.set(date, completed);
+    if (dateStr) byDate.set(dateStr, (byDate.get(dateStr) || 0) + completed);
     if (e.selfCareOption && categoryCounts[e.selfCareOption] !== undefined) {
       categoryCounts[e.selfCareOption] += 1;
     }
@@ -1695,7 +1797,7 @@ document.addEventListener('click', (e) => {
   }
 });
 
-// Load dashboard if initial page is dashboard
+// Load dashboard on first navigation to it or if hash targets it
 if (window.location.hash && window.location.hash.includes('dashboard')) {
   setTimeout(loadDashboardData, 200);
 }
