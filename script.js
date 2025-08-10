@@ -1030,15 +1030,15 @@ function setupNavigation() {
 
 function updateBreadcrumbs(page) {
   const map = {
-    'home': ['Dashboard'],
-    'dashboard': ['Dashboard'],
-    'daily-anchors': ['Dashboard', 'Daily Anchors'],
-    'dream-life': ['Dashboard', 'Dream Life'],
-    'about': ['Dashboard', 'About'],
-    'profile': ['Dashboard', 'Profile'],
-    'contact': ['Dashboard', 'Contact']
+    'home': ['Home'],
+    'dashboard': ['Home', 'Dashboard'],
+    'daily-anchors': ['Home', 'Daily Anchors'],
+    'dream-life': ['Home', 'Dream Life'],
+    'about': ['Home', 'About'],
+    'profile': ['Home', 'Profile'],
+    'contact': ['Home', 'Contact']
   };
-  const crumbs = map[page] || ['Dashboard'];
+  const crumbs = map[page] || ['Home'];
   const el = document.getElementById('breadcrumbs');
   if (!el) return;
   el.innerHTML = '';
@@ -1383,7 +1383,7 @@ async function initializeApp() {
   applySavedSettings();
 
   // Initialize breadcrumbs
-  updateBreadcrumbs('dashboard');
+  updateBreadcrumbs('home');
 
   // Show onboarding for first-time users (no local streak and no entries)
   try {
