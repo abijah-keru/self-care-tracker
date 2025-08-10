@@ -752,8 +752,6 @@ html {
   margin-left: 6px;
 }
 
-.anchors-info { display:flex; align-items: center; gap: 8px; color: #475467; margin-bottom: 10px; }
-
 /* Onboarding card */
 .onboarding-card {
   background: var(--tint);
@@ -883,16 +881,6 @@ small, .text-small { font-size: 14px; line-height: 1.5; }
   flex-wrap: wrap;
   gap: 8px;
 }
-
-.anchor .remove-anchor {
-  background: transparent;
-  color: #ef4444;
-  border: 1px solid #fecaca;
-  padding: 6px 10px;
-  border-radius: 10px;
-  flex: 0 0 auto;
-}
-.anchor .remove-anchor:hover { background: #fef2f2; }
 
 .anchor label {
   display: flex;

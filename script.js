@@ -305,7 +305,7 @@ function renderCustomAnchors() {
     row.setAttribute('data-custom', 'true');
     row.setAttribute('data-id', item.id);
     row.innerHTML = `<label><input type="checkbox" id="${item.id}"> ${item.label}</label>
-      <button type="button" class="remove-anchor" aria-label="Remove anchor">✕</button>`;
+      <button data-action="remove" class="btn-danger" style="margin-left:8px; flex:0 0 auto;">Remove</button>`;
     page.insertBefore(row, insertBeforeEl);
     // restore state
     const checkbox = row.querySelector('input[type="checkbox"]');
@@ -314,14 +314,15 @@ function renderCustomAnchors() {
       checkbox.checked = localStorage.getItem(prefix + item.id) === 'true';
       checkbox.addEventListener('change', updateProgressIndicator);
     }
-  });
-
-  // Hide any default anchors the user opted out of
-  defaultAnchors.forEach(id => {
-    const prefix = getUserPrefix();
-    if (prefix && localStorage.getItem(prefix + 'hide_' + id) === 'true') {
-      const row = document.getElementById(id)?.closest('.anchor');
-      if (row) row.style.display = 'none';
+    // remove handler
+    const removeBtn = row.querySelector('button[data-action="remove"]');
+    if (removeBtn) {
+      removeBtn.addEventListener('click', () => {
+        const updated = loadCustomAnchors().filter(c => c.id !== item.id);
+        saveCustomAnchors(updated);
+        renderCustomAnchors();
+        updateProgressIndicator();
+      });
     }
   });
 }
@@ -1298,35 +1299,6 @@ function setupEventListeners() {
     addBtn.addEventListener('click', addHandler);
     addInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') { e.preventDefault(); addHandler(); } });
   }
-
-  // Delegate remove for default and custom anchors using best practice (inline X button)
-  document.addEventListener('click', (e) => {
-    const target = e.target;
-    if (!(target instanceof HTMLElement)) return;
-    if (target.matches('.remove-anchor')) {
-      const row = target.closest('.anchor');
-      if (!row) return;
-      const checkbox = row.querySelector('input[type="checkbox"]');
-      const id = checkbox ? checkbox.id : row.getAttribute('data-id');
-      // Prevent removing protected defaults by mistake
-      if (id && defaultAnchors.includes(id)) {
-        if (!confirm('Remove this default anchor from your view? You can add custom anchors anytime.')) return;
-        // Hide default anchor for this user only
-        if (currentUser) {
-          const prefix = getUserPrefix();
-          localStorage.setItem(prefix + 'hide_' + id, 'true');
-          row.remove();
-          updateProgressIndicator();
-        }
-        return;
-      }
-      // Remove custom anchor permanently for this user
-      const updated = loadCustomAnchors().filter(c => c.id !== id);
-      saveCustomAnchors(updated);
-      renderCustomAnchors();
-      updateProgressIndicator();
-    }
-  });
   
   if (watchShowCheckbox && watchShowInput) {
     watchShowCheckbox.addEventListener("change", function () {
@@ -1523,16 +1495,6 @@ function setupCoachTutorial() {
     {
       selector: '.bottom-nav .nav-link[data-page="daily-anchors"]',
       text: 'Your Daily Anchors live here. Tap to check off today\'s habits.',
-      position: 'top'
-    },
-    {
-      selector: '.bottom-nav .nav-link[data-page="mood-booster"]',
-      text: 'Mood Booster gives you a quick, random anchor to act on right now.',
-      position: 'top'
-    },
-    {
-      selector: '.bottom-nav .nav-link[data-page="dream-life"]',
-      text: 'Dream Life helps you visualize and plan your ideal lifestyle.',
       position: 'top'
     }
   ];
