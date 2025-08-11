@@ -1037,6 +1037,13 @@ function setupNavigation() {
 
       // Update breadcrumbs
       updateBreadcrumbs(targetPage);
+      
+      // Load page-specific data
+      if (targetPage === 'dashboard') {
+        loadDashboardData();
+      } else if (targetPage === 'daily-anchors') {
+        loadProgress();
+      }
     });
   });
 
@@ -1069,6 +1076,14 @@ function setupNavigation() {
         const correspondingTopLink = document.querySelector(`.nav-link[data-page="${page}"]`);
         if (correspondingTopLink) correspondingTopLink.classList.add('active');
         updateBreadcrumbs(page);
+        
+        // Load page-specific data
+        if (page === 'dashboard') {
+          loadDashboardData();
+        } else if (page === 'daily-anchors') {
+          loadProgress();
+        }
+        
         closeAux();
       });
     });
@@ -1104,6 +1119,14 @@ function setupNavigation() {
         const correspondingBottomLink = document.querySelector(`.bottom-nav .nav-link[data-page="${page}"]`);
         if (correspondingBottomLink) correspondingBottomLink.classList.add('active');
         updateBreadcrumbs(page);
+        
+        // Load page-specific data
+        if (page === 'dashboard') {
+          loadDashboardData();
+        } else if (page === 'daily-anchors') {
+          loadProgress();
+        }
+        
         hamburgerSheet.classList.remove('active');
         hamburgerSheet.setAttribute('aria-hidden', 'true');
       });
