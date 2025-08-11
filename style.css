@@ -1524,3 +1524,58 @@ button[disabled] {
 img, canvas, svg, video { max-width: 100%; height: auto; }
 
 .card-body canvas, .chart-card canvas { max-width: 100%; }
+
+/* Sparkle Animation */
+@keyframes sparkle {
+  0% {
+    opacity: 0;
+    transform: scale(0.5) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2) rotate(180deg);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.8) rotate(360deg);
+  }
+}
+
+.sparkle-animation {
+  position: absolute;
+  pointer-events: none;
+  z-index: 1000;
+  animation: sparkle 1.5s ease-out forwards;
+}
+
+/* Remove button styling */
+.remove-anchor-btn {
+  background: #dc2626;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.remove-anchor-btn:hover {
+  background: #b91c1c;
+}
+
+/* Anchor layout improvements */
+.anchor {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.anchor label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}

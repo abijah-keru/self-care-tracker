@@ -288,17 +288,17 @@ function saveCustomAnchors(list) {
 }
 
 function renderCustomAnchors() {
-  const container = document.getElementById('selfCareOption')?.closest('#daily-anchors');
   const page = document.getElementById('daily-anchors');
   if (!page) return;
+  
   // Remove existing custom anchors before re-render
   page.querySelectorAll('.anchor[data-custom="true"]').forEach(el => el.remove());
 
   const custom = loadCustomAnchors();
   anchors = [...defaultAnchors, ...custom.map(a => a.id)];
 
-  // Insert after the last default anchor and before the self-care select
-  const insertBeforeEl = document.getElementById('selfCare')?.closest('.anchor') || page.querySelector('.buttons');
+  // Insert custom anchors at the bottom, after the self-care section
+  const insertBeforeEl = page.querySelector('.progress-indicator');
   custom.forEach(item => {
     const row = document.createElement('div');
     row.className = 'anchor';
@@ -307,13 +307,15 @@ function renderCustomAnchors() {
     row.innerHTML = `<label><input type="checkbox" id="${item.id}"> ${item.label}</label>
       <button data-action="remove" class="btn-danger" style="margin-left:8px; flex:0 0 auto;">Remove</button>`;
     page.insertBefore(row, insertBeforeEl);
+    
     // restore state
     const checkbox = row.querySelector('input[type="checkbox"]');
     if (checkbox) {
       const prefix = getUserPrefix();
       checkbox.checked = localStorage.getItem(prefix + item.id) === 'true';
-      checkbox.addEventListener('change', updateProgressIndicator);
+      checkbox.addEventListener('change', handleAnchorChange);
     }
+    
     // remove handler
     const removeBtn = row.querySelector('button[data-action="remove"]');
     if (removeBtn) {
@@ -329,6 +331,138 @@ function renderCustomAnchors() {
 
 // Current user
 let currentUser = null;
+
+// ----------------------------
+// Anchor Management Functions
+// ----------------------------
+
+// Track removed default anchors
+let removedDefaultAnchors = new Set();
+
+function loadRemovedDefaultAnchors() {
+  const prefix = getUserPrefix();
+  if (!prefix) return new Set();
+  try {
+    const raw = localStorage.getItem(prefix + 'removedDefaultAnchors');
+    return raw ? new Set(JSON.parse(raw)) : new Set();
+  } catch { return new Set(); }
+}
+
+function saveRemovedDefaultAnchors() {
+  const prefix = getUserPrefix();
+  if (!prefix) return;
+  localStorage.setItem(prefix + 'removedDefaultAnchors', JSON.stringify([...removedDefaultAnchors]));
+}
+
+function removeDefaultAnchor(anchorId) {
+  removedDefaultAnchors.add(anchorId);
+  saveRemovedDefaultAnchors();
+  
+  // Hide the anchor element
+  const anchorEl = document.querySelector(`[data-id="${anchorId}"]`);
+  if (anchorEl) {
+    anchorEl.style.display = 'none';
+  }
+  
+  // Update anchors array
+  anchors = anchors.filter(id => id !== anchorId);
+  updateProgressIndicator();
+  updateRemovedAnchorsDisplay();
+}
+
+function restoreDefaultAnchor(anchorId) {
+  removedDefaultAnchors.delete(anchorId);
+  saveRemovedDefaultAnchors();
+  
+  // Show the anchor element
+  const anchorEl = document.querySelector(`[data-id="${anchorId}"]`);
+  if (anchorEl) {
+    anchorEl.style.display = 'flex';
+  }
+  
+  // Update anchors array
+  anchors = [...defaultAnchors.filter(id => !removedDefaultAnchors.has(id)), ...loadCustomAnchors().map(a => a.id)];
+  updateProgressIndicator();
+  updateRemovedAnchorsDisplay();
+}
+
+function updateRemovedAnchorsDisplay() {
+  const removedList = document.getElementById('removedAnchorsList');
+  if (!removedList) return;
+  
+  if (removedDefaultAnchors.size === 0) {
+    removedList.innerHTML = '<em>No anchors removed</em>';
+  } else {
+    const anchorNames = Array.from(removedDefaultAnchors).map(id => 
+      id.replace(/([A-Z])/g, ' $1').toLowerCase()
+    );
+    removedList.innerHTML = `<strong>Removed:</strong> ${anchorNames.join(', ')}`;
+  }
+}
+
+// Sparkle animation function
+function addSparkleAnimation(checkbox) {
+  const sparkle = document.createElement('div');
+  sparkle.className = 'sparkle-animation';
+  sparkle.innerHTML = '✨';
+  sparkle.style.cssText = `
+    position: absolute;
+    font-size: 16px;
+    pointer-events: none;
+    animation: sparkle 1.5s ease-out forwards;
+    z-index: 1000;
+  `;
+  
+  // Position sparkle near the checkbox
+  const rect = checkbox.getBoundingClientRect();
+  sparkle.style.left = (rect.left + rect.width/2 - 8) + 'px';
+  sparkle.style.top = (rect.top + rect.height/2 - 8) + 'px';
+  
+  document.body.appendChild(sparkle);
+  
+  // Remove after animation
+  setTimeout(() => {
+    if (sparkle.parentNode) {
+      sparkle.parentNode.removeChild(sparkle);
+    }
+  }, 1500);
+}
+
+// Handle anchor checkbox changes with auto-save
+async function handleAnchorChange(event) {
+  const checkbox = event.target;
+  const anchorId = checkbox.id;
+  
+  // Add sparkle animation
+  addSparkleAnimation(checkbox);
+  
+  // Update progress indicator immediately
+  updateProgressIndicator();
+  
+  // Auto-save to localStorage
+  if (currentUser) {
+    const prefix = `user_${currentUser.uid}_`;
+    localStorage.setItem(prefix + anchorId, checkbox.checked.toString());
+    
+    // Also save self-care option if this is the self-care checkbox
+    if (anchorId === 'selfCare' && checkbox.checked) {
+      const selfCareOption = document.getElementById('selfCareOption');
+      if (selfCareOption && selfCareOption.value) {
+        localStorage.setItem(prefix + 'selfCareOption', selfCareOption.value);
+      }
+    }
+  }
+  
+  // Auto-save to Firebase
+  try {
+    await saveProgress();
+    // Show success message briefly
+    showMessage();
+  } catch (error) {
+    console.warn('Auto-save to Firebase failed:', error);
+    // Don't show error to user for auto-save failures
+  }
+}
 
 
 // ----------------------------
@@ -657,6 +791,13 @@ async function loadProgress() {
   }
   
   checkDailyReset();
+  
+  // Load removed default anchors first
+  removedDefaultAnchors = loadRemovedDefaultAnchors();
+  
+  // Update anchors array to exclude removed ones
+  anchors = [...defaultAnchors.filter(id => !removedDefaultAnchors.has(id)), ...loadCustomAnchors().map(a => a.id)];
+  
   // Merge in any custom anchors visually before setting states
   renderCustomAnchors();
   
@@ -921,6 +1062,20 @@ function calculateCurrentStreak(streakData) {
 function updateUIAfterLoad() {
   if (!currentUser) return;
   
+  // Load removed default anchors
+  removedDefaultAnchors = loadRemovedDefaultAnchors();
+  
+  // Hide removed default anchors
+  removedDefaultAnchors.forEach(anchorId => {
+    const anchorEl = document.querySelector(`[data-id="${anchorId}"]`);
+    if (anchorEl) {
+      anchorEl.style.display = 'none';
+    }
+  });
+  
+  // Update anchors array to exclude removed ones
+  anchors = [...defaultAnchors.filter(id => !removedDefaultAnchors.has(id)), ...loadCustomAnchors().map(a => a.id)];
+  
   // Update streak display
   const userPrefix = `user_${currentUser.uid}_`;
   const streakData = JSON.parse(localStorage.getItem(userPrefix + "streakData")) || [];
@@ -933,6 +1088,12 @@ function updateUIAfterLoad() {
   if (watchShowCheckbox && watchShowInput && watchShowCheckbox.checked) {
     watchShowInput.style.display = "inline-block";
   }
+  
+  // Render custom anchors
+  renderCustomAnchors();
+  
+  // Update removed anchors display
+  updateRemovedAnchorsDisplay();
 }
 
 // ----------------------------
@@ -1302,6 +1463,28 @@ function setupEventListeners() {
   if (resetBtn) {
     resetBtn.addEventListener("click", clearAll);
   }
+  
+  // Restore removed anchors button
+  const restoreAnchorsBtn = document.getElementById("restoreAnchorsBtn");
+  if (restoreAnchorsBtn) {
+    restoreAnchorsBtn.addEventListener("click", () => {
+      if (removedDefaultAnchors.size === 0) {
+        alert("No removed anchors to restore!");
+        return;
+      }
+      
+      const anchorNames = Array.from(removedDefaultAnchors).map(id => 
+        id.replace(/([A-Z])/g, ' $1').toLowerCase()
+      );
+      
+      if (confirm(`Restore these anchors?\n${anchorNames.join('\n')}`)) {
+        removedDefaultAnchors.forEach(anchorId => {
+          restoreDefaultAnchor(anchorId);
+        });
+        alert("Anchors restored! You can now track them again.");
+      }
+    });
+  }
 
   // Add custom anchor handlers
   const addBtn = document.getElementById('addAnchorBtn');
@@ -1322,6 +1505,25 @@ function setupEventListeners() {
     addBtn.addEventListener('click', addHandler);
     addInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') { e.preventDefault(); addHandler(); } });
   }
+  
+  // Add event handlers for default anchors
+  defaultAnchors.forEach(anchorId => {
+    const checkbox = document.getElementById(anchorId);
+    if (checkbox) {
+      checkbox.addEventListener('change', handleAnchorChange);
+    }
+  });
+  
+  // Add event handlers for remove buttons on default anchors
+  document.querySelectorAll('.remove-anchor-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const anchorId = btn.closest('.anchor').getAttribute('data-id');
+      if (confirm(`Remove "${anchorId.replace(/([A-Z])/g, ' $1').toLowerCase()}" from your daily anchors?`)) {
+        removeDefaultAnchor(anchorId);
+      }
+    });
+  });
   
   if (watchShowCheckbox && watchShowInput) {
     watchShowCheckbox.addEventListener("change", function () {

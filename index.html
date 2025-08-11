@@ -250,26 +250,40 @@
         <button id="addAnchorBtn" class="btn-primary" style="flex:0 0 auto;">Add</button>
       </div>
       
-      <!-- User Header (Sign out moved to Profile) -->
-      <div class="user-header">
-        <div id="userInfo">Welcome!</div>
+      <div class="anchor" data-default="true" data-id="makeBed">
+        <label><input type="checkbox" id="makeBed"> Make bed</label>
+        <button data-action="remove" class="btn-danger remove-anchor-btn" style="margin-left:8px; flex:0 0 auto;">Remove</button>
       </div>
-        
-      <div class="anchor"><label><input type="checkbox" id="makeBed"> Make bed</label></div>
-      <div class="anchor"><label><input type="checkbox" id="drinkWater"> Take water</label></div>
-      <div class="anchor"><label><input type="checkbox" id="chooseClothes"> Choose clothes of the day</label></div>
-      <div class="anchor"><label><input type="checkbox" id="bodyMovement"> Body movement</label></div>
-      <div class="anchor"><label><input type="checkbox" id="musicDance"> Music / Dance</label></div>
-      <div class="anchor">
+      <div class="anchor" data-default="true" data-id="drinkWater">
+        <label><input type="checkbox" id="drinkWater"> Take water</label>
+        <button data-action="remove" class="btn-danger remove-anchor-btn" style="margin-left:8px; flex:0 0 auto;">Remove</button>
+      </div>
+      <div class="anchor" data-default="true" data-id="chooseClothes">
+        <label><input type="checkbox" id="chooseClothes"> Choose clothes of the day</label>
+        <button data-action="remove" class="btn-danger remove-anchor-btn" style="margin-left:8px; flex:0 0 auto;">Remove</button>
+      </div>
+      <div class="anchor" data-default="true" data-id="bodyMovement">
+        <label><input type="checkbox" id="bodyMovement"> Body movement</label>
+        <button data-action="remove" class="btn-danger remove-anchor-btn" style="margin-left:8px; flex:0 0 auto;">Remove</button>
+      </div>
+      <div class="anchor" data-default="true" data-id="musicDance">
+        <label><input type="checkbox" id="musicDance"> Music / Dance</label>
+        <button data-action="remove" class="btn-danger remove-anchor-btn" style="margin-left:8px; flex:0 0 auto;">Remove</button>
+      </div>
+      <div class="anchor" data-default="true" data-id="watchShow">
         <label>
           <input type="checkbox" id="watchShow"> Watch TV show
         </label>
         <input type="text" id="watchShowInput" placeholder="Which show?" style="display: none; margin-left: 10px;">
+        <button data-action="remove" class="btn-danger remove-anchor-btn" style="margin-left:8px; flex:0 0 auto;">Remove</button>
       </div>
       
-      <div class="anchor"><label><input type="checkbox" id="journalAboutApp"> Journal About App</label></div>
+      <div class="anchor" data-default="true" data-id="journalAboutApp">
+        <label><input type="checkbox" id="journalAboutApp"> Journal About App</label>
+        <button data-action="remove" class="btn-danger remove-anchor-btn" style="margin-left:8px; flex:0 0 auto;">Remove</button>
+      </div>
 
-      <div class="anchor">
+      <div class="anchor" data-default="true" data-id="selfCare">
         <label><input type="checkbox" id="selfCare"> Self-care</label>
         <select id="selfCareOption">
           <option value="">--choose--</option>
@@ -278,6 +292,7 @@
           <option>Organize</option>
           <option>Journal</option>
         </select>
+        <button data-action="remove" class="btn-danger remove-anchor-btn" style="margin-left:8px; flex:0 0 auto;">Remove</button>
       </div>
 
       <div class="progress-indicator" id="progressIndicator">Completed 0/7</div>
@@ -285,6 +300,18 @@
       <div class="buttons">
         <button id="saveBtn">Save My Progress</button>
         <button id="resetBtn">Clear Today</button>
+        <button id="restoreAnchorsBtn" class="btn-secondary">Restore Removed Anchors</button>
+      </div>
+      
+      <!-- Anchor Management Section -->
+      <div class="anchor-management" style="margin-top: 20px; padding: 16px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0;">
+        <h3 style="margin: 0 0 12px 0; font-size: 16px; color: #475467;">📋 Anchor Management</h3>
+        <p style="margin: 0 0 12px 0; font-size: 14px; color: #64748b; line-height: 1.4;">
+          Customize your daily anchors by removing ones you don't want to track. You can always restore them later.
+        </p>
+        <div id="removedAnchorsList" style="font-size: 14px; color: #64748b;">
+          <!-- Dynamically populated -->
+        </div>
       </div>
 
       <div id="streakSection">
