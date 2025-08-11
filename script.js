@@ -297,8 +297,8 @@ function renderCustomAnchors() {
   const custom = loadCustomAnchors();
   anchors = [...defaultAnchors, ...custom.map(a => a.id)];
 
-  // Insert custom anchors at the bottom, after the self-care section
-  const insertBeforeEl = page.querySelector('.progress-indicator');
+  // Insert custom anchors at the very bottom, after the anchor management section
+  const insertBeforeEl = page.querySelector('#streakSection');
   custom.forEach(item => {
     const row = document.createElement('div');
     row.className = 'anchor';
@@ -400,7 +400,7 @@ function updateRemovedAnchorsDisplay() {
   }
 }
 
-// Sparkle animation function
+// Sparkle animation function (kept for other uses)
 function addSparkleAnimation(checkbox) {
   const sparkle = document.createElement('div');
   sparkle.className = 'sparkle-animation';
@@ -428,13 +428,45 @@ function addSparkleAnimation(checkbox) {
   }, 1500);
 }
 
+// Tiny twinkle inside checkbox function
+function addCheckboxTwinkle(checkbox) {
+  // Create a small twinkle element
+  const twinkle = document.createElement('div');
+  twinkle.className = 'checkbox-twinkle';
+  twinkle.innerHTML = '✨';
+  
+  // Position it inside the checkbox
+  const rect = checkbox.getBoundingClientRect();
+  twinkle.style.cssText = `
+    position: absolute;
+    font-size: 10px;
+    pointer-events: none;
+    animation: checkboxTwinkle 1s ease-out forwards;
+    z-index: 1000;
+    left: ${rect.left + rect.width/2 - 5}px;
+    top: ${rect.top + rect.height/2 - 5}px;
+    opacity: 0;
+  `;
+  
+  document.body.appendChild(twinkle);
+  
+  // Remove after animation
+  setTimeout(() => {
+    if (twinkle.parentNode) {
+      twinkle.parentNode.removeChild(twinkle);
+    }
+  }, 1000);
+}
+
 // Handle anchor checkbox changes with auto-save
 async function handleAnchorChange(event) {
   const checkbox = event.target;
   const anchorId = checkbox.id;
   
-  // Add sparkle animation
-  addSparkleAnimation(checkbox);
+  // Add tiny twinkle inside the checkbox only when checked
+  if (checkbox.checked) {
+    addCheckboxTwinkle(checkbox);
+  }
   
   // Update progress indicator immediately
   updateProgressIndicator();
@@ -960,7 +992,6 @@ function displaySaveMessage(progressData) {
     messageEl.textContent = messageText;
     showMessage();
   }
-  launchConfetti();
   updateStreak(completed > 0);
 }
 
@@ -1298,7 +1329,7 @@ function setupNavigation() {
 function updateBreadcrumbs(page) {
   const map = {
     'home': ['Home'],
-    'dashboard': ['Home', 'Dashboard'],
+    'dashboard': ['Home', 'Your Wins'],
     'daily-anchors': ['Home', 'Daily Anchors'],
     'dream-life': ['Home', 'Dream Life'],
     'about': ['Home', 'About'],
@@ -1464,27 +1495,42 @@ function setupEventListeners() {
     resetBtn.addEventListener("click", clearAll);
   }
   
-  // Restore removed anchors button
-  const restoreAnchorsBtn = document.getElementById("restoreAnchorsBtn");
-  if (restoreAnchorsBtn) {
-    restoreAnchorsBtn.addEventListener("click", () => {
-      if (removedDefaultAnchors.size === 0) {
-        alert("No removed anchors to restore!");
-        return;
-      }
-      
-      const anchorNames = Array.from(removedDefaultAnchors).map(id => 
-        id.replace(/([A-Z])/g, ' $1').toLowerCase()
-      );
-      
-      if (confirm(`Restore these anchors?\n${anchorNames.join('\n')}`)) {
-        removedDefaultAnchors.forEach(anchorId => {
-          restoreDefaultAnchor(anchorId);
-        });
-        alert("Anchors restored! You can now track them again.");
-      }
-    });
-  }
+      // Restore removed anchors button
+    const restoreAnchorsBtn = document.getElementById("restoreAnchorsBtn");
+    if (restoreAnchorsBtn) {
+      restoreAnchorsBtn.addEventListener("click", () => {
+        if (removedDefaultAnchors.size === 0) {
+          alert("No removed anchors to restore!");
+          return;
+        }
+        
+        const anchorNames = Array.from(removedDefaultAnchors).map(id => 
+          id.replace(/([A-Z])/g, ' $1').toLowerCase()
+        );
+        
+        if (confirm(`Restore these anchors?\n${anchorNames.join('\n')}`)) {
+          removedDefaultAnchors.forEach(anchorId => {
+            restoreDefaultAnchor(anchorId);
+          });
+          alert("Anchors restored! You can now track them again.");
+        }
+      });
+    }
+    
+    // Empty state buttons for Your Wins
+    const emptyGoAnchorsBtn = document.getElementById("emptyGoAnchorsBtn");
+    if (emptyGoAnchorsBtn) {
+      emptyGoAnchorsBtn.addEventListener("click", () => {
+        navigateToPage('daily-anchors');
+      });
+    }
+    
+    const emptySetReminderBtn = document.getElementById("emptySetReminderBtn");
+    if (emptySetReminderBtn) {
+      emptySetReminderBtn.addEventListener("click", () => {
+        navigateToPage('profile');
+      });
+    }
 
   // Add custom anchor handlers
   const addBtn = document.getElementById('addAnchorBtn');
@@ -1522,6 +1568,40 @@ function setupEventListeners() {
       if (confirm(`Remove "${anchorId.replace(/([A-Z])/g, ' $1').toLowerCase()}" from your daily anchors?`)) {
         removeDefaultAnchor(anchorId);
       }
+    });
+  });
+  
+  // Show remove buttons on right-click or hover
+  document.querySelectorAll('.anchor[data-default="true"]').forEach(anchorEl => {
+    const removeBtn = anchorEl.querySelector('.remove-anchor-btn');
+    if (!removeBtn) return;
+    
+    // Show on right-click
+    anchorEl.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      removeBtn.style.display = 'block';
+      // Hide after 3 seconds
+      setTimeout(() => {
+        removeBtn.style.display = 'none';
+      }, 3000);
+    });
+    
+    // Show on hover (desktop)
+    anchorEl.addEventListener('mouseenter', () => {
+      removeBtn.style.display = 'block';
+    });
+    
+    anchorEl.addEventListener('mouseleave', () => {
+      removeBtn.style.display = 'none';
+    });
+    
+    // Show on touch (mobile)
+    anchorEl.addEventListener('touchstart', () => {
+      removeBtn.style.display = 'block';
+      // Hide after 3 seconds
+      setTimeout(() => {
+        removeBtn.style.display = 'none';
+      }, 3000);
     });
   });
   
@@ -1712,11 +1792,11 @@ function setupCoachTutorial() {
   if (!overlay) return;
 
   const steps = [
-    {
-      selector: '.bottom-nav .nav-link[data-page="dashboard"]',
-      text: 'This is your Dashboard. Tap here anytime to view your progress and charts.',
-      position: 'top'
-    },
+          {
+        selector: '.bottom-nav .nav-link[data-page="dashboard"]',
+        text: 'This is Your Wins. Tap here anytime to view your achievements and progress.',
+        position: 'top'
+      },
     {
       selector: '.bottom-nav .nav-link[data-page="daily-anchors"]',
       text: 'Your Daily Anchors live here. Tap to check off today\'s habits.',
@@ -1803,10 +1883,7 @@ if (document.readyState === 'loading') {
 // ----------------------------
 // Dashboard Rendering
 // ----------------------------
-let completionChartInstance = null;
-let categoryChartInstance = null;
-let dashboardRange = '30d';
-let dashboardBucket = 'daily';
+
 
 window.addEventListener('error', (event) => {
   console.error('Global error caught:', event.error || event.message);
@@ -1821,10 +1898,6 @@ async function loadDashboardData() {
   const emptyEl = document.getElementById('dashboardEmptyState');
   if (loadingEl) loadingEl.style.display = 'block';
   if (emptyEl) emptyEl.style.display = 'none';
-  const completionCard = document.getElementById('completionCard');
-  const categoryCard = document.getElementById('categoryCard');
-  if (completionCard) completionCard.classList.add('skeleton');
-  if (categoryCard) categoryCard.classList.add('skeleton');
 
   // Try to fetch last N days from Firestore if signed in
   let entries = [];
@@ -1832,9 +1905,8 @@ async function loadDashboardData() {
   try {
     if (currentUser && typeof db !== 'undefined') {
       console.log('User authenticated, attempting Firestore query...');
-      const days = dashboardRange === '7d' ? 7 : (dashboardRange === '90d' ? 90 : 30);
       const fromDate = new Date();
-      fromDate.setDate(fromDate.getDate() - days);
+      fromDate.setDate(fromDate.getDate() - 30);
 
       // Use simple query without composite indexes - fetch all user data and filter in memory
       try {
@@ -1939,107 +2011,16 @@ async function loadDashboardData() {
   if (loadingEl) loadingEl.style.display = 'none';
   if (!entries || entries.length === 0) {
     if (emptyEl) emptyEl.style.display = 'block';
-    if (completionCard) completionCard.classList.remove('skeleton');
-    if (categoryCard) categoryCard.classList.remove('skeleton');
-    renderDashboardStats([], 0);
-    renderCompletionChart([], []);
-    renderCategoryChart({});
+    renderWinsCards([], 0, 0);
     renderRecentActivity([]);
-    // Wire empty-state CTA buttons
-    const goBtn = document.getElementById('emptyGoAnchorsBtn');
-    const remBtn = document.getElementById('emptySetReminderBtn');
-    if (goBtn) {
-      goBtn.onclick = () => {
-        document.querySelector('.nav-link[data-page="daily-anchors"]').click();
-      };
-    }
-    if (remBtn) {
-      remBtn.onclick = () => {
-        document.querySelector('.nav-link[data-page="profile"]').click();
-      };
-    }
     return;
   }
 
-  // Compute metrics
-  console.log('Computing metrics with anchors:', anchors);
-  const byDate = new Map();
-  const categoryCounts = { Cook: 0, Clean: 0, Organize: 0, Journal: 0 };
-  let totalCompletedCount = 0;
-
-  entries.forEach(e => {
-    let dateStr = '';
-    if (e.date) {
-      // Support both toDateString outputs and ISO yyyy-mm-dd
-      const d = new Date(e.date);
-      dateStr = isNaN(d.getTime()) ? String(e.date) : d.toDateString();
-    } else if (e.timestamp && e.timestamp.toDate) {
-      dateStr = e.timestamp.toDate().toDateString();
-    } else if (e.timestamp && e.timestamp.seconds) {
-      dateStr = new Date(e.timestamp.seconds * 1000).toDateString();
-    }
-    const completed = Object.entries(e)
-      .filter(([k, v]) => anchors.includes(k) && v === true)
-      .length;
-    totalCompletedCount += completed;
-    if (dateStr) byDate.set(dateStr, (byDate.get(dateStr) || 0) + completed);
-    if (e.selfCareOption && categoryCounts[e.selfCareOption] !== undefined) {
-      categoryCounts[e.selfCareOption] += 1;
-    }
-  });
-
-  // Build time series (fill gaps) based on selected bucket and range
-  const labels = [];
-  const values = [];
-  const days = dashboardRange === '7d' ? 7 : (dashboardRange === '90d' ? 90 : 30);
-  if (dashboardBucket === 'daily') {
-    for (let i = days - 1; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      const key = d.toDateString();
-      labels.push(`${d.getMonth()+1}/${d.getDate()}`);
-      values.push(byDate.get(key) || 0);
-    }
-  } else if (dashboardBucket === 'weekly') {
-    // Group by ISO week
-    const weekMap = new Map();
-    entries.forEach(e => {
-      const d = e.date ? new Date(e.date) : new Date(e.timestamp.seconds * 1000);
-      const weekKey = `${d.getFullYear()}-W${getISOWeek(d)}`;
-      const completed = Object.entries(e).filter(([k, v]) => anchors.includes(k) && v === true).length;
-      weekMap.set(weekKey, (weekMap.get(weekKey) || 0) + completed);
-    });
-    // Approximate last N days into weeks (N/7 points)
-    const numWeeks = Math.ceil(days / 7);
-    for (let i = numWeeks - 1; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i * 7);
-      const wk = `${d.getFullYear()}-W${getISOWeek(d)}`;
-      labels.push(wk);
-      values.push(weekMap.get(wk) || 0);
-    }
-  } else {
-    // Monthly grouping
-    const monthMap = new Map();
-    entries.forEach(e => {
-      const d = e.date ? new Date(e.date) : new Date(e.timestamp.seconds * 1000);
-      const monthKey = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-      const completed = Object.entries(e).filter(([k, v]) => anchors.includes(k) && v === true).length;
-      monthMap.set(monthKey, (monthMap.get(monthKey) || 0) + completed);
-    });
-    // Use last 3 months for 90d, 2 months for 30d/7d
-    const numMonths = dashboardRange === '90d' ? 3 : 2;
-    for (let i = numMonths - 1; i >= 0; i--) {
-      const d = new Date();
-      d.setMonth(d.getMonth() - i);
-      const mk = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-      labels.push(mk);
-      values.push(monthMap.get(mk) || 0);
-    }
-  }
-
-  // Stats
+  // Calculate completion rate
   const totalEntries = entries.length;
+  const totalCompletedCount = entries.reduce((total, entry) => {
+    return total + Object.entries(entry).filter(([k, v]) => anchors.includes(k) && v === true).length;
+  }, 0);
   const completionRate = totalEntries > 0 ? Math.round((totalCompletedCount / (totalEntries * anchors.length)) * 100) : 0;
 
   // Streak from local streak data if available
@@ -2050,131 +2031,97 @@ async function loadDashboardData() {
     currentStreak = calculateCurrentStreak(streakData);
   }
 
-  console.log('Rendering dashboard with:', { entries: entries.length, currentStreak, completionRate, labels: labels.length, values: values.length, categoryCounts });
-  renderDashboardStats(entries, currentStreak, completionRate);
-  renderCompletionChart(labels, values);
-  renderCategoryChart(categoryCounts);
+  console.log('Rendering Your Wins with:', { entries: entries.length, currentStreak, completionRate });
+  renderWinsCards(entries, currentStreak, completionRate);
   renderRecentActivity(entries);
-  if (completionCard) completionCard.classList.remove('skeleton');
-  if (categoryCard) categoryCard.classList.remove('skeleton');
-  console.log('Dashboard rendering complete');
+  console.log('Your Wins rendering complete');
 }
 
-function getISOWeek(date) {
-  const tmp = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-  const dayNum = tmp.getUTCDay() || 7;
-  tmp.setUTCDate(tmp.getUTCDate() + 4 - dayNum);
-  const yearStart = new Date(Date.UTC(tmp.getUTCFullYear(),0,1));
-  return Math.ceil((((tmp - yearStart) / 86400000) + 1)/7);
-}
 
-function renderDashboardStats(entries, currentStreak, completionRatePct = null) {
-  console.log('renderDashboardStats called with:', { entries: entries.length, currentStreak, completionRatePct });
-  const totalEl = document.getElementById('statTotalEntries');
-  const rateEl = document.getElementById('statCompletionRate');
-  const streakEl = document.getElementById('statCurrentStreak');
-  console.log('Found elements:', { totalEl: !!totalEl, rateEl: !!rateEl, streakEl: !!streakEl });
-  if (totalEl) totalEl.textContent = entries.length.toString();
-  if (rateEl) rateEl.textContent = (completionRatePct === null ? '—' : `${completionRatePct}%`);
-  if (streakEl) streakEl.textContent = (currentStreak || 0).toString();
-}
 
-function renderCompletionChart(labels, values) {
-  const ctx = document.getElementById('completionChart');
-  console.log('renderCompletionChart called with:', { labels, values, ctx: !!ctx, Chart: typeof Chart });
+
+
+
+
+
+function renderWinsCards(entries, currentStreak, completionRate) {
+  console.log('renderWinsCards called with:', { entries: entries.length, currentStreak, completionRate });
   
-  if (!ctx) {
-    console.error('Completion chart canvas element not found');
-    return;
-  }
+  // Calculate metrics
+  const totalCompleted = entries.reduce((total, entry) => {
+    return total + Object.entries(entry).filter(([k, v]) => anchors.includes(k) && v === true).length;
+  }, 0);
   
-  if (typeof Chart === 'undefined') {
-    console.error('Chart.js library not loaded. Check CDN connection.');
-    // Show fallback message
-    ctx.style.display = 'none';
-    const fallback = document.createElement('div');
-    fallback.innerHTML = '<p style="text-align:center;color:#666;">Chart unavailable - check internet connection</p>';
-    ctx.parentNode.appendChild(fallback);
-    return;
-  }
+  // Calculate weekly completion
+  const now = new Date();
+  const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekEnd.getDate() + 6);
   
-  if (completionChartInstance) completionChartInstance.destroy();
-  completionChartInstance = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels,
-      datasets: [{
-        label: 'Anchors Completed',
-        data: values,
-        borderColor: '#2563eb',
-        backgroundColor: 'rgba(37,99,235,0.12)',
-        borderWidth: 2,
-        pointRadius: 2,
-        tension: 0.3,
-        fill: true
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      animations: {
-        tension: { duration: 600, easing: 'easeOutCubic' },
-        x: { duration: 400 },
-        y: { duration: 400 }
-      },
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { grid: { display: false } },
-        y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: '#F2F4F7' } }
-      }
-    }
+  const weeklyEntries = entries.filter(entry => {
+    const entryDate = entry.timestamp && entry.timestamp.toDate ? entry.timestamp.toDate() : new Date(entry.date);
+    return entryDate >= weekStart && entryDate <= weekEnd;
   });
+  
+  const weeklyCompleted = weeklyEntries.reduce((total, entry) => {
+    return total + Object.entries(entry).filter(([k, v]) => anchors.includes(k) && v === true).length;
+  }, 0);
+  
+  const weeklyTotal = weeklyEntries.length > 0 ? weeklyEntries.length * anchors.length : 0;
+  
+  // Calculate monthly completion
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const monthEntries = entries.filter(entry => {
+    const entryDate = entry.timestamp && entry.timestamp.toDate ? entry.timestamp.toDate() : new Date(entry.date);
+    return entryDate >= monthStart;
+  });
+  
+  const monthlyCompleted = monthEntries.reduce((total, entry) => {
+    return total + Object.entries(entry).filter(([k, v]) => anchors.includes(k) && v === true).length;
+  }, 0);
+  
+  const monthlyTotal = monthEntries.length * anchors.length;
+  const monthlyPercent = monthlyTotal > 0 ? Math.round((monthlyCompleted / monthlyTotal) * 100) : 0;
+  
+  // Calculate best streak from localStorage
+  let bestStreak = 0;
+  if (currentUser) {
+    const userPrefix = `user_${currentUser.uid}_`;
+    const streakData = JSON.parse(localStorage.getItem(userPrefix + 'streakData')) || [];
+    if (streakData.length > 0) {
+      bestStreak = Math.max(...streakData.map(s => s.streak || 0), 0);
+    }
+  }
+  
+  // Calculate favorite anchor
+  const anchorCounts = {};
+  anchors.forEach(anchor => anchorCounts[anchor] = 0);
+  
+  entries.forEach(entry => {
+    anchors.forEach(anchor => {
+      if (entry[anchor] === true) {
+        anchorCounts[anchor]++;
+      }
+    });
+  });
+  
+  const favoriteAnchor = Object.entries(anchorCounts)
+    .sort(([,a], [,b]) => b - a)[0];
+  
+  // Update the cards
+  updateWinsCard('currentStreakValue', currentStreak > 0 ? `${currentStreak} Days Strong` : 'Start Today!');
+  updateWinsCard('weeklyValue', `${weeklyCompleted}/${weeklyTotal} Anchors`);
+  updateWinsCard('totalValue', `${totalCompleted} Life Moments`);
+  updateWinsCard('bestStreakValue', bestStreak > 0 ? `${bestStreak} Days` : 'Building...');
+  updateWinsCard('monthlyValue', `${monthlyPercent}%`);
+  updateWinsCard('favoriteValue', favoriteAnchor ? favoriteAnchor[0].replace(/([A-Z])/g, ' $1').trim() : 'Keep tracking!');
 }
 
-function renderCategoryChart(categoryCounts) {
-  const ctx = document.getElementById('categoryChart');
-  console.log('renderCategoryChart called with:', { categoryCounts, ctx: !!ctx, Chart: typeof Chart });
-  
-  if (!ctx) {
-    console.error('Category chart canvas element not found');
-    return;
+function updateWinsCard(elementId, value) {
+  const element = document.getElementById(elementId);
+  if (element) {
+    element.textContent = value;
   }
-  
-  if (typeof Chart === 'undefined') {
-    console.error('Chart.js library not loaded. Check CDN connection.');
-    // Show fallback message
-    ctx.style.display = 'none';
-    const fallback = document.createElement('div');
-    fallback.innerHTML = '<p style="text-align:center;color:#666;">Chart unavailable - check internet connection</p>';
-    ctx.parentNode.appendChild(fallback);
-    return;
-  }
-  
-  const labels = Object.keys(categoryCounts);
-  const values = Object.values(categoryCounts);
-  if (categoryChartInstance) categoryChartInstance.destroy();
-  categoryChartInstance = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels,
-      datasets: [{
-        label: 'Days Selected',
-        data: values,
-        backgroundColor: ['#2563eb', '#4CA7A0', '#64748b', '#0ea5e9'],
-        borderWidth: 0
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      animation: { duration: 500, easing: 'easeOutCubic' },
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { grid: { display: false } },
-        y: { beginAtZero: true, grid: { color: '#F2F4F7' } }
-      }
-    }
-  });
 }
 
 function renderRecentActivity(entries) {
@@ -2190,7 +2137,8 @@ function renderRecentActivity(entries) {
     const dateStr = e.date || (e.timestamp && e.timestamp.toDate ? e.timestamp.toDate().toDateString() : '');
     const completed = Object.entries(e).filter(([k, v]) => anchors.includes(k) && v === true).length;
     const li = document.createElement('li');
-    li.innerHTML = `<span>${dateStr}</span><span>${completed}/${anchors.length} completed</span>`;
+    li.className = 'activity-item';
+    li.innerHTML = `<span class="activity-date">${dateStr}</span><span class="activity-progress">${completed}/${anchors.length} completed</span>`;
     list.appendChild(li);
   });
 }
@@ -2206,39 +2154,7 @@ document.addEventListener('click', (e) => {
   }
 });
 
-// Load dashboard on first navigation to it or if hash targets it
+// Load Your Wins on first navigation to it or if hash targets it
 if (window.location.hash && window.location.hash.includes('dashboard')) {
   setTimeout(loadDashboardData, 200);
 }
-
-// Check if Chart.js loaded properly
-document.addEventListener('DOMContentLoaded', () => {
-  setTimeout(() => {
-    if (typeof Chart === 'undefined') {
-      console.error('Chart.js failed to load from CDN');
-      // Try to show a helpful message
-      const chartElements = document.querySelectorAll('canvas[id*="Chart"]');
-      chartElements.forEach(canvas => {
-        const fallback = document.createElement('div');
-        fallback.innerHTML = '<p style="text-align:center;color:#666;padding:20px;">Chart library unavailable. Please check your internet connection and refresh the page.</p>';
-        canvas.parentNode.appendChild(fallback);
-      });
-    } else {
-      console.log('Chart.js loaded successfully:', Chart.version);
-    }
-  }, 2000); // Wait 2 seconds for CDN to load
-});
-
-// Sidebar filters handlers
-document.addEventListener('change', (e) => {
-  const target = e.target;
-  if (!(target instanceof HTMLElement)) return;
-  if (target.id === 'rangeSelect') {
-    dashboardRange = target.value;
-    loadDashboardData();
-  }
-  if (target.id === 'bucketSelect') {
-    dashboardBucket = target.value;
-    loadDashboardData();
-  }
-});

@@ -47,49 +47,235 @@
 .is-success textarea { border-color: var(--success); box-shadow: 0 0 0 3px rgba(22,163,74,0.15); }
 .is-warning input,
 .is-warning textarea { border-color: var(--warning); box-shadow: 0 0 0 3px rgba(245,158,11,0.15); }
-.dashboard-layout {
+/* Your Wins Design */
+.wins-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.wins-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #2D3748;
+  margin-bottom: 12px;
+  background: linear-gradient(135deg, #4CA7A0, #2563eb);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.wins-subtitle {
+  font-size: 1.1rem;
+  color: #718096;
+  font-weight: 400;
+}
+
+.wins-grid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 24px;
+  margin-bottom: 40px;
 }
 
-.dashboard-sidebar {
-  display: none;
-}
-
-.sidebar-card {
+.win-card {
   background: white;
   border-radius: 16px;
-  padding: 16px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  padding: 28px;
+  box-shadow: 0 4px 20px rgba(76, 167, 160, 0.08);
+  border: 1px solid rgba(76, 167, 160, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
 }
 
-.sidebar-title {
-  font-size: 14px;
+.win-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--card-accent, #4CA7A0);
+  border-radius: 16px 16px 0 0;
+}
+
+.win-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 40px rgba(76, 167, 160, 0.15);
+}
+
+.win-card.streak {
+  --card-accent: #F56565;
+  background: linear-gradient(135deg, #FFF5F5 0%, #FFFFFF 100%);
+}
+
+.win-card.weekly {
+  --card-accent: #4299E1;
+  background: linear-gradient(135deg, #EBF8FF 0%, #FFFFFF 100%);
+}
+
+.win-card.total {
+  --card-accent: #48BB78;
+  background: linear-gradient(135deg, #F0FFF4 0%, #FFFFFF 100%);
+}
+
+.win-card.best-streak {
+  --card-accent: #9F7AEA;
+  background: linear-gradient(135deg, #FAF5FF 0%, #FFFFFF 100%);
+}
+
+.win-card.monthly {
+  --card-accent: #ED8936;
+  background: linear-gradient(135deg, #FFFAF0 0%, #FFFFFF 100%);
+}
+
+.win-card.favorite {
+  --card-accent: #38B2AC;
+  background: linear-gradient(135deg, #E6FFFA 0%, #FFFFFF 100%);
+}
+
+.win-emoji {
+  font-size: 2.5rem;
+  margin-bottom: 16px;
+  display: block;
+  text-align: center;
+}
+
+.win-label {
+  font-size: 0.9rem;
   font-weight: 600;
-  color: #344054;
-  margin-bottom: 12px;
+  color: #718096;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
 }
 
-.sidebar-row {
+.win-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #2D3748;
+  margin-bottom: 8px;
+  line-height: 1.2;
+}
+
+.win-description {
+  font-size: 0.95rem;
+  color: #A0AEC0;
+  line-height: 1.4;
+}
+
+.recent-activity {
+  background: white;
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 4px 20px rgba(76, 167, 160, 0.08);
+  border: 1px solid rgba(76, 167, 160, 0.1);
+}
+
+.activity-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
-  padding: 12px 0;
-  border-bottom: 1px solid #F2F4F7;
+  margin-bottom: 24px;
 }
 
-.sidebar-row:last-child {
+.activity-title {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #2D3748;
+}
+
+.activity-list {
+  list-style: none;
+}
+
+.activity-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 0;
+  border-bottom: 1px solid #E2E8F0;
+}
+
+.activity-item:last-child {
   border-bottom: none;
 }
 
-@media (min-width: 1024px) {
-  .dashboard-layout {
-    grid-template-columns: 260px 1fr;
+.activity-date {
+  font-weight: 500;
+  color: #4A5568;
+}
+
+.activity-progress {
+  font-size: 0.9rem;
+  color: #718096;
+  background: #F7FAFC;
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  color: #718096;
+}
+
+.empty-emoji {
+  font-size: 3rem;
+  margin-bottom: 16px;
+}
+
+.empty-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 24px;
+}
+
+.btn {
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background: #4CA7A0;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #3a8a85;
+}
+
+.btn-secondary {
+  background: #E2E8F0;
+  color: #4A5568;
+}
+
+.btn-secondary:hover {
+  background: #CBD5E0;
+}
+
+@media (max-width: 768px) {
+  .wins-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
   }
-  .dashboard-sidebar {
-    display: block;
+  
+  .wins-title {
+    font-size: 2rem;
+  }
+  
+  .win-card {
+    padding: 20px;
+  }
+  
+  .recent-activity {
+    padding: 24px;
   }
 }
 /* Reset and base styles */
@@ -1548,6 +1734,29 @@ img, canvas, svg, video { max-width: 100%; height: auto; }
   animation: sparkle 1.5s ease-out forwards;
 }
 
+/* Checkbox Twinkle Animation */
+@keyframes checkboxTwinkle {
+  0% {
+    opacity: 0;
+    transform: scale(0.3) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1) rotate(180deg);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.5) rotate(360deg);
+  }
+}
+
+.checkbox-twinkle {
+  position: absolute;
+  pointer-events: none;
+  z-index: 1000;
+  animation: checkboxTwinkle 1s ease-out forwards;
+}
+
 /* Remove button styling */
 .remove-anchor-btn {
   background: #dc2626;
@@ -1557,11 +1766,23 @@ img, canvas, svg, video { max-width: 100%; height: auto; }
   border-radius: 6px;
   font-size: 12px;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: all 0.2s ease;
+  opacity: 0.9;
+  position: relative;
 }
 
 .remove-anchor-btn:hover {
   background: #b91c1c;
+  opacity: 1;
+  transform: scale(1.05);
+}
+
+/* Anchor hover effects */
+.anchor[data-default="true"]:hover {
+  background: rgba(76, 167, 160, 0.05);
+  border-radius: 8px;
+  padding: 4px;
+  margin: -4px;
 }
 
 /* Anchor layout improvements */
