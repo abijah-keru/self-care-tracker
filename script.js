@@ -1611,6 +1611,10 @@ window.addEventListener('error', (event) => {
 });
 
 async function loadDashboardData() {
+  console.log('loadDashboardData called');
+  console.log('currentUser:', currentUser);
+  console.log('db available:', typeof db !== 'undefined');
+  
   const loadingEl = document.getElementById('dashboardLoadingState');
   const emptyEl = document.getElementById('dashboardEmptyState');
   if (loadingEl) loadingEl.style.display = 'block';
@@ -1622,87 +1626,112 @@ async function loadDashboardData() {
 
   // Try to fetch last N days from Firestore if signed in
   let entries = [];
+  console.log('Starting data fetch...');
   try {
     if (currentUser && typeof db !== 'undefined') {
+      console.log('User authenticated, attempting Firestore query...');
       const days = dashboardRange === '7d' ? 7 : (dashboardRange === '90d' ? 90 : 30);
       const fromDate = new Date();
       fromDate.setDate(fromDate.getDate() - days);
 
-      // Primary: range by timestamp
+      // Use simple query without composite indexes - fetch all user data and filter in memory
       try {
+        console.log('Fetching all user data to avoid composite index issues...');
         const snapshot = await db.collection('dailyProgress')
           .where('userId', '==', currentUser.uid)
-          .where('timestamp', '>=', fromDate)
           .orderBy('timestamp', 'desc')
+          .limit(200) // Reasonable limit
           .get();
-        entries = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        
+        const allEntries = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        console.log('Fetched entries:', allEntries.length);
+        
+        // Filter by date in memory to avoid composite index requirements
+        entries = allEntries.filter(e => {
+          let entryDate;
+          if (e.timestamp && e.timestamp.toDate) {
+            entryDate = e.timestamp.toDate();
+          } else if (e.timestamp && e.timestamp.seconds) {
+            entryDate = new Date(e.timestamp.seconds * 1000);
+          } else if (e.date) {
+            entryDate = new Date(e.date);
+          } else {
+            return false; // Skip entries without valid date
+          }
+          
+          return entryDate >= fromDate;
+        });
+        
+        console.log('Filtered entries for range:', entries.length);
       } catch (e1) {
-        console.warn('Primary dashboard query failed (timestamp range).', e1);
-      }
-
-      // Fallback 1: latest by timestamp (no range), then filter in-memory
-      if (!entries || entries.length === 0) {
-        try {
-          const snap2 = await db.collection('dailyProgress')
-            .where('userId', '==', currentUser.uid)
-            .orderBy('timestamp', 'desc')
-            .limit(120)
-            .get();
-          const all = snap2.docs.map(d => ({ id: d.id, ...d.data() }));
-          entries = all.filter(e => {
-            if (e.timestamp && e.timestamp.toDate) {
-              return e.timestamp.toDate() >= fromDate;
-            }
-            if (e.date) {
-              const d = new Date(e.date);
-              return d >= fromDate;
-            }
-            return false;
-          });
-        } catch (e2) {
-          console.warn('Fallback query by timestamp (no range) failed.', e2);
+        console.error('Firestore query failed:', e1);
+        console.error('Error details:', {
+          code: e1.code,
+          message: e1.message,
+          stack: e1.stack
+        });
+        
+        // Show specific error message for common issues
+        const loadingEl = document.getElementById('dashboardLoadingState');
+        if (loadingEl) {
+          if (e1.code === 'permission-denied') {
+            loadingEl.textContent = 'Permission denied. Please check your Firebase rules.';
+          } else if (e1.code === 'unavailable') {
+            loadingEl.textContent = 'Firebase unavailable. Check your internet connection.';
+          } else {
+            loadingEl.textContent = `Database error: ${e1.message}`;
+          }
         }
-      }
-
-      // Fallback 2: order by date string if some old docs lack timestamp
-      if (!entries || entries.length === 0) {
-        try {
-          const snap3 = await db.collection('dailyProgress')
-            .where('userId', '==', currentUser.uid)
-            .orderBy('date', 'desc')
-            .limit(180)
-            .get();
-          const allByDate = snap3.docs.map(d => ({ id: d.id, ...d.data() }));
-          const daysBack = days;
-          const cutoff = new Date();
-          cutoff.setDate(cutoff.getDate() - daysBack);
-          entries = allByDate.filter(e => {
-            if (e.timestamp && e.timestamp.toDate) {
-              return e.timestamp.toDate() >= cutoff;
-            }
-            if (e.date) {
-              const d = new Date(e.date);
-              return d >= cutoff;
-            }
-            return false;
-          });
-        } catch (e3) {
-          console.warn('Fallback query by date string failed.', e3);
-        }
+        
+        // Continue to localStorage fallback
       }
     }
   } catch (e) {
-    console.warn('Firestore load failed, falling back to local data.', e);
+    console.error('Firestore load failed:', e);
     const loadingEl = document.getElementById('dashboardLoadingState');
     if (loadingEl) {
       loadingEl.textContent = 'Unable to load data right now. Showing placeholders.';
     }
+    // Continue to localStorage fallback
   }
 
   // Fallback: derive minimal entries from localStorage if Firestore empty
   if (entries.length === 0) {
+    console.log('No Firestore entries found, checking localStorage...');
     const prefix = currentUser ? `user_${currentUser.uid}_` : '';
-    // We don't store historical dates in localStorage; show empty state if none
+    
+    // Try to load today's progress from localStorage as a fallback
+    if (prefix) {
+      try {
+        const today = new Date().toDateString();
+        const todayProgress = {};
+        let hasAnyData = false;
+        
+        // Check each anchor for today's progress
+        anchors.forEach(anchorId => {
+          const stored = localStorage.getItem(prefix + anchorId);
+          if (stored === 'true') {
+            todayProgress[anchorId] = true;
+            hasAnyData = true;
+          }
+        });
+        
+        if (hasAnyData) {
+          // Create a mock entry for today
+          const mockEntry = {
+            id: 'local_' + Date.now(),
+            date: today,
+            timestamp: new Date(),
+            userId: currentUser.uid,
+            ...todayProgress
+          };
+          entries = [mockEntry];
+          console.log('Created mock entry from localStorage:', mockEntry);
+        }
+      } catch (e) {
+        console.warn('localStorage fallback failed:', e);
+      }
+    }
   }
 
   if (loadingEl) loadingEl.style.display = 'none';
@@ -1731,6 +1760,7 @@ async function loadDashboardData() {
   }
 
   // Compute metrics
+  console.log('Computing metrics with anchors:', anchors);
   const byDate = new Map();
   const categoryCounts = { Cook: 0, Clean: 0, Organize: 0, Journal: 0 };
   let totalCompletedCount = 0;
@@ -1818,12 +1848,14 @@ async function loadDashboardData() {
     currentStreak = calculateCurrentStreak(streakData);
   }
 
+  console.log('Rendering dashboard with:', { entries: entries.length, currentStreak, completionRate, labels: labels.length, values: values.length, categoryCounts });
   renderDashboardStats(entries, currentStreak, completionRate);
   renderCompletionChart(labels, values);
   renderCategoryChart(categoryCounts);
   renderRecentActivity(entries);
   if (completionCard) completionCard.classList.remove('skeleton');
   if (categoryCard) categoryCard.classList.remove('skeleton');
+  console.log('Dashboard rendering complete');
 }
 
 function getISOWeek(date) {
@@ -1835,9 +1867,11 @@ function getISOWeek(date) {
 }
 
 function renderDashboardStats(entries, currentStreak, completionRatePct = null) {
+  console.log('renderDashboardStats called with:', { entries: entries.length, currentStreak, completionRatePct });
   const totalEl = document.getElementById('statTotalEntries');
   const rateEl = document.getElementById('statCompletionRate');
   const streakEl = document.getElementById('statCurrentStreak');
+  console.log('Found elements:', { totalEl: !!totalEl, rateEl: !!rateEl, streakEl: !!streakEl });
   if (totalEl) totalEl.textContent = entries.length.toString();
   if (rateEl) rateEl.textContent = (completionRatePct === null ? '—' : `${completionRatePct}%`);
   if (streakEl) streakEl.textContent = (currentStreak || 0).toString();
@@ -1845,7 +1879,23 @@ function renderDashboardStats(entries, currentStreak, completionRatePct = null) 
 
 function renderCompletionChart(labels, values) {
   const ctx = document.getElementById('completionChart');
-  if (!ctx || typeof Chart === 'undefined') return;
+  console.log('renderCompletionChart called with:', { labels, values, ctx: !!ctx, Chart: typeof Chart });
+  
+  if (!ctx) {
+    console.error('Completion chart canvas element not found');
+    return;
+  }
+  
+  if (typeof Chart === 'undefined') {
+    console.error('Chart.js library not loaded. Check CDN connection.');
+    // Show fallback message
+    ctx.style.display = 'none';
+    const fallback = document.createElement('div');
+    fallback.innerHTML = '<p style="text-align:center;color:#666;">Chart unavailable - check internet connection</p>';
+    ctx.parentNode.appendChild(fallback);
+    return;
+  }
+  
   if (completionChartInstance) completionChartInstance.destroy();
   completionChartInstance = new Chart(ctx, {
     type: 'line',
@@ -1881,7 +1931,23 @@ function renderCompletionChart(labels, values) {
 
 function renderCategoryChart(categoryCounts) {
   const ctx = document.getElementById('categoryChart');
-  if (!ctx || typeof Chart === 'undefined') return;
+  console.log('renderCategoryChart called with:', { categoryCounts, ctx: !!ctx, Chart: typeof Chart });
+  
+  if (!ctx) {
+    console.error('Category chart canvas element not found');
+    return;
+  }
+  
+  if (typeof Chart === 'undefined') {
+    console.error('Chart.js library not loaded. Check CDN connection.');
+    // Show fallback message
+    ctx.style.display = 'none';
+    const fallback = document.createElement('div');
+    fallback.innerHTML = '<p style="text-align:center;color:#666;">Chart unavailable - check internet connection</p>';
+    ctx.parentNode.appendChild(fallback);
+    return;
+  }
+  
   const labels = Object.keys(categoryCounts);
   const values = Object.values(categoryCounts);
   if (categoryChartInstance) categoryChartInstance.destroy();
@@ -1910,8 +1976,12 @@ function renderCategoryChart(categoryCounts) {
 }
 
 function renderRecentActivity(entries) {
+  console.log('renderRecentActivity called with:', { entries: entries.length, anchors });
   const list = document.getElementById('recentActivityList');
-  if (!list) return;
+  if (!list) {
+    console.warn('recentActivityList element not found');
+    return;
+  }
   list.innerHTML = '';
   const last = entries.slice(0, 10);
   last.forEach(e => {
@@ -1938,6 +2008,24 @@ document.addEventListener('click', (e) => {
 if (window.location.hash && window.location.hash.includes('dashboard')) {
   setTimeout(loadDashboardData, 200);
 }
+
+// Check if Chart.js loaded properly
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    if (typeof Chart === 'undefined') {
+      console.error('Chart.js failed to load from CDN');
+      // Try to show a helpful message
+      const chartElements = document.querySelectorAll('canvas[id*="Chart"]');
+      chartElements.forEach(canvas => {
+        const fallback = document.createElement('div');
+        fallback.innerHTML = '<p style="text-align:center;color:#666;padding:20px;">Chart library unavailable. Please check your internet connection and refresh the page.</p>';
+        canvas.parentNode.appendChild(fallback);
+      });
+    } else {
+      console.log('Chart.js loaded successfully:', Chart.version);
+    }
+  }, 2000); // Wait 2 seconds for CDN to load
+});
 
 // Sidebar filters handlers
 document.addEventListener('change', (e) => {
