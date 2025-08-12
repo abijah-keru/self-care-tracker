@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Your Wins - Daily Anchors</title>
+  <title>Daily Anchors - Your Self-Care Journey</title>
   <link rel="stylesheet" href="style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800;900&family=Kalam:wght@300;400;700&display=swap" rel="stylesheet">
 
   <!-- PWA Manifest -->
   <link rel="manifest" href="manifest.json">
@@ -92,6 +92,7 @@
   <!-- Main Content Container -->
   <div class="main-content" id="mainContent" style="display: none;">
     <nav class="breadcrumbs" id="breadcrumbs"></nav>
+    
     <!-- Onboarding Overlay -->
     <div id="onboardingOverlay" class="onboarding-overlay" aria-hidden="true">
       <div class="onboarding-card-ui">
@@ -111,13 +112,148 @@
     <!-- Coach Tutorial Overlay (hidden by default) -->
     <div id="coachOverlay" class="coach-overlay" style="display:none;" aria-hidden="true"></div>
     
-    <!-- Home Page -->
+    <!-- Home Page - Transformed with Breathing Design -->
     <div id="home" class="page-section active">
-      <h1 id="homeGreeting">Welcome to Your Daily Self-Care Journey</h1>
-      <p class="welcome-text">
-        Transform your life one anchor at a time. Build sustainable habits that nurture your mind, body, and soul.
-      </p>
-      
+      <!-- Hero Section: Full-screen personalized greeting -->
+      <div class="hero-section">
+        <div class="hero-background">
+          <div class="breathing-gradient"></div>
+          <div class="floating-shapes">
+            <div class="shape shape-1"></div>
+            <div class="shape shape-2"></div>
+            <div class="shape shape-3"></div>
+          </div>
+        </div>
+        
+        <div class="hero-content">
+          <div class="greeting-container">
+            <h1 class="hero-greeting" id="heroGreeting">Good morning, Beautiful Soul ✨</h1>
+            <p class="hero-insight" id="heroInsight">Yesterday you chose to care for yourself - how beautiful is that?</p>
+          </div>
+          
+          <!-- Mood Check-in Interaction -->
+          <div class="mood-checkin">
+            <h3 class="mood-title">How are you feeling right now?</h3>
+            <div class="mood-emoji-grid">
+              <button class="mood-emoji" data-mood="amazing" aria-label="Feeling amazing">
+                <span class="emoji">😊</span>
+                <span class="mood-label">Amazing</span>
+              </button>
+              <button class="mood-emoji" data-mood="good" aria-label="Feeling good">
+                <span class="emoji">😌</span>
+                <span class="mood-label">Good</span>
+              </button>
+              <button class="mood-emoji" data-mood="okay" aria-label="Feeling okay">
+                <span class="emoji">😐</span>
+                <span class="mood-label">Okay</span>
+              </button>
+              <button class="mood-emoji" data-mood="rough" aria-label="Having a rough time">
+                <span class="emoji">😔</span>
+                <span class="mood-label">Rough</span>
+              </button>
+              <button class="mood-emoji" data-mood="struggling" aria-label="Really struggling">
+                <span class="emoji">😢</span>
+                <span class="mood-label">Struggling</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Personal Reflection Zone -->
+      <div class="reflection-zone">
+        <!-- Recent Win Celebration -->
+        <div class="celebration-card" id="celebrationCard">
+          <div class="celebration-icon">🎉</div>
+          <h3>Celebrating You!</h3>
+          <p class="celebration-text" id="celebrationText">You're building something beautiful, one day at a time</p>
+          <div class="celebration-sparkles">
+            <span class="sparkle">✨</span>
+            <span class="sparkle">✨</span>
+            <span class="sparkle">✨</span>
+          </div>
+        </div>
+
+        <!-- Gentle Nudge -->
+        <div class="nudge-card" id="nudgeCard">
+          <div class="nudge-icon">💭</div>
+          <h3>Gentle Reminder</h3>
+          <p class="nudge-text" id="nudgeText">Take a deep breath. You're exactly where you need to be.</p>
+        </div>
+
+        <!-- Energy Check -->
+        <div class="energy-card">
+          <h3>Energy Check</h3>
+          <div class="energy-slider-container">
+            <input type="range" id="energySlider" min="1" max="10" value="7" class="energy-slider">
+            <div class="energy-labels">
+              <span>Low</span>
+              <span>High</span>
+            </div>
+            <div class="energy-value" id="energyValue">7/10</div>
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+          <h3>Quick Actions</h3>
+          <div class="action-buttons">
+            <button class="action-btn" data-action="meditate">
+              <span class="action-icon">🧘</span>
+              <span class="action-text">Meditate</span>
+            </button>
+            <button class="action-btn" data-action="journal">
+              <span class="action-icon">📝</span>
+              <span class="action-text">Journal</span>
+            </button>
+            <button class="action-btn" data-action="walk">
+              <span class="action-icon">🚶</span>
+              <span class="action-text">Walk</span>
+            </button>
+            <button class="action-btn" data-action="gratitude">
+              <span class="action-icon">🙏</span>
+              <span class="action-text">Gratitude</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation & Discovery -->
+      <div class="discovery-zone">
+        <!-- Smart Suggestions -->
+        <div class="suggestions-card">
+          <h3>Today's Suggestions</h3>
+          <div class="suggestion-list" id="suggestionList">
+            <div class="suggestion-item">
+              <span class="suggestion-icon">🌅</span>
+              <span class="suggestion-text">Morning sunlight for 10 minutes</span>
+            </div>
+            <div class="suggestion-item">
+              <span class="suggestion-icon">💧</span>
+              <span class="suggestion-text">Drink a glass of water</span>
+            </div>
+            <div class="suggestion-item">
+              <span class="suggestion-icon">🫂</span>
+              <span class="suggestion-text">Give yourself a hug</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Today's Intention -->
+        <div class="intention-card">
+          <h3>Today's Intention</h3>
+          <div class="intention-input-container">
+            <input type="text" id="intentionInput" placeholder="What would you like to focus on today?" class="intention-input">
+            <button id="setIntentionBtn" class="intention-btn">Set</button>
+          </div>
+          <div class="current-intention" id="currentIntention" style="display: none;">
+            <span class="intention-label">Today's focus:</span>
+            <span class="intention-text" id="intentionText"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Onboarding Card (Hidden by default) -->
       <div class="onboarding-card" id="onboardingCard" style="display:none;">
         <h3 class="section-header">Getting Started</h3>
         <p>Welcome! Here are a few quick steps to begin:</p>
@@ -131,69 +267,66 @@
           <button id="onboardingDismissBtn" class="btn-primary">Got it</button>
         </div>
       </div>
-
-      <div class="feature-grid">
-        <div class="feature-card">
-          <h3>🎯 Daily Anchors</h3>
-          <p>Track your essential daily habits and build consistency in your self-care routine.</p>
-        </div>
-        <div class="feature-card">
-          <h3>✨ Dream Life</h3>
-          <p>Visualize and work towards your ideal lifestyle with intention and purpose.</p>
-        </div>
-        <div class="feature-card">
-          <h3>📈 Progress Tracking</h3>
-          <p>Monitor your growth and celebrate your wins along the self-care journey.</p>
-        </div>
-      </div>
     </div>
 
-    <!-- Your Wins Page -->
+    <!-- Your Wins Page - Enhanced with Organic Visualizations -->
     <div id="dashboard" class="page-section">
       <div class="wins-header">
         <h1 class="wins-title">Your Wins</h1>
         <p class="wins-subtitle">Celebrating your self-care journey</p>
       </div>
       
-      <!-- Wins Grid -->
+      <!-- Wins Grid with Organic Shapes -->
       <div class="wins-grid" id="winsGrid">
-        <div class="win-card streak">
-          <span class="win-emoji">🔥</span>
+        <div class="win-card streak organic-card">
+          <div class="organic-progress">
+            <div class="progress-flame" id="streakFlame">🔥</div>
+          </div>
           <div class="win-label">Current Streak</div>
           <div class="win-value" id="currentStreakValue">0 Days Strong</div>
           <div class="win-description">Keep the momentum going!</div>
         </div>
         
-        <div class="win-card weekly">
-          <span class="win-emoji">✨</span>
+        <div class="win-card weekly organic-card">
+          <div class="organic-progress">
+            <div class="progress-plant" id="weeklyPlant">🌱</div>
+          </div>
           <div class="win-label">This Week</div>
           <div class="win-value" id="weeklyValue">0/0 Anchors</div>
           <div class="win-description">You're doing amazing this week</div>
         </div>
         
-        <div class="win-card total">
-          <span class="win-emoji">🌟</span>
+        <div class="win-card total organic-card">
+          <div class="organic-progress">
+            <div class="progress-star" id="totalStar">⭐</div>
+          </div>
           <div class="win-label">Total Anchors</div>
           <div class="win-value" id="totalValue">0 Life Moments</div>
           <div class="win-description">Every single one counts</div>
         </div>
         
-        <div class="win-card best-streak">
-          <span class="win-emoji">💪</span>
+        <div class="win-card best-streak organic-card">
+          <div class="organic-progress">
+            <div class="progress-trophy" id="bestTrophy">🏆</div>
+          </div>
           <div class="win-label">Personal Best</div>
           <div class="win-value" id="bestStreakValue">0 Days</div>
           <div class="win-description">You've got this!</div>
         </div>
         
-        <div class="win-card monthly">
-          <span class="win-emoji">📈</span>
+        <div class="win-card monthly organic-card">
+          <div class="organic-progress">
+            <div class="progress-chart" id="monthlyChart">📈</div>
+          </div>
           <div class="win-label">This Month</div>
           <div class="win-value" id="monthlyValue">0%</div>
           <div class="win-description">Consistency is key</div>
         </div>
         
-        <div class="win-card favorite">
-          <span class="win-emoji">❤️</span>
+        <div class="win-card favorite organic-card">
+          <div class="organic-progress">
+            <div class="progress-heart" id="favoriteHeart">❤️</div>
+          </div>
           <div class="win-label">Favorite Anchor</div>
           <div class="win-value" id="favoriteValue">Keep tracking!</div>
           <div class="win-description">Your go-to daily win</div>
@@ -226,9 +359,13 @@
       </div>
     </div>
 
-    <!-- Daily Anchors Page -->
+    <!-- Daily Anchors Page - Enhanced with Breathing Interactions -->
     <div id="daily-anchors" class="page-section">
+      <div class="anchors-header">
       <h1>Today's Anchors</h1>
+        <p class="anchors-subtitle">Small steps, big transformations</p>
+      </div>
+      
       <div class="anchor" id="addAnchorRow">
         <label style="flex:1; display:flex; align-items:center; gap:8px;">
           <span class="icon-inline">➕</span>
@@ -289,8 +426,6 @@
         <button id="resetBtn">Clear Today</button>
         <button id="restoreAnchorsBtn" class="btn-secondary">Restore Removed Anchors</button>
       </div>
-      
-
 
       <div id="streakSection">
         <div id="streakIcons"></div>
@@ -300,13 +435,20 @@
       <div id="message">🌱 Progress Saved! You're blooming today! 🌞</div>
     </div>
 
-    <!-- Mood Booster Page -->
+    <!-- Mood Booster Page - Enhanced with Breathing Interactions -->
     <div id="mood-booster" class="page-section">
+      <div class="mood-header">
       <h1>Mood Booster</h1>
+        <p class="mood-subtitle">Need a gentle nudge? We're here for you</p>
+      </div>
+      
       <div class="mood-card">
         <p class="mood-desc">Need a pick-me-up or a quick nudge? Tap the button to randomly pick one of your anchors to do now. Tap again for another suggestion.</p>
         <div class="mood-wheel">
-          <button id="moodSpinBtn" class="mood-button" aria-label="Pick a random anchor">Boost</button>
+          <button id="moodSpinBtn" class="mood-button breathing-button" aria-label="Pick a random anchor">
+            <span class="button-text">Boost</span>
+            <div class="breathing-ripple"></div>
+          </button>
         </div>
         <div class="mood-result" id="moodResult">Try me ✨</div>
         <div class="mood-actions">
@@ -316,9 +458,13 @@
       </div>
     </div>
 
-    <!-- Dream Life Page -->
+    <!-- Dream Life Page - Enhanced with Breathing Spaces -->
     <div id="dream-life" class="page-section">
+      <div class="dream-header">
       <h1>Your Dream Life Vision</h1>
+        <p class="dream-subtitle">Take a moment to breathe and dream</p>
+      </div>
+      
       <h2>Visualize Your Ideal Life</h2>
       <p class="section-description">
         Take a moment to envision your perfect day, your ideal relationships, career, and lifestyle. 

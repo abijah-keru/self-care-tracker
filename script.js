@@ -19,6 +19,463 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const auth = firebase.auth();
 
+// ----------------------------
+// Breathing Design System - New Features
+// ----------------------------
+
+// Dynamic Greeting System
+function updateDynamicGreeting() {
+  const heroGreeting = document.getElementById('heroGreeting');
+  const heroInsight = document.getElementById('heroInsight');
+  
+  if (!heroGreeting || !heroInsight) return;
+  
+  const now = new Date();
+  const hour = now.getHours();
+  const userName = localStorage.getItem('userName') || 'Beautiful Soul';
+  
+  // Time-based greetings
+  let greeting = '';
+  if (hour < 12) {
+    greeting = `Good morning, ${userName} ✨`;
+  } else if (hour < 17) {
+    greeting = `Good afternoon, ${userName} 🌟`;
+  } else if (hour < 21) {
+    greeting = `Good evening, ${userName} 🌙`;
+  } else {
+    greeting = `Good night, ${userName} 💫`;
+  }
+  
+  heroGreeting.textContent = greeting;
+  
+  // Dynamic insights based on user data
+  const lastLogin = localStorage.getItem('lastLogin');
+  const today = new Date().toDateString();
+  
+  if (lastLogin === today) {
+    // Same day - encouraging message
+    const insights = [
+      "You're building something beautiful, one day at a time",
+      "Every moment of self-care is a step toward your best self",
+      "Your journey is unique and beautiful - keep going",
+      "You have the power to create positive change in your life"
+    ];
+    heroInsight.textContent = insights[Math.floor(Math.random() * insights.length)];
+  } else {
+    // New day - welcoming message
+    const welcomeInsights = [
+      "Welcome back! We're so glad to see you again",
+      "A new day brings new opportunities for growth",
+      "You're exactly where you need to be right now",
+      "Let's make today beautiful together"
+    ];
+    heroInsight.textContent = welcomeInsights[Math.floor(Math.random() * insights.length)];
+  }
+  
+  // Update last login
+  localStorage.setItem('lastLogin', today);
+}
+
+// Mood Tracking System
+function initializeMoodTracking() {
+  const moodEmojis = document.querySelectorAll('.mood-emoji');
+  
+  moodEmojis.forEach(emoji => {
+    emoji.addEventListener('click', function() {
+      const mood = this.dataset.mood;
+      const moodData = {
+        mood: mood,
+        timestamp: new Date().toISOString(),
+        date: new Date().toDateString()
+      };
+      
+      // Store mood data
+      localStorage.setItem('currentMood', JSON.stringify(moodData));
+      
+      // Visual feedback
+      this.style.transform = 'scale(1.1)';
+      this.style.background = 'rgba(76, 167, 160, 0.2)';
+      
+      // Update celebration card with mood-based message
+      updateCelebrationCard(mood);
+      
+      // Reset after animation
+      setTimeout(() => {
+        this.style.transform = '';
+        this.style.background = '';
+      }, 300);
+      
+      // Save to Firebase if user is authenticated
+      if (auth.currentUser) {
+        saveMoodToFirebase(moodData);
+      }
+    });
+  });
+}
+
+// Update celebration card based on mood
+function updateCelebrationCard(mood) {
+  const celebrationText = document.getElementById('celebrationText');
+  if (!celebrationText) return;
+  
+  const moodMessages = {
+    amazing: "You're radiating positive energy today! Keep shining ✨",
+    good: "You're in a great place - let's build on this momentum",
+    okay: "It's okay to feel okay. Every day doesn't need to be extraordinary",
+    rough: "You're showing strength by being here. That's something to celebrate",
+    struggling: "You're not alone in this. Reaching out for support is brave"
+  };
+  
+  celebrationText.textContent = moodMessages[mood] || "You're doing amazing, keep going!";
+  
+  // Add sparkle animation
+  const sparkles = document.querySelectorAll('.sparkle');
+  sparkles.forEach((sparkle, index) => {
+    setTimeout(() => {
+      sparkle.style.animation = 'none';
+      sparkle.offsetHeight; // Trigger reflow
+      sparkle.style.animation = 'sparkle 2s ease-in-out infinite';
+    }, index * 200);
+  });
+}
+
+// Energy Monitoring System
+function initializeEnergyMonitoring() {
+  const energySlider = document.getElementById('energySlider');
+  const energyValue = document.getElementById('energyValue');
+  
+  if (!energySlider || !energyValue) return;
+  
+  // Load saved energy level
+  const savedEnergy = localStorage.getItem('energyLevel') || 7;
+  energySlider.value = savedEnergy;
+  energyValue.textContent = `${savedEnergy}/10`;
+  
+  energySlider.addEventListener('input', function() {
+    const value = this.value;
+    energyValue.textContent = `${value}/10`;
+    
+    // Save energy level
+    localStorage.setItem('energyLevel', value);
+    
+    // Update nudge card based on energy
+    updateNudgeCard(value);
+    
+    // Save to Firebase if user is authenticated
+    if (auth.currentUser) {
+      saveEnergyToFirebase(parseInt(value));
+    }
+  });
+}
+
+// Update nudge card based on energy level
+function updateNudgeCard(energyLevel) {
+  const nudgeText = document.getElementById('nudgeText');
+  if (!nudgeText) return;
+  
+  let nudgeMessage = '';
+  
+  if (energyLevel <= 3) {
+    nudgeMessage = "Your energy is low. Remember: it's okay to rest and recharge. You don't have to do everything today.";
+  } else if (energyLevel <= 6) {
+    nudgeMessage = "You have some energy to work with. Focus on one or two important things rather than trying to do it all.";
+  } else if (energyLevel <= 8) {
+    nudgeMessage = "You're feeling good! Use this energy wisely and don't forget to celebrate your wins.";
+  } else {
+    nudgeMessage = "You're full of energy! Channel it into something that brings you joy and fulfillment.";
+  }
+  
+  nudgeText.textContent = nudgeMessage;
+}
+
+// Quick Actions System
+function initializeQuickActions() {
+  const actionButtons = document.querySelectorAll('.action-btn');
+  
+  actionButtons.forEach(button => {
+    button.addEventListener('click', function() {
+      const action = this.dataset.action;
+      handleQuickAction(action);
+    });
+  });
+}
+
+// Handle quick actions
+function handleQuickAction(action) {
+  const actions = {
+    meditate: {
+      title: "Mindful Moment",
+      message: "Take 3 deep breaths. Inhale peace, exhale tension.",
+      duration: "2 minutes"
+    },
+    journal: {
+      title: "Reflection Time",
+      message: "Write down one thing you're grateful for today.",
+      duration: "5 minutes"
+    },
+    walk: {
+      title: "Movement Break",
+      message: "Step outside for a 10-minute walk. Notice the world around you.",
+      duration: "10 minutes"
+    },
+    gratitude: {
+      title: "Gratitude Practice",
+      message: "Think of 3 things that made you smile today.",
+      duration: "3 minutes"
+    }
+  };
+  
+  const actionData = actions[action];
+  if (!actionData) return;
+  
+  // Show action modal or notification
+  showActionNotification(actionData);
+  
+  // Track action completion
+  trackActionCompletion(action);
+}
+
+// Show action notification
+function showActionNotification(actionData) {
+  // Create notification element
+  const notification = document.createElement('div');
+  notification.className = 'action-notification';
+  notification.innerHTML = `
+    <div class="notification-content">
+      <h4>${actionData.title}</h4>
+      <p>${actionData.message}</p>
+      <small>Duration: ${actionData.duration}</small>
+      <button class="notification-close">✓ Got it</button>
+    </div>
+  `;
+  
+  // Add styles
+  notification.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 8px 40px rgba(76, 167, 160, 0.25);
+    border: 1px solid rgba(76, 167, 160, 0.1);
+    z-index: 10000;
+    max-width: 300px;
+    animation: slideInRight 0.3s ease-out;
+  `;
+  
+  document.body.appendChild(notification);
+  
+  // Close button functionality
+  const closeBtn = notification.querySelector('.notification-close');
+  closeBtn.addEventListener('click', () => {
+    notification.remove();
+  });
+  
+  // Auto-remove after 10 seconds
+  setTimeout(() => {
+    if (notification.parentNode) {
+      notification.remove();
+    }
+  }, 10000);
+}
+
+// Intention Setting System
+function initializeIntentionSetting() {
+  const intentionInput = document.getElementById('intentionInput');
+  const setIntentionBtn = document.getElementById('setIntentionBtn');
+  const currentIntention = document.getElementById('currentIntention');
+  const intentionText = document.getElementById('intentionText');
+  
+  if (!intentionInput || !setIntentionBtn) return;
+  
+  // Load saved intention
+  const savedIntention = localStorage.getItem('todayIntention');
+  if (savedIntention) {
+    intentionText.textContent = savedIntention;
+    currentIntention.style.display = 'block';
+    intentionInput.style.display = 'none';
+    setIntentionBtn.style.display = 'none';
+  }
+  
+  setIntentionBtn.addEventListener('click', function() {
+    const intention = intentionInput.value.trim();
+    if (!intention) return;
+    
+    // Save intention
+    localStorage.setItem('todayIntention', intention);
+    localStorage.setItem('intentionDate', new Date().toDateString());
+    
+    // Update UI
+    intentionText.textContent = intention;
+    currentIntention.style.display = 'block';
+    intentionInput.style.display = 'none';
+    setIntentionBtn.style.display = 'none';
+    
+    // Save to Firebase if user is authenticated
+    if (auth.currentUser) {
+      saveIntentionToFirebase(intention);
+    }
+    
+    // Show celebration
+    showIntentionCelebration(intention);
+  });
+}
+
+// Show intention celebration
+function showIntentionCelebration(intention) {
+  const celebration = document.createElement('div');
+  celebration.className = 'intention-celebration';
+  celebration.innerHTML = `
+    <div class="celebration-content">
+      <span class="celebration-emoji">🎯</span>
+      <p>Today's intention set: "${intention}"</p>
+      <p class="celebration-subtitle">You've got this!</p>
+    </div>
+  `;
+  
+  celebration.style.cssText = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 20px 60px rgba(76, 167, 160, 0.3);
+    border: 1px solid rgba(76, 167, 160, 0.1);
+    z-index: 10000;
+    text-align: center;
+    animation: fadeInUp 0.5s ease-out;
+  `;
+  
+  document.body.appendChild(celebration);
+  
+  // Auto-remove after 3 seconds
+  setTimeout(() => {
+    if (celebration.parentNode) {
+      celebration.remove();
+    }
+  }, 3000);
+}
+
+// Enhanced Wins Visualization
+function initializeEnhancedWins() {
+  // Add organic animations to win cards
+  const winCards = document.querySelectorAll('.win-card.organic-card');
+  
+  winCards.forEach((card, index) => {
+    // Stagger entrance animation
+    card.style.opacity = '0';
+    card.style.transform = 'translateY(30px)';
+    
+    setTimeout(() => {
+      card.style.transition = 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+      card.style.opacity = '1';
+      card.style.transform = 'translateY(0)';
+    }, index * 200);
+    
+    // Add hover effects
+    card.addEventListener('mouseenter', function() {
+      this.style.transform = 'translateY(-8px) scale(1.02)';
+    });
+    
+    card.addEventListener('mouseleave', function() {
+      this.style.transform = 'translateY(0) scale(1)';
+    });
+  });
+}
+
+// Firebase Integration for New Features
+function saveMoodToFirebase(moodData) {
+  if (!auth.currentUser) return;
+  
+  db.collection('users').doc(auth.currentUser.uid).collection('moods').add({
+    ...moodData,
+    userId: auth.currentUser.uid
+  }).catch(error => {
+    console.error("Error saving mood:", error);
+  });
+}
+
+function saveEnergyToFirebase(energyLevel) {
+  if (!auth.currentUser) return;
+  
+  db.collection('users').doc(auth.currentUser.uid).collection('energy').add({
+    level: energyLevel,
+    timestamp: new Date().toISOString(),
+    date: new Date().toDateString(),
+    userId: auth.currentUser.uid
+  }).catch(error => {
+    console.error("Error saving energy:", error);
+  });
+}
+
+function saveIntentionToFirebase(intention) {
+  if (!auth.currentUser) return;
+  
+  db.collection('users').doc(auth.currentUser.uid).collection('intentions').add({
+    intention: intention,
+    timestamp: new Date().toISOString(),
+    date: new Date().toDateString(),
+    userId: auth.currentUser.uid
+  }).catch(error => {
+    console.error("Error saving intention:", error);
+  });
+}
+
+function trackActionCompletion(action) {
+  if (!auth.currentUser) return;
+  
+  db.collection('users').doc(auth.currentUser.uid).collection('quickActions').add({
+    action: action,
+    timestamp: new Date().toISOString(),
+    date: new Date().toDateString(),
+    userId: auth.currentUser.uid
+  }).catch(error => {
+    console.error("Error tracking action:", error);
+  });
+}
+
+// Initialize all new features
+function initializeBreathingDesignSystem() {
+  updateDynamicGreeting();
+  initializeMoodTracking();
+  initializeEnergyMonitoring();
+  initializeQuickActions();
+  initializeIntentionSetting();
+  initializeEnhancedWins();
+  
+  // Update greeting every minute
+  setInterval(updateDynamicGreeting, 60000);
+  
+  // Check for new day and reset intention
+  checkNewDay();
+}
+
+// Check if it's a new day and reset intention
+function checkNewDay() {
+  const intentionDate = localStorage.getItem('intentionDate');
+  const today = new Date().toDateString();
+  
+  if (intentionDate !== today) {
+    // New day - reset intention
+    localStorage.removeItem('todayIntention');
+    localStorage.removeItem('intentionDate');
+    
+    // Reset UI
+    const intentionInput = document.getElementById('intentionInput');
+    const setIntentionBtn = document.getElementById('setIntentionBtn');
+    const currentIntention = document.getElementById('currentIntention');
+    
+    if (intentionInput && setIntentionBtn && currentIntention) {
+      intentionInput.style.display = 'block';
+      setIntentionBtn.style.display = 'block';
+      currentIntention.style.display = 'none';
+      intentionInput.value = '';
+    }
+  }
+}
 
 // ----------------------------
 // PWA Update Detection
@@ -1781,6 +2238,13 @@ async function initializeApp() {
       setupCoachTutorial();
     }
   } catch (e) { /* ignore */ }
+  
+  // Initialize the breathing design system
+  try {
+    initializeBreathingDesignSystem();
+  } catch (e) {
+    console.error("Error initializing breathing design system:", e);
+  }
   
   // The splash screen will show first, then auth screen based on auth state
   // This is handled by the HTML inline script and auth state listener
