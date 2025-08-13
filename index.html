@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Daily Anchors - Your Self-Care Journey</title>
+      <title>Your Anchors - Your Self-Care Journey</title>
   <link rel="stylesheet" href="style.css">
   <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800;900&family=Kalam:wght@300;400;700&display=swap" rel="stylesheet">
 
@@ -20,7 +20,7 @@
   <div class="splash-screen" id="splashScreen">
     <div class="splash-content">
       <div class="splash-logo">🌱</div>
-      <h1 class="splash-title">Daily Anchors</h1>
+              <h1 class="splash-title">Your Anchors</h1>
       <p class="splash-message">Building your <u>best self</u>, one day at a time</p>
       <div class="splash-loader">
         <div class="loader-bar"></div>
@@ -32,10 +32,18 @@
   <div class="auth-screen" id="authScreen" style="display: none;">
     <div class="auth-content">
       <div class="auth-logo">🌱</div>
-      <h2 class="auth-title">Daily Anchors</h2>
+              <h2 class="auth-title">Your Anchors</h2>
       <p class="auth-subtitle">Sign in to your self-care journey</p>
       
       <div class="auth-container">
+        <div class="float-field">
+          <input type="text" id="firstNameInput" placeholder=" " required />
+          <label for="firstNameInput">First Name</label>
+        </div>
+        <div class="float-field optional-field">
+          <input type="text" id="lastNameInput" placeholder=" " />
+          <label for="lastNameInput">Last Name (Optional)</label>
+        </div>
         <div class="float-field">
           <input type="email" id="emailInput" placeholder=" " required />
           <label for="emailInput">Email</label>
@@ -66,7 +74,7 @@
       <span class="icon">🏆</span>
       <span class="label">Your Wins</span>
     </a>
-    <a href="#" class="nav-link bottom-nav-link" data-page="daily-anchors" aria-label="Daily Anchors">
+    <a href="#" class="nav-link bottom-nav-link" data-page="daily-anchors" aria-label="Your Anchors">
       <span class="icon">🎯</span>
       <span class="label">Anchors</span>
     </a>
@@ -80,14 +88,19 @@
     </a>
   </nav>
   <button id="hamburgerBtn" class="hamburger-btn" aria-label="Menu">☰</button>
-  <div id="hamburgerSheet" class="hamburger-sheet" aria-hidden="true">
-    <div class="more-header">Menu</div>
-    <div class="more-list">
-      <a href="#" class="hamburger-item" data-page="profile"><span class="mi">👤</span> Profile</a>
-      <a href="#" class="hamburger-item" data-page="about"><span class="mi">ℹ️</span> About</a>
-      <a href="#" class="hamburger-item" data-page="contact"><span class="mi">📮</span> Contact Us</a>
+      <div id="hamburgerSheet" class="hamburger-sheet" aria-hidden="true">
+      <div class="more-header">Menu</div>
+      <div class="more-list">
+        <a href="#" class="hamburger-item" data-page="home"><span class="mi">🏠</span> Home</a>
+        <a href="#" class="hamburger-item" data-page="profile"><span class="mi">👤</span> Profile</a>
+        <a href="#" class="hamburger-item" data-page="about"><span class="mi">ℹ️</span> About</a>
+        <a href="#" class="hamburger-item" data-page="contact"><span class="mi">📮</span> Contact Us</a>
+        <div class="menu-divider"></div>
+        <button id="signOutMenuBtn" class="hamburger-item sign-out-item">
+          <span class="mi">→</span> Sign Out
+        </button>
+      </div>
     </div>
-  </div>
 
   <!-- Main Content Container -->
   <div class="main-content" id="mainContent" style="display: none;">
@@ -130,140 +143,77 @@
             <h1 class="hero-greeting" id="heroGreeting">Good morning, Beautiful Soul ✨</h1>
             <p class="hero-insight" id="heroInsight">Yesterday you chose to care for yourself - how beautiful is that?</p>
           </div>
-          
-          <!-- Mood Check-in Interaction -->
-          <div class="mood-checkin">
-            <h3 class="mood-title">How are you feeling right now?</h3>
-            <div class="mood-emoji-grid">
-              <button class="mood-emoji" data-mood="amazing" aria-label="Feeling amazing">
-                <span class="emoji">😊</span>
-                <span class="mood-label">Amazing</span>
-              </button>
-              <button class="mood-emoji" data-mood="good" aria-label="Feeling good">
-                <span class="emoji">😌</span>
-                <span class="mood-label">Good</span>
-              </button>
-              <button class="mood-emoji" data-mood="okay" aria-label="Feeling okay">
-                <span class="emoji">😐</span>
-                <span class="mood-label">Okay</span>
-              </button>
-              <button class="mood-emoji" data-mood="rough" aria-label="Having a rough time">
-                <span class="emoji">😔</span>
-                <span class="mood-label">Rough</span>
-              </button>
-              <button class="mood-emoji" data-mood="struggling" aria-label="Really struggling">
-                <span class="emoji">😢</span>
-                <span class="mood-label">Struggling</span>
-              </button>
-            </div>
-          </div>
         </div>
       </div>
 
-      <!-- Personal Reflection Zone -->
-      <div class="reflection-zone">
-        <!-- Recent Win Celebration -->
-        <div class="celebration-card" id="celebrationCard">
-          <div class="celebration-icon">🎉</div>
-          <h3>Celebrating You!</h3>
-          <p class="celebration-text" id="celebrationText">You're building something beautiful, one day at a time</p>
-          <div class="celebration-sparkles">
+      <!-- Achievement Celebration Zone -->
+      <div class="achievement-zone">
+        <div class="achievement-card" id="achievementCard">
+          <div class="achievement-icon">🏆</div>
+          <h3 class="achievement-title" id="achievementTitle">Celebrating Your Wins!</h3>
+          <p class="achievement-text" id="achievementText">Loading your achievements...</p>
+          <div class="achievement-stats" id="achievementStats">
+            <div class="stat-item">
+              <span class="stat-icon">🔥</span>
+              <span class="stat-value" id="currentStreakDisplay">0</span>
+              <span class="stat-label">Day Streak</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-icon">⭐</span>
+              <span class="stat-value" id="totalWinsDisplay">0</span>
+              <span class="stat-label">Total Wins</span>
+            </div>
+          </div>
+          <div class="achievement-sparkles">
             <span class="sparkle">✨</span>
             <span class="sparkle">✨</span>
             <span class="sparkle">✨</span>
           </div>
         </div>
+      </div>
 
-        <!-- Gentle Nudge -->
-        <div class="nudge-card" id="nudgeCard">
-          <div class="nudge-icon">💭</div>
-          <h3>Gentle Reminder</h3>
-          <p class="nudge-text" id="nudgeText">Take a deep breath. You're exactly where you need to be.</p>
-        </div>
-
-        <!-- Energy Check -->
-        <div class="energy-card">
-          <h3>Energy Check</h3>
-          <div class="energy-slider-container">
-            <input type="range" id="energySlider" min="1" max="10" value="7" class="energy-slider">
-            <div class="energy-labels">
-              <span>Low</span>
-              <span>High</span>
-            </div>
-            <div class="energy-value" id="energyValue">7/10</div>
-          </div>
-        </div>
-
-        <!-- Quick Actions -->
-        <div class="quick-actions">
-          <h3>Quick Actions</h3>
-          <div class="action-buttons">
-            <button class="action-btn" data-action="meditate">
-              <span class="action-icon">🧘</span>
-              <span class="action-text">Meditate</span>
+      <!-- Mood Check-in Section -->
+      <div class="mood-checkin-section">
+        <div class="mood-checkin">
+          <h3 class="mood-title">How are you feeling right now?</h3>
+          <div class="mood-emoji-grid">
+            <button class="mood-emoji" data-mood="amazing" aria-label="Feeling amazing">
+              <span class="emoji">😊</span>
+              <span class="mood-label">Amazing</span>
             </button>
-            <button class="action-btn" data-action="journal">
-              <span class="action-icon">📝</span>
-              <span class="action-text">Journal</span>
+            <button class="mood-emoji" data-mood="good" aria-label="Feeling good">
+              <span class="emoji">😌</span>
+              <span class="mood-label">Good</span>
             </button>
-            <button class="action-btn" data-action="walk">
-              <span class="action-icon">🚶</span>
-              <span class="action-text">Walk</span>
+            <button class="mood-emoji" data-mood="okay" aria-label="Feeling okay">
+              <span class="emoji">😐</span>
+              <span class="mood-label">Okay</span>
             </button>
-            <button class="action-btn" data-action="gratitude">
-              <span class="action-icon">🙏</span>
-              <span class="action-text">Gratitude</span>
+            <button class="mood-emoji" data-mood="rough" aria-label="Having a rough time">
+              <span class="emoji">😔</span>
+              <span class="mood-label">Rough</span>
+            </button>
+            <button class="mood-emoji" data-mood="struggling" aria-label="Really struggling">
+              <span class="emoji">😢</span>
+              <span class="mood-label">Struggling</span>
             </button>
           </div>
         </div>
       </div>
 
-      <!-- Navigation & Discovery -->
-      <div class="discovery-zone">
-        <!-- Smart Suggestions -->
-        <div class="suggestions-card">
-          <h3>Today's Suggestions</h3>
-          <div class="suggestion-list" id="suggestionList">
-            <div class="suggestion-item">
-              <span class="suggestion-icon">🌅</span>
-              <span class="suggestion-text">Morning sunlight for 10 minutes</span>
-            </div>
-            <div class="suggestion-item">
-              <span class="suggestion-icon">💧</span>
-              <span class="suggestion-text">Drink a glass of water</span>
-            </div>
-            <div class="suggestion-item">
-              <span class="suggestion-icon">🫂</span>
-              <span class="suggestion-text">Give yourself a hug</span>
-            </div>
-          </div>
-        </div>
 
-        <!-- Today's Intention -->
-        <div class="intention-card">
-          <h3>Today's Intention</h3>
-          <div class="intention-input-container">
-            <input type="text" id="intentionInput" placeholder="What would you like to focus on today?" class="intention-input">
-            <button id="setIntentionBtn" class="intention-btn">Set</button>
-          </div>
-          <div class="current-intention" id="currentIntention" style="display: none;">
-            <span class="intention-label">Today's focus:</span>
-            <span class="intention-text" id="intentionText"></span>
-          </div>
-        </div>
-      </div>
 
       <!-- Onboarding Card (Hidden by default) -->
       <div class="onboarding-card" id="onboardingCard" style="display:none;">
         <h3 class="section-header">Getting Started</h3>
         <p>Welcome! Here are a few quick steps to begin:</p>
         <ul>
-          <li>Go to Daily Anchors and check what you complete today</li>
+          <li>Go to Your Anchors and check what you complete today</li>
           <li>Set a daily reminder time in Profile → Settings</li>
           <li>Visit Dashboard to see your progress over time</li>
         </ul>
         <div style="margin-top:12px; display:flex; gap:8px;">
-          <button id="onboardingStartBtn" class="btn-secondary">Go to Daily Anchors</button>
+          <button id="onboardingStartBtn" class="btn-secondary">Go to Your Anchors</button>
           <button id="onboardingDismissBtn" class="btn-primary">Got it</button>
         </div>
       </div>
@@ -287,32 +237,7 @@
           <div class="win-description">Keep the momentum going!</div>
         </div>
         
-        <div class="win-card weekly organic-card">
-          <div class="organic-progress">
-            <div class="progress-plant" id="weeklyPlant">🌱</div>
-          </div>
-          <div class="win-label">This Week</div>
-          <div class="win-value" id="weeklyValue">0/0 Anchors</div>
-          <div class="win-description">You're doing amazing this week</div>
-        </div>
-        
-        <div class="win-card total organic-card">
-          <div class="organic-progress">
-            <div class="progress-star" id="totalStar">⭐</div>
-          </div>
-          <div class="win-label">Total Anchors</div>
-          <div class="win-value" id="totalValue">0 Life Moments</div>
-          <div class="win-description">Every single one counts</div>
-        </div>
-        
-        <div class="win-card best-streak organic-card">
-          <div class="organic-progress">
-            <div class="progress-trophy" id="bestTrophy">🏆</div>
-          </div>
-          <div class="win-label">Personal Best</div>
-          <div class="win-value" id="bestStreakValue">0 Days</div>
-          <div class="win-description">You've got this!</div>
-        </div>
+
         
         <div class="win-card monthly organic-card">
           <div class="organic-progress">
@@ -321,6 +246,15 @@
           <div class="win-label">This Month</div>
           <div class="win-value" id="monthlyValue">0%</div>
           <div class="win-description">Consistency is key</div>
+        </div>
+        
+        <div class="win-card mood organic-card">
+          <div class="organic-progress">
+            <div class="progress-mood" id="moodProgress">🌈</div>
+          </div>
+          <div class="win-label">Mood Wellness</div>
+          <div class="win-value" id="moodValue">Loading...</div>
+          <div class="win-description" id="moodDescription">Your emotional journey</div>
         </div>
         
         <div class="win-card favorite organic-card">
@@ -349,7 +283,7 @@
             <div class="empty-emoji">🌱</div>
             <p>You're just getting started — your progress will show here.</p>
             <div class="empty-actions">
-              <button class="btn btn-primary" id="emptyGoAnchorsBtn">Start Today's Anchors</button>
+              <button class="btn btn-primary" id="emptyGoAnchorsBtn">Start Your Anchors</button>
               <button class="btn btn-secondary" id="emptySetReminderBtn">Set Daily Reminder</button>
             </div>
           </div>
@@ -362,8 +296,9 @@
     <!-- Daily Anchors Page - Enhanced with Breathing Interactions -->
     <div id="daily-anchors" class="page-section">
       <div class="anchors-header">
-      <h1>Today's Anchors</h1>
+        <h1>Your Anchors</h1>
         <p class="anchors-subtitle">Small steps, big transformations</p>
+        <p class="anchors-description">Your anchors are the little joys and steady habits that you choose and curate to help you feel grounded</p>
       </div>
       
       <div class="anchor" id="addAnchorRow">
@@ -378,16 +313,9 @@
         <label><input type="checkbox" id="makeBed"> Make bed</label>
         <button data-action="remove" class="btn-danger remove-anchor-btn" style="display: none; margin-left:8px; flex:0 0 auto;">Remove</button>
       </div>
-      <div class="anchor" data-default="true" data-id="drinkWater">
-        <label><input type="checkbox" id="drinkWater"> Take water</label>
-        <button data-action="remove" class="btn-danger remove-anchor-btn" style="display: none; margin-left:8px; flex:0 0 auto;">Remove</button>
-      </div>
-      <div class="anchor" data-default="true" data-id="chooseClothes">
-        <label><input type="checkbox" id="chooseClothes"> Choose clothes of the day</label>
-        <button data-action="remove" class="btn-danger remove-anchor-btn" style="display: none; margin-left:8px; flex:0 0 auto;">Remove</button>
-      </div>
+
       <div class="anchor" data-default="true" data-id="bodyMovement">
-        <label><input type="checkbox" id="bodyMovement"> Body movement</label>
+        <label><input type="checkbox" id="bodyMovement"> Move your body</label>
         <button data-action="remove" class="btn-danger remove-anchor-btn" style="display: none; margin-left:8px; flex:0 0 auto;">Remove</button>
       </div>
       <div class="anchor" data-default="true" data-id="musicDance">
@@ -396,14 +324,13 @@
       </div>
       <div class="anchor" data-default="true" data-id="watchShow">
         <label>
-          <input type="checkbox" id="watchShow"> Watch TV show
+          <input type="checkbox" id="watchShow"> Watch something you enjoy
         </label>
-        <input type="text" id="watchShowInput" placeholder="Which show?" style="display: none; margin-left: 10px;">
         <button data-action="remove" class="btn-danger remove-anchor-btn" style="display: none; margin-left:8px; flex:0 0 auto;">Remove</button>
       </div>
       
       <div class="anchor" data-default="true" data-id="journalAboutApp">
-        <label><input type="checkbox" id="journalAboutApp"> Journal About App</label>
+        <label><input type="checkbox" id="journalAboutApp"> Journal your thoughts</label>
         <button data-action="remove" class="btn-danger remove-anchor-btn" style="display: none; margin-left:8px; flex:0 0 auto;">Remove</button>
       </div>
 
@@ -419,12 +346,13 @@
         <button data-action="remove" class="btn-danger remove-anchor-btn" style="display: none; margin-left:8px; flex:0 0 auto;">Remove</button>
       </div>
 
-      <div class="progress-indicator" id="progressIndicator">Completed 0/7</div>
+      <div class="progress-indicator" id="progressIndicator">Completed 0/5</div>
 
       <div class="buttons">
-        <button id="saveBtn">Save My Progress</button>
-        <button id="resetBtn">Clear Today</button>
-        <button id="restoreAnchorsBtn" class="btn-secondary">Restore Removed Anchors</button>
+        <button id="resetBtn" class="clear-today-btn">
+          <span class="btn-icon">🔄</span>
+          <span class="btn-text">Start Fresh</span>
+        </button>
       </div>
 
       <div id="streakSection">
@@ -485,18 +413,18 @@
 
     <!-- About Page -->
     <div id="about" class="page-section">
-      <h1>About Daily Anchors</h1>
+      <h1>About Your Anchors</h1>
       <div class="about-content">
         <h2>Our Mission</h2>
         <p class="section-description">
-          Daily Anchors is designed to help you build sustainable self-care habits that anchor you to your best self. 
+          Your Anchors is designed to help you build sustainable self-care habits that anchor you to your best self. 
           We believe that small, consistent actions compound into extraordinary transformations.
         </p>
 
-        <h2>Why Daily Anchors?</h2>
+        <h2>Why Your Anchors?</h2>
         <p class="section-description">
           In our fast-paced world, it's easy to neglect the fundamental practices that keep us grounded, healthy, and happy. 
-          Daily Anchors serves as your gentle reminder and tracking companion, helping you stay connected to what truly matters.
+          Your Anchors serves as your gentle reminder and tracking companion, helping you stay connected to what truly matters.
         </p>
 
         <div class="features-highlight">

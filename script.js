@@ -32,18 +32,41 @@ function updateDynamicGreeting() {
   
   const now = new Date();
   const hour = now.getHours();
-  const userName = localStorage.getItem('userName') || 'Beautiful Soul';
   
-  // Time-based greetings
+  // Get user's name with proper anonymous user handling
+  let firstName = 'Beautiful Soul';
+  let isAnonymousUser = false;
+  
+  if (currentUser) {
+    // First, check if this is an anonymous user
+    if (currentUser.isAnonymous) {
+      isAnonymousUser = true;
+      firstName = 'Mystery Guest'; // Use full name for anonymous users
+      console.log('Anonymous user detected - using "Mystery Guest"');
+    } else if (currentUser.displayName) {
+      // For registered users, extract first name from display name
+      firstName = currentUser.displayName.split(' ')[0];
+      console.log('Using displayName for greeting:', currentUser.displayName, '-> firstName:', firstName);
+    } else {
+      // Try to get from localStorage for registered users
+      const storedFirstName = localStorage.getItem(`user_${currentUser.uid}_firstName`);
+      if (storedFirstName && storedFirstName !== 'Mystery') {
+        firstName = storedFirstName;
+        console.log('Using localStorage firstName for greeting:', firstName);
+      }
+    }
+  }
+  
+  console.log('Final firstName for greeting:', firstName, 'isAnonymous:', isAnonymousUser);
+  
+  // Time-based greetings with exact timing as requested
   let greeting = '';
   if (hour < 12) {
-    greeting = `Good morning, ${userName} ✨`;
-  } else if (hour < 17) {
-    greeting = `Good afternoon, ${userName} 🌟`;
-  } else if (hour < 21) {
-    greeting = `Good evening, ${userName} 🌙`;
+    greeting = `Good morning, ${firstName} ✨`;
+  } else if (hour < 18) {
+    greeting = `Good afternoon, ${firstName} 🌟`;
   } else {
-    greeting = `Good night, ${userName} 💫`;
+    greeting = `Good evening, ${firstName} 🌙`;
   }
   
   heroGreeting.textContent = greeting;
@@ -76,28 +99,163 @@ function updateDynamicGreeting() {
   localStorage.setItem('lastLogin', today);
 }
 
-// Mood Tracking System
+// Enhanced Mood Tracking System
 function initializeMoodTracking() {
   const moodEmojis = document.querySelectorAll('.mood-emoji');
   
   moodEmojis.forEach(emoji => {
-    emoji.addEventListener('click', function() {
+    emoji.addEventListener('click', async function() {
       const mood = this.dataset.mood;
       const moodData = {
         mood: mood,
         timestamp: new Date().toISOString(),
-        date: new Date().toDateString()
+        date: new Date().toDateString(),
+        userId: currentUser ? currentUser.uid : null
       };
       
-      // Store mood data
-      localStorage.setItem('currentMood', JSON.stringify(moodData));
+      // Store mood data locally
+      if (currentUser) {
+        const userPrefix = `user_${currentUser.uid}_`;
+        localStorage.setItem(userPrefix + 'currentMood', JSON.stringify(moodData));
+        
+        // Save to Firebase
+        await saveMoodToFirebase(moodData);
+      } else {
+        localStorage.setItem('currentMood', JSON.stringify(moodData));
+      }
       
       // Visual feedback
       this.style.transform = 'scale(1.1)';
       this.style.background = 'rgba(76, 167, 160, 0.2)';
       
-      // Update celebration card with mood-based message
-      updateCelebrationCard(mood);
+      // Show mood saved confirmation
+      showMoodSavedMessage(mood);
+      
+      // Update achievement card with mood-based message
+      updateAchievementCard(mood);
+      
+      // Update mood wins card
+      updateMoodWinsCard();
+      
+      // Reset visual feedback after animation
+      setTimeout(() => {
+        this.style.transform = 'scale(1)';
+        this.style.background = '';
+      }, 300);
+    });
+  });
+}
+
+// Save mood data to Firebase
+async function saveMoodToFirebase(moodData) {
+  if (!currentUser) return false;
+  
+  try {
+    const today = new Date().toDateString();
+    
+    // Check if we already have a mood entry for today for this user
+    const querySnapshot = await db.collection("moodData")
+      .where("userId", "==", currentUser.uid)
+      .where("date", "==", today)
+      .limit(1)
+      .get();
+
+    const dataToSave = {
+      ...moodData,
+      userId: currentUser.uid,
+      userEmail: currentUser.email || "anonymous",
+      date: today,
+      timestamp: new Date()
+    };
+
+    if (!querySnapshot.empty) {
+      // Update existing document
+      const doc = querySnapshot.docs[0];
+      await doc.ref.update(dataToSave);
+      console.log("Mood updated in Firestore");
+    } else {
+      // Create new document
+      const docRef = await db.collection("moodData").add(dataToSave);
+      console.log("Mood saved to Firestore with ID:", docRef.id);
+    }
+    
+    return true;
+  } catch (error) {
+    console.error("Error saving mood to Firestore:", error);
+    return false;
+  }
+}
+
+// Show mood saved confirmation
+function showMoodSavedMessage(mood) {
+  const moodMessages = {
+    'amazing': 'You\'re feeling amazing! ✨',
+    'good': 'Great mood! Keep it up! 🌟',
+    'okay': 'You\'re doing okay. That\'s perfectly fine! 🌸',
+    'rough': 'It\'s okay to have rough days. You\'re strong! 💪',
+    'struggling': 'You\'re not alone. Tomorrow is a new day! 🌅'
+  };
+  
+  const message = moodMessages[mood] || 'Mood saved! 💫';
+  
+  // Create temporary notification
+  const notification = document.createElement('div');
+  notification.className = 'mood-notification';
+  notification.textContent = message;
+  notification.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+    color: white;
+    padding: 16px 24px;
+    border-radius: 12px;
+    box-shadow: var(--shadow-medium);
+    z-index: 1000;
+    animation: slideInRight 0.3s ease-out;
+    font-weight: 600;
+  `;
+  
+  document.body.appendChild(notification);
+  
+  // Remove after 3 seconds
+  setTimeout(() => {
+    notification.style.animation = 'slideOutRight 0.3s ease-in';
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.parentNode.removeChild(notification);
+      }
+    }, 300);
+  }, 3000);
+}
+
+// Load mood data from Firebase
+async function loadMoodFromFirebase() {
+  if (!currentUser) return null;
+  
+  try {
+    const today = new Date().toDateString();
+    
+    const querySnapshot = await db.collection("moodData")
+      .where("userId", "==", currentUser.uid)
+      .where("date", "==", today)
+      .limit(1)
+      .get();
+
+    if (!querySnapshot.empty) {
+      const doc = querySnapshot.docs[0];
+      const data = doc.data();
+      console.log("Mood data loaded from Firebase:", data);
+      return data;
+    } else {
+      console.log("No mood data found for today");
+      return null;
+    }
+  } catch (error) {
+    console.error("Error loading mood from Firebase:", error);
+    return null;
+  }
+}
       
       // Reset after animation
       setTimeout(() => {
@@ -105,38 +263,117 @@ function initializeMoodTracking() {
         this.style.background = '';
       }, 300);
       
-      // Save to Firebase if user is authenticated
-      if (auth.currentUser) {
-        saveMoodToFirebase(moodData);
-      }
-    });
-  });
-}
 
-// Update celebration card based on mood
-function updateCelebrationCard(mood) {
-  const celebrationText = document.getElementById('celebrationText');
-  if (!celebrationText) return;
+
+// Update achievement card based on mood and user data
+function updateAchievementCard(mood) {
+  const achievementTitle = document.getElementById('achievementTitle');
+  const achievementText = document.getElementById('achievementText');
+  const currentStreakDisplay = document.getElementById('currentStreakDisplay');
+  const totalWinsDisplay = document.getElementById('totalWinsDisplay');
   
+  if (!achievementTitle || !achievementText) return;
+  
+  // Get user's current data
+  const userPrefix = currentUser ? `user_${currentUser.uid}_` : '';
+  const streakData = userPrefix ? JSON.parse(localStorage.getItem(userPrefix + "streakData") || "[]") : [];
+  const currentStreak = streakData.length > 0 ? streakData[streakData.length - 1].done : 0;
+  const totalWins = userPrefix ? anchors.filter(id => localStorage.getItem(userPrefix + id) === "true").length : 0;
+  
+  // Update streak display
+  if (currentStreakDisplay) {
+    currentStreakDisplay.textContent = currentStreak;
+  }
+  
+  // Update total wins display
+  if (totalWinsDisplay) {
+    totalWinsDisplay.textContent = totalWins;
+  }
+  
+  // Update achievement message based on mood and performance
   const moodMessages = {
-    amazing: "You're radiating positive energy today! Keep shining ✨",
-    good: "You're in a great place - let's build on this momentum",
-    okay: "It's okay to feel okay. Every day doesn't need to be extraordinary",
-    rough: "You're showing strength by being here. That's something to celebrate",
-    struggling: "You're not alone in this. Reaching out for support is brave"
+    amazing: "You're absolutely crushing it today! Your energy is contagious ✨",
+    good: "You're in a great flow state. Keep building on this momentum! 🌟",
+    okay: "You're showing up consistently. That's the foundation of success 🌸",
+    rough: "You're here despite the challenges. That's real strength 💪",
+    struggling: "You're showing courage by continuing. Every step forward counts 🌅"
   };
   
-  celebrationText.textContent = moodMessages[mood] || "You're doing amazing, keep going!";
+  const message = moodMessages[mood] || "You're making progress every day!";
+  achievementText.textContent = message;
   
   // Add sparkle animation
-  const sparkles = document.querySelectorAll('.sparkle');
+  const sparkles = document.querySelectorAll('.achievement-sparkles .sparkle');
   sparkles.forEach((sparkle, index) => {
     setTimeout(() => {
       sparkle.style.animation = 'none';
       sparkle.offsetHeight; // Trigger reflow
-      sparkle.style.animation = 'sparkle 2s ease-in-out infinite';
+      sparkle.style.animation = 'sparkleFloat 2s ease-in-out infinite';
     }, index * 200);
   });
+}
+
+// Update mood wins card with mood statistics
+async function updateMoodWinsCard() {
+  const moodValue = document.getElementById('moodValue');
+  const moodDescription = document.getElementById('moodDescription');
+  
+  if (!moodValue || !moodDescription) return;
+  
+  if (!currentUser) {
+    moodValue.textContent = 'Sign in to track';
+    moodDescription.textContent = 'Your emotional journey';
+    return;
+  }
+  
+  try {
+    // Get mood data for the last 7 days
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    
+    const querySnapshot = await db.collection("moodData")
+      .where("userId", "==", currentUser.uid)
+      .where("timestamp", ">=", sevenDaysAgo.toISOString())
+      .orderBy("timestamp", "desc")
+      .get();
+    
+    if (!querySnapshot.empty) {
+      const moodCounts = {};
+      let totalMoods = 0;
+      
+      querySnapshot.docs.forEach(doc => {
+        const data = doc.data();
+        moodCounts[data.mood] = (moodCounts[data.mood] || 0) + 1;
+        totalMoods++;
+      });
+      
+      // Calculate mood statistics
+      const amazingDays = moodCounts.amazing || 0;
+      const goodDays = moodCounts.good || 0;
+      const positiveDays = amazingDays + goodDays;
+      
+      if (positiveDays >= 5) {
+        moodValue.textContent = `${positiveDays}/7 days positive!`;
+        moodDescription.textContent = 'You\'re on fire this week! 🔥';
+      } else if (positiveDays >= 3) {
+        moodValue.textContent = `${positiveDays}/7 days positive`;
+        moodDescription.textContent = 'Great mood balance! 🌟';
+      } else if (totalMoods > 0) {
+        moodValue.textContent = `${totalMoods}/7 days tracked`;
+        moodDescription.textContent = 'Every mood matters! 💫';
+      } else {
+        moodValue.textContent = 'Start tracking!';
+        moodDescription.textContent = 'Your emotional journey';
+      }
+    } else {
+      moodValue.textContent = 'Start tracking!';
+      moodDescription.textContent = 'Your emotional journey';
+    }
+  } catch (error) {
+    console.error("Error updating mood wins card:", error);
+    moodValue.textContent = 'Loading...';
+    moodDescription.textContent = 'Your emotional journey';
+  }
 }
 
 // Energy Monitoring System
@@ -712,14 +949,27 @@ function initializeServiceWorker() {
 // Default anchors (checkboxes)
 const defaultAnchors = [
     "makeBed",
-    "drinkWater", 
-    "chooseClothes",
     "bodyMovement",
     "musicDance",
     "watchShow",
     "selfCare",
     "journalAboutApp"
 ];
+
+// Anchor display name mapping for improved user experience
+const anchorDisplayNames = {
+    "makeBed": "Make bed",
+    "bodyMovement": "Move your body",
+    "musicDance": "Music / Dance",
+    "watchShow": "Watch something you enjoy",
+    "selfCare": "Self-care",
+    "journalAboutApp": "Journal your thoughts"
+};
+
+// Function to get display name for an anchor
+function getAnchorDisplayName(anchorId) {
+    return anchorDisplayNames[anchorId] || anchorId;
+}
 
 // Working anchors list (default + custom)
 let anchors = [...defaultAnchors];
@@ -754,8 +1004,10 @@ function renderCustomAnchors() {
   const custom = loadCustomAnchors();
   anchors = [...defaultAnchors, ...custom.map(a => a.id)];
 
-  // Insert custom anchors at the very bottom, after the anchor management section
-  const insertBeforeEl = page.querySelector('#streakSection');
+  // Insert custom anchors after the last existing anchor in the list
+  const lastAnchor = page.querySelector('.anchor:last-of-type');
+  const insertAfterEl = lastAnchor || page.querySelector('#addAnchorRow');
+  
   custom.forEach(item => {
     const row = document.createElement('div');
     row.className = 'anchor';
@@ -763,7 +1015,12 @@ function renderCustomAnchors() {
     row.setAttribute('data-id', item.id);
     row.innerHTML = `<label><input type="checkbox" id="${item.id}"> ${item.label}</label>
       <button data-action="remove" class="btn-danger" style="margin-left:8px; flex:0 0 auto;">Remove</button>`;
-    page.insertBefore(row, insertBeforeEl);
+    
+    if (insertAfterEl && insertAfterEl.nextSibling) {
+      page.insertBefore(row, insertAfterEl.nextSibling);
+    } else {
+      page.appendChild(row);
+    }
     
     // restore state
     const checkbox = row.querySelector('input[type="checkbox"]');
@@ -784,6 +1041,9 @@ function renderCustomAnchors() {
       });
     }
   });
+  
+  // Update progress indicator after rendering custom anchors
+  updateProgressIndicator();
 }
 
 // Current user
@@ -851,7 +1111,7 @@ function updateRemovedAnchorsDisplay() {
     removedList.innerHTML = '<em>No anchors removed</em>';
   } else {
     const anchorNames = Array.from(removedDefaultAnchors).map(id => 
-      id.replace(/([A-Z])/g, ' $1').toLowerCase()
+      getAnchorDisplayName(id)
     );
     removedList.innerHTML = `<strong>Removed:</strong> ${anchorNames.join(', ')}`;
   }
@@ -1003,8 +1263,127 @@ function showMainApp() {
           mainContent.style.opacity = "1";
         }, 50);
       }
+      
+      // Ensure homepage is shown after successful authentication
+      setTimeout(() => {
+        navigateToHomepage();
+      }, 300);
     }, 500);
   }
+}
+
+// Navigate to homepage with smooth transition
+function navigateToHomepage() {
+  try {
+    console.log('Starting homepage navigation...');
+    
+    // Remove active class from all navigation links and page sections
+    document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+    document.querySelectorAll('.page-section').forEach(section => section.classList.remove('active'));
+    
+    // Activate homepage navigation link
+    const homeLink = document.querySelector('.nav-link[data-page="home"]');
+    if (homeLink) {
+      homeLink.classList.add('active');
+      console.log('Home navigation link activated');
+    } else {
+      console.warn('Home navigation link not found');
+    }
+    
+    // Show homepage section
+    const homeSection = document.getElementById('home');
+    if (homeSection) {
+      homeSection.classList.add('active');
+      // Add smooth animation
+      homeSection.classList.remove('animate-in');
+      void homeSection.offsetWidth; // reflow
+      homeSection.classList.add('animate-in');
+      console.log('Home section activated with animation');
+    } else {
+      console.error('Home section not found');
+    }
+    
+    // Update breadcrumbs to show homepage
+    if (typeof updateBreadcrumbs === 'function') {
+      updateBreadcrumbs('home');
+      console.log('Breadcrumbs updated to home');
+    }
+    
+    // Ensure bottom navigation shows home as active
+    const bottomHomeLink = document.querySelector('.bottom-nav .nav-link[data-page="home"]');
+    if (bottomHomeLink) {
+      bottomHomeLink.classList.add('active');
+      console.log('Bottom navigation home link activated');
+    } else {
+      console.warn('Bottom navigation home link not found');
+    }
+    
+    console.log('Successfully navigated to homepage after authentication');
+  } catch (error) {
+    console.error('Error during homepage navigation:', error);
+  }
+}
+
+// Load user profile data from Firebase
+async function loadUserProfile() {
+  if (!currentUser) return;
+  
+  // For anonymous users, ensure local storage is set correctly
+  if (currentUser.isAnonymous) {
+    console.log('Anonymous user detected in loadUserProfile');
+    localStorage.setItem(`user_${currentUser.uid}_firstName`, 'Mystery');
+    localStorage.setItem(`user_${currentUser.uid}_lastName`, 'Guest');
+    return;
+  }
+  
+  try {
+    const userDoc = await db.collection("userProfiles").doc(currentUser.uid).get();
+    if (userDoc.exists) {
+      const userData = userDoc.data();
+      
+      // Store name data locally for immediate access
+      if (userData.firstName) {
+        localStorage.setItem(`user_${currentUser.uid}_firstName`, userData.firstName);
+      }
+      if (userData.lastName) {
+        localStorage.setItem(`user_${currentUser.uid}_lastName`, userData.lastName);
+      }
+      
+      console.log('User profile loaded:', userData);
+    }
+  } catch (error) {
+    console.log('Could not load user profile:', error);
+  }
+}
+
+// Force refresh greeting with current user data
+function refreshGreeting() {
+  if (currentUser) {
+    console.log('Forcing greeting refresh for user:', currentUser.uid);
+    updateDynamicGreeting();
+  }
+}
+
+// Debug function to check current user state
+function debugUserState() {
+  if (!currentUser) {
+    console.log('No current user');
+    return;
+  }
+  
+  console.log('=== USER STATE DEBUG ===');
+  console.log('User ID:', currentUser.uid);
+  console.log('Is Anonymous:', currentUser.isAnonymous);
+  console.log('Display Name:', currentUser.displayName);
+  console.log('Email:', currentUser.email);
+  console.log('Creation Time:', currentUser.metadata.creationTime);
+  console.log('Last Sign In:', currentUser.metadata.lastSignInTime);
+  
+  const storedFirstName = localStorage.getItem(`user_${currentUser.uid}_firstName`);
+  const storedLastName = localStorage.getItem(`user_${currentUser.uid}_lastName`);
+  console.log('Stored First Name:', storedFirstName);
+  console.log('Stored Last Name:', storedLastName);
+  console.log('========================');
 }
 
 function updateUserInfo() {
@@ -1012,27 +1391,64 @@ function updateUserInfo() {
   const profileNameEl = document.getElementById("profileName");
   const profileEmailEl = document.getElementById("profileEmail");
   const homeGreeting = document.getElementById('homeGreeting');
+  
   if (currentUser && userInfo) {
-    const displayName = currentUser.email || 'Anonymous User';
+    let displayName = 'Anonymous User';
+    if (currentUser.displayName) {
+      displayName = currentUser.displayName;
+    } else if (currentUser.email) {
+      displayName = currentUser.email;
+    }
     userInfo.textContent = `Welcome, ${displayName}!`;
   }
+  
   if (currentUser && profileNameEl && profileEmailEl) {
-    const displayName = currentUser.displayName || currentUser.email || 'Anonymous User';
+    let displayName = 'Anonymous User';
+    if (currentUser.displayName) {
+      displayName = currentUser.displayName;
+    } else if (currentUser.email) {
+      displayName = currentUser.email;
+    }
     profileNameEl.textContent = displayName;
     profileEmailEl.textContent = currentUser.email || '—';
   }
+  
   if (homeGreeting) {
     const hours = new Date().getHours();
     const period = hours < 12 ? 'Good morning' : (hours < 18 ? 'Good afternoon' : 'Good evening');
-    const name = currentUser && (currentUser.displayName || currentUser.email) ? (currentUser.displayName || currentUser.email) : '';
-    homeGreeting.textContent = `${period}${name ? ', ' + name : ''}`;
+    
+    let firstName = '';
+    if (currentUser) {
+      // Check if this is an anonymous user
+      if (currentUser.isAnonymous) {
+        firstName = 'Mystery Guest'; // Use full name for anonymous users
+      } else if (currentUser.displayName) {
+        // For registered users, extract first name
+        firstName = currentUser.displayName.split(' ')[0];
+      } else {
+        // Try to get from localStorage for registered users
+        const storedFirstName = localStorage.getItem(`user_${currentUser.uid}_firstName`);
+        if (storedFirstName && storedFirstName !== 'Mystery') {
+          firstName = storedFirstName;
+        }
+      }
+    }
+    
+    homeGreeting.textContent = `${period}${firstName ? ', ' + firstName : ''}`;
   }
 }
 
 // Sign up with email/password
 async function signUp() {
+  const firstName = document.getElementById("firstNameInput").value.trim();
+  const lastName = document.getElementById("lastNameInput").value.trim();
   const email = document.getElementById("emailInput").value;
   const password = document.getElementById("passwordInput").value;
+  
+  if (!firstName) {
+    alert("Please enter your first name");
+    return;
+  }
   
   if (!email || !password) {
     alert("Please enter email and password");
@@ -1045,8 +1461,31 @@ async function signUp() {
   }
   
   try {
-    await auth.createUserWithEmailAndPassword(email, password);
-    console.log("User signed up successfully");
+    // Create user account
+    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+    const user = userCredential.user;
+    
+    // Update user profile with name
+    await user.updateProfile({
+      displayName: lastName ? `${firstName} ${lastName}` : firstName
+    });
+    
+    // Store name data in Firebase for additional access
+    await db.collection("userProfiles").doc(user.uid).set({
+      firstName: firstName,
+      lastName: lastName || "",
+      email: email,
+      createdAt: new Date(),
+      lastUpdated: new Date()
+    });
+    
+    // Store name locally for immediate use
+    localStorage.setItem(`user_${user.uid}_firstName`, firstName);
+    if (lastName) {
+      localStorage.setItem(`user_${user.uid}_lastName`, lastName);
+    }
+    
+    console.log("User signed up successfully with name - will redirect to homepage");
   } catch (error) {
     console.error("Sign up error:", error);
     alert("Sign up failed: " + error.message);
@@ -1064,8 +1503,34 @@ async function signIn() {
   }
   
   try {
-    await auth.signInWithEmailAndPassword(email, password);
-    console.log("User signed in successfully");
+    const userCredential = await auth.signInWithEmailAndPassword(email, password);
+    const user = userCredential.user;
+    
+    // Try to load user profile data if not already loaded
+    if (user && !user.displayName) {
+      try {
+        const userDoc = await db.collection("userProfiles").doc(user.uid).get();
+        if (userDoc.exists) {
+          const userData = userDoc.data();
+          if (userData.firstName) {
+            // Update user profile with name
+            await user.updateProfile({
+              displayName: userData.lastName ? `${userData.firstName} ${userData.lastName}` : userData.firstName
+            });
+            
+            // Store name locally
+            localStorage.setItem(`user_${user.uid}_firstName`, userData.firstName);
+            if (userData.lastName) {
+              localStorage.setItem(`user_${user.uid}_lastName`, userData.lastName);
+            }
+          }
+        }
+      } catch (profileError) {
+        console.log("Could not load user profile:", profileError);
+      }
+    }
+    
+    console.log("User signed in successfully - will redirect to homepage");
   } catch (error) {
     console.error("Sign in error:", error);
     alert("Sign in failed: " + error.message);
@@ -1076,8 +1541,42 @@ async function signIn() {
 async function signInWithGoogle() {
   try {
     const provider = new firebase.auth.GoogleAuthProvider();
-    await auth.signInWithPopup(provider);
-    console.log("Google sign in successful");
+    const userCredential = await auth.signInWithPopup(provider);
+    const user = userCredential.user;
+    
+    // Google provides displayName, but let's ensure it's stored in our database
+    if (user && user.displayName) {
+      try {
+        // Check if we already have this user's profile
+        const userDoc = await db.collection("userProfiles").doc(user.uid).get();
+        if (!userDoc.exists) {
+          // Extract first and last name from Google displayName
+          const nameParts = user.displayName.split(' ');
+          const firstName = nameParts[0] || '';
+          const lastName = nameParts.slice(1).join(' ') || '';
+          
+          // Store in our database
+          await db.collection("userProfiles").doc(user.uid).set({
+            firstName: firstName,
+            lastName: lastName,
+            email: user.email,
+            createdAt: new Date(),
+            lastUpdated: new Date(),
+            source: 'google'
+          });
+          
+          // Store locally
+          localStorage.setItem(`user_${user.uid}_firstName`, firstName);
+          if (lastName) {
+            localStorage.setItem(`user_${user.uid}_lastName`, lastName);
+          }
+        }
+      } catch (profileError) {
+        console.log("Could not store Google user profile:", profileError);
+      }
+    }
+    
+    console.log("Google sign in successful - will redirect to homepage");
   } catch (error) {
     console.error("Google sign in error:", error);
     alert("Google sign in failed: " + error.message);
@@ -1087,8 +1586,39 @@ async function signInWithGoogle() {
 // Sign in anonymously (for guests)
 async function signInAnonymously() {
   try {
-    await auth.signInAnonymously();
-    console.log("Anonymous sign in successful");
+    const userCredential = await auth.signInAnonymously();
+    const user = userCredential.user;
+    
+    console.log("Anonymous user created:", user.uid);
+    
+    // Set display name for guest users
+    await user.updateProfile({
+      displayName: 'Mystery Guest'
+    });
+    
+    console.log("Display name set to 'Mystery Guest'");
+    
+    // Store guest profile in Firebase for consistency
+    try {
+      await db.collection("userProfiles").doc(user.uid).set({
+        firstName: 'Mystery',
+        lastName: 'Guest',
+        email: null,
+        createdAt: new Date(),
+        lastUpdated: new Date(),
+        source: 'anonymous'
+      });
+      console.log("Guest profile stored in Firebase");
+    } catch (profileError) {
+      console.log("Could not store guest profile in Firebase:", profileError);
+    }
+    
+    // Store guest info locally
+    localStorage.setItem(`user_${user.uid}_firstName`, 'Mystery');
+    localStorage.setItem(`user_${user.uid}_lastName`, 'Guest');
+    console.log("Guest info stored locally");
+    
+    console.log("Anonymous sign in successful - will redirect to homepage");
   } catch (error) {
     console.error("Anonymous sign in error:", error);
     alert("Anonymous sign in failed: " + error.message);
@@ -1148,15 +1678,7 @@ async function loadFromFirebase() {
         }
       }
       
-      if (data.watchShowName) {
-        const watchShowInput = document.getElementById("watchShowInput");
-        if (watchShowInput) {
-          watchShowInput.value = data.watchShowName;
-          if (data.watchShow) {
-            watchShowInput.style.display = "inline-block";
-          }
-        }
-      }
+
       
       console.log("Firebase data loaded successfully");
       return true;
@@ -1234,14 +1756,9 @@ async function saveProgress() {
   
   // Get other form data
   const selfCareSelect = document.getElementById("selfCareOption");
-  const watchShowInput = document.getElementById("watchShowInput");
   
   if (selfCareSelect) {
     progressData.selfCareOption = selfCareSelect.value;
-  }
-  
-  if (watchShowInput) {
-    progressData.watchShowName = watchShowInput.value;
   }
 
   // Save to localStorage (for offline access) - using user-specific keys
@@ -1253,7 +1770,6 @@ async function saveProgress() {
   });
   
   localStorage.setItem(userPrefix + "selfCareOption", progressData.selfCareOption || "");
-  localStorage.setItem(userPrefix + "watchedShowName", progressData.watchShowName || "");
   localStorage.setItem(userPrefix + "lastSavedDate", new Date().toDateString());
 
   // Save to Firebase
@@ -1293,6 +1809,9 @@ async function loadProgress() {
   // Try to load from Firebase first
   const firebaseLoaded = await loadFromFirebase();
   
+  // Load mood data from Firebase
+  const moodData = await loadMoodFromFirebase();
+  
   if (!firebaseLoaded) {
     // Fallback to localStorage if Firebase fails or has no data
     console.log("Loading from localStorage...");
@@ -1310,19 +1829,13 @@ async function loadProgress() {
       selfCareSelect.value = localStorage.getItem(userPrefix + "selfCareOption") || "";
     }
     
-    const savedShow = localStorage.getItem(userPrefix + "watchedShowName");
-    const watchShowInput = document.getElementById("watchShowInput");
     const watchShowCheckbox = document.getElementById("watchShow");
-    
-    if (savedShow && watchShowInput) {
-      watchShowInput.value = savedShow;
-      if (watchShowCheckbox && watchShowCheckbox.checked) {
-        watchShowInput.style.display = "inline-block";
-      }
-    }
   }
   
   updateUIAfterLoad();
+  
+  // Update progress indicator after loading
+  updateProgressIndicator();
 }
 
 // ----------------------------
@@ -1348,19 +1861,12 @@ async function clearAll() {
     selfCareSelect.value = "";
   }
   
-  const watchShowInput = document.getElementById("watchShowInput");
-  if (watchShowInput) {
-    watchShowInput.value = "";
-    watchShowInput.style.display = "none";
-  }
-  
   // Clear localStorage with user prefix
   const userPrefix = `user_${currentUser.uid}_`;
   anchors.forEach(id => {
     localStorage.setItem(userPrefix + id, false);
   });
   localStorage.removeItem(userPrefix + "selfCareOption");
-  localStorage.removeItem(userPrefix + "watchedShowName");
   localStorage.setItem(userPrefix + "lastSavedDate", new Date().toDateString());
   
   // Hide message
@@ -1376,9 +1882,14 @@ async function clearAll() {
     clearedData[id] = false;
   });
   clearedData.selfCareOption = "";
-  clearedData.watchShowName = "";
   
   await saveToFirebase(clearedData);
+  
+  // Re-render custom anchors to ensure event listeners are properly attached
+  renderCustomAnchors();
+  
+  // Update progress indicator to show 0 completed
+  updateProgressIndicator();
 }
 
 // ----------------------------
@@ -1397,7 +1908,6 @@ function checkDailyReset() {
       localStorage.setItem(userPrefix + id, false);
     });
     localStorage.removeItem(userPrefix + "selfCareOption");
-    localStorage.removeItem(userPrefix + "watchedShowName");
     localStorage.setItem(userPrefix + "lastSavedDate", today);
   }
 }
@@ -1411,9 +1921,26 @@ auth.onAuthStateChanged(async (user) => {
   if (user) {
     console.log("User signed in:", user.email || user.uid);
     showMainApp();
+    await loadUserProfile(); // Load user profile data first
+    
+    // Update user info and greeting
     updateUserInfo();
+    updateDynamicGreeting(); // Update greeting with user's name
+    
+    // Continue with app initialization
     renderCustomAnchors();
     await loadProgress();
+    updateProgressIndicator();
+    updateAchievementCard();
+    updateMoodWinsCard();
+    
+    // For returning users, ensure they land on homepage
+    if (user.metadata.lastSignInTime && user.metadata.creationTime !== user.metadata.lastSignInTime) {
+      console.log("Returning user - ensuring homepage navigation");
+      setTimeout(() => {
+        navigateToHomepage();
+      }, 200);
+    }
   } else {
     console.log("User signed out");
     showAuthScreen();
@@ -1424,6 +1951,11 @@ auth.onAuthStateChanged(async (user) => {
         checkbox.checked = false;
       }
     });
+    // Update progress indicator when user signs out
+    updateProgressIndicator();
+    // Update achievement card and mood wins card for signed out state
+    updateAchievementCard();
+    updateMoodWinsCard();
   }
 });
 
@@ -1569,19 +2101,17 @@ function updateUIAfterLoad() {
   const streakData = JSON.parse(localStorage.getItem(userPrefix + "streakData")) || [];
   renderStreak(streakData);
   
-  // Handle watch show input visibility
+  // Handle watch show checkbox state
   const watchShowCheckbox = document.getElementById("watchShow");
-  const watchShowInput = document.getElementById("watchShowInput");
-  
-  if (watchShowCheckbox && watchShowInput && watchShowCheckbox.checked) {
-    watchShowInput.style.display = "inline-block";
-  }
   
   // Render custom anchors
   renderCustomAnchors();
   
   // Update removed anchors display
   updateRemovedAnchorsDisplay();
+  
+  // Update progress indicator after all UI elements are loaded
+  updateProgressIndicator();
 }
 
 // ----------------------------
@@ -1787,7 +2317,7 @@ function updateBreadcrumbs(page) {
   const map = {
     'home': ['Home'],
     'dashboard': ['Home', 'Your Wins'],
-    'daily-anchors': ['Home', 'Daily Anchors'],
+    'daily-anchors': ['Home', 'Your Anchors'],
     'dream-life': ['Home', 'Dream Life'],
     'about': ['Home', 'About'],
     'profile': ['Home', 'Profile'],
@@ -1939,40 +2469,12 @@ function clearLocalData() {
 // ----------------------------
 function setupEventListeners() {
   // App functionality
-  const saveBtn = document.getElementById("saveBtn");
   const resetBtn = document.getElementById("resetBtn");
   const watchShowCheckbox = document.getElementById("watchShow");
-  const watchShowInput = document.getElementById("watchShowInput");
-  
-  if (saveBtn) {
-    saveBtn.addEventListener("click", saveProgress);
-  }
   
   if (resetBtn) {
     resetBtn.addEventListener("click", clearAll);
   }
-  
-      // Restore removed anchors button
-    const restoreAnchorsBtn = document.getElementById("restoreAnchorsBtn");
-    if (restoreAnchorsBtn) {
-      restoreAnchorsBtn.addEventListener("click", () => {
-        if (removedDefaultAnchors.size === 0) {
-          alert("No removed anchors to restore!");
-          return;
-        }
-        
-        const anchorNames = Array.from(removedDefaultAnchors).map(id => 
-          id.replace(/([A-Z])/g, ' $1').toLowerCase()
-        );
-        
-        if (confirm(`Restore these anchors?\n${anchorNames.join('\n')}`)) {
-          removedDefaultAnchors.forEach(anchorId => {
-            restoreDefaultAnchor(anchorId);
-          });
-          alert("Anchors restored! You can now track them again.");
-        }
-      });
-    }
     
     // Empty state buttons for Your Wins
     const emptyGoAnchorsBtn = document.getElementById("emptyGoAnchorsBtn");
@@ -2022,11 +2524,35 @@ function setupEventListeners() {
     btn.addEventListener('click', (e) => {
       e.preventDefault();
       const anchorId = btn.closest('.anchor').getAttribute('data-id');
-      if (confirm(`Remove "${anchorId.replace(/([A-Z])/g, ' $1').toLowerCase()}" from your daily anchors?`)) {
+      if (confirm(`Remove "${getAnchorDisplayName(anchorId)}" from your daily anchors?`)) {
         removeDefaultAnchor(anchorId);
       }
     });
   });
+
+  // Add sign out button handler
+  const signOutMenuBtn = document.getElementById('signOutMenuBtn');
+  if (signOutMenuBtn) {
+    signOutMenuBtn.addEventListener('click', async () => {
+      // Show confirmation dialog
+      if (confirm('Are you sure you want to sign out?')) {
+        try {
+          await signOut();
+          // Close hamburger menu
+          const hamburgerSheet = document.getElementById('hamburgerSheet');
+          if (hamburgerSheet) {
+            hamburgerSheet.classList.remove('active');
+            hamburgerSheet.setAttribute('aria-hidden', 'true');
+          }
+          // Show success message
+          console.log('User signed out successfully');
+        } catch (error) {
+          console.error('Error signing out:', error);
+          alert('Error signing out. Please try again.');
+        }
+      }
+    });
+  }
   
   // Show remove buttons on right-click or hover
   document.querySelectorAll('.anchor[data-default="true"]').forEach(anchorEl => {
@@ -2062,27 +2588,9 @@ function setupEventListeners() {
     });
   });
   
-  if (watchShowCheckbox && watchShowInput) {
+  if (watchShowCheckbox) {
     watchShowCheckbox.addEventListener("change", function () {
-      if (this.checked) {
-        watchShowInput.style.display = "inline-block";
-        watchShowInput.focus();
-      } else {
-        watchShowInput.style.display = "none";
-        watchShowInput.value = "";
-        if (currentUser) {
-          const userPrefix = `user_${currentUser.uid}_`;
-          localStorage.removeItem(userPrefix + "watchedShowName");
-        }
-      }
       updateProgressIndicator();
-    });
-    
-    watchShowInput.addEventListener("input", function () {
-      if (currentUser) {
-        const userPrefix = `user_${currentUser.uid}_`;
-        localStorage.setItem(userPrefix + "watchedShowName", this.value);
-      }
     });
   }
   
@@ -2245,6 +2753,13 @@ async function initializeApp() {
   } catch (e) {
     console.error("Error initializing breathing design system:", e);
   }
+  
+  // Update progress indicator on initial load
+  updateProgressIndicator();
+  
+  // Initialize achievement card and mood wins card
+  updateAchievementCard();
+  updateMoodWinsCard();
   
   // The splash screen will show first, then auth screen based on auth state
   // This is handled by the HTML inline script and auth state listener
@@ -2498,6 +3013,11 @@ async function loadDashboardData() {
   console.log('Rendering Your Wins with:', { entries: entries.length, currentStreak, completionRate });
   renderWinsCards(entries, currentStreak, completionRate);
   renderRecentActivity(entries);
+  
+  // Update achievement card and mood wins card
+  updateAchievementCard();
+  updateMoodWinsCard();
+  
   console.log('Your Wins rendering complete');
 }
 
@@ -2588,7 +3108,7 @@ function updateWinsCard(elementId, value) {
   }
 }
 
-function renderRecentActivity(entries) {
+async function renderRecentActivity(entries) {
   console.log('renderRecentActivity called with:', { entries: entries.length, anchors });
   const list = document.getElementById('recentActivityList');
   if (!list) {
@@ -2597,14 +3117,61 @@ function renderRecentActivity(entries) {
   }
   list.innerHTML = '';
   const last = entries.slice(0, 10);
+  
+  // Get mood data for recent days
+  let moodData = {};
+  if (currentUser) {
+    try {
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      
+      const querySnapshot = await db.collection("moodData")
+        .where("userId", "==", currentUser.uid)
+        .where("timestamp", ">=", sevenDaysAgo.toISOString())
+        .orderBy("timestamp", "desc")
+        .get();
+      
+      querySnapshot.docs.forEach(doc => {
+        const data = doc.data();
+        const date = data.date || new Date(data.timestamp).toDateString();
+        moodData[date] = data.mood;
+      });
+    } catch (error) {
+      console.error("Error loading mood data for activity:", error);
+    }
+  }
+  
   last.forEach(e => {
     const dateStr = e.date || (e.timestamp && e.timestamp.toDate ? e.timestamp.toDate().toDateString() : '');
     const completed = Object.entries(e).filter(([k, v]) => anchors.includes(k) && v === true).length;
+    
+    // Get mood for this date
+    const mood = moodData[dateStr];
+    const moodEmoji = mood ? getMoodEmoji(mood) : '';
+    const moodText = mood ? ` • ${moodEmoji} ${mood.charAt(0).toUpperCase() + mood.slice(1)}` : '';
+    
     const li = document.createElement('li');
     li.className = 'activity-item';
-    li.innerHTML = `<span class="activity-date">${dateStr}</span><span class="activity-progress">${completed}/${anchors.length} completed</span>`;
+    li.innerHTML = `
+      <span class="activity-date">${dateStr}</span>
+      <span class="activity-progress">
+        ${completed}/${anchors.length} completed${moodText}
+      </span>
+    `;
     list.appendChild(li);
   });
+}
+
+// Helper function to get mood emoji
+function getMoodEmoji(mood) {
+  const moodEmojis = {
+    'amazing': '😊',
+    'good': '😌',
+    'okay': '😐',
+    'rough': '😔',
+    'struggling': '😢'
+  };
+  return moodEmojis[mood] || '💫';
 }
 
 // Hook dashboard load when dashboard page is navigated to
