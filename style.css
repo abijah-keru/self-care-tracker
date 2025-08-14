@@ -3605,6 +3605,29 @@ select:focus {
   animation: fadeInUp 0.6s ease-out;
 }
 
+/* Slide animations for temporary messages */
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -3613,5 +3636,340 @@ select:focus {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+/* Dream Life Vision Page - Enhanced Styling */
+.dream-header {
+  text-align: center;
+  margin-bottom: var(--space-2xl);
+  padding: 0 var(--space-lg);
+}
+
+.dream-subtitle {
+  font-size: 1.25rem;
+  color: var(--text-secondary);
+  margin: var(--space-md) 0;
+  font-weight: 500;
+}
+
+.dream-intro {
+  font-size: 1.1rem;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  max-width: 800px;
+  margin: var(--space-lg) auto 0;
+  opacity: 0.9;
+}
+
+.dream-categories {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 var(--space-lg);
+}
+
+.dream-category {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 246, 240, 0.9) 100%);
+  border: 2px solid rgba(76, 167, 160, 0.1);
+  border-radius: var(--radius-xl);
+  margin-bottom: var(--space-lg);
+  overflow: hidden;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(76, 167, 160, 0.1);
+}
+
+.dream-category:hover {
+  box-shadow: 0 8px 30px rgba(76, 167, 160, 0.15);
+  transform: translateY(-2px);
+}
+
+.category-header {
+  display: flex;
+  align-items: center;
+  padding: var(--space-lg);
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  position: relative;
+}
+
+.category-header:hover {
+  background: rgba(76, 167, 160, 0.05);
+}
+
+.category-header h3 {
+  margin: 0;
+  font-size: 1.3rem;
+  color: var(--text-primary);
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.category-icon {
+  font-size: 1.5rem;
+  margin-right: var(--space-sm);
+}
+
+.expand-icon {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  transition: transform 0.3s ease;
+  margin-left: var(--space-md);
+}
+
+.dream-category.expanded .expand-icon {
+  transform: rotate(180deg);
+}
+
+.category-progress {
+  position: absolute;
+  top: var(--space-lg);
+  right: var(--space-lg);
+  background: rgba(76, 167, 160, 0.1);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.progress-text {
+  font-weight: 500;
+}
+
+.category-content {
+  padding: 0 var(--space-lg) var(--space-lg);
+  border-top: 1px solid rgba(76, 167, 160, 0.1);
+  animation: fadeInUp 0.4s ease-out;
+}
+
+.vision-section {
+  margin-bottom: var(--space-xl);
+}
+
+.vision-section label {
+  display: block;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-sm);
+  font-size: 1.1rem;
+}
+
+.vision-section textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: var(--space-md);
+  border: 2px solid rgba(76, 167, 160, 0.2);
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.8);
+  resize: vertical;
+  transition: all 0.3s ease;
+}
+
+.vision-section textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(76, 167, 160, 0.1);
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.vision-section textarea::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.7;
+}
+
+.action-items-section h4 {
+  margin: 0 0 var(--space-md) 0;
+  color: var(--text-primary);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.add-action-item {
+  display: flex;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
+}
+
+.add-action-item input {
+  flex: 1;
+  padding: var(--space-sm) var(--space-md);
+  border: 2px solid rgba(76, 167, 160, 0.2);
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.8);
+  transition: all 0.3s ease;
+}
+
+.add-action-item input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(76, 167, 160, 0.1);
+}
+
+.add-action-item button {
+  padding: var(--space-sm) var(--space-md);
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.action-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.action-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(76, 167, 160, 0.1);
+  border-radius: var(--radius-md);
+  transition: all 0.3s ease;
+  animation: fadeInUp 0.3s ease-out;
+}
+
+.action-item:hover {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: rgba(76, 167, 160, 0.2);
+}
+
+.action-item.completed {
+  background: rgba(76, 167, 160, 0.1);
+  border-color: rgba(76, 167, 160, 0.3);
+}
+
+.action-item.completed .action-text {
+  text-decoration: line-through;
+  color: var(--text-secondary);
+  opacity: 0.7;
+}
+
+.action-checkbox {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.action-text {
+  flex: 1;
+  font-size: 1rem;
+  color: var(--text-primary);
+  transition: all 0.3s ease;
+}
+
+.delete-action-btn {
+  background: none;
+  border: none;
+  color: #dc2626;
+  cursor: pointer;
+  padding: var(--space-xs);
+  border-radius: var(--radius-sm);
+  transition: all 0.3s ease;
+  opacity: 0.6;
+}
+
+.delete-action-btn:hover {
+  opacity: 1;
+  background: rgba(220, 38, 38, 0.1);
+}
+
+/* Empty state styling */
+.action-items-list:empty::after {
+  content: "No action steps yet. Add your first step above! ✨";
+  text-align: center;
+  color: var(--text-secondary);
+  font-style: italic;
+  padding: var(--space-lg);
+  opacity: 0.7;
+}
+
+.empty-state {
+  text-align: center;
+  color: var(--text-secondary);
+  font-style: italic;
+  padding: var(--space-lg);
+  opacity: 0.7;
+  font-size: 0.95rem;
+}
+
+/* Celebration animation for completed items */
+@keyframes celebrationPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.action-item.completed {
+  animation: celebrationPulse 0.6s ease-out;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .dream-categories {
+    padding: 0 var(--space-md);
+  }
+  
+  .category-header {
+    padding: var(--space-md);
+    flex-wrap: wrap;
+  }
+  
+  .category-header h3 {
+    font-size: 1.2rem;
+    flex: 1;
+    min-width: 200px;
+  }
+  
+  .category-progress {
+    position: static;
+    margin-top: var(--space-sm);
+    width: 100%;
+    text-align: center;
+  }
+  
+  .add-action-item {
+    flex-direction: column;
+  }
+  
+  .add-action-item button {
+    align-self: flex-end;
+  }
+  
+  .action-item {
+    padding: var(--space-sm);
+  }
+  
+  .action-text {
+    font-size: 0.95rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .dream-header {
+    padding: 0 var(--space-md);
+  }
+  
+  .dream-intro {
+    font-size: 1rem;
+    padding: 0 var(--space-sm);
+  }
+  
+  .category-header h3 {
+    font-size: 1.1rem;
+    min-width: 150px;
+  }
+  
+  .vision-section textarea {
+    min-height: 100px;
+    font-size: 0.95rem;
   }
 }

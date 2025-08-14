@@ -386,28 +386,156 @@
       </div>
     </div>
 
-    <!-- Dream Life Page - Enhanced with Breathing Spaces -->
+    <!-- Dream Life Page - Enhanced with Interactive Life Planning -->
     <div id="dream-life" class="page-section">
       <div class="dream-header">
-      <h1>Your Dream Life Vision</h1>
-        <p class="dream-subtitle">Take a moment to breathe and dream</p>
+        <h1>Your Dream Life Vision</h1>
+        <p class="dream-subtitle">Your body knows the life you're meant to live</p>
+        <p class="dream-intro">
+          We all have an inner compass that guides us toward the life we're meant to live. Sometimes circumstances or limiting beliefs hold us back, but you have the power to work toward what truly matters to you. This space helps you pause, envision your dream life across key areas, and break it down into actionable steps. You're in the driver's seat of your transformation.
+        </p>
       </div>
       
-      <h2>Visualize Your Ideal Life</h2>
-      <p class="section-description">
-        Take a moment to envision your perfect day, your ideal relationships, career, and lifestyle. 
-        Writing down your dreams makes them more tangible and achievable.
-      </p>
-      
       <div class="dream-categories">
-        <h3>💭 Dream Categories</h3>
-        <ul class="category-list">
-          <li>🏠 Living Situation & Environment</li>
-          <li>💼 Career & Purpose</li>
-          <li>❤️ Relationships & Social Life</li>
-          <li>🌱 Health & Wellness</li>
-          <li>✨ Personal Growth & Hobbies</li>
-        </ul>
+        <!-- Living Situation & Environment -->
+        <div class="dream-category" data-category="livingEnvironment">
+          <div class="category-header" onclick="toggleCategory('livingEnvironment')">
+            <span class="category-icon">🏠</span>
+            <h3>Living Situation & Environment</h3>
+            <span class="expand-icon">▼</span>
+            <div class="category-progress">
+              <span class="progress-text">0 of 0 completed</span>
+            </div>
+          </div>
+          <div class="category-content" style="display: none;">
+            <div class="vision-section">
+              <label for="livingVision">Describe your ideal living situation...</label>
+              <textarea id="livingVision" placeholder="What does your dream home and environment look like? Consider location, style, atmosphere, and the feeling you want to experience daily..."></textarea>
+            </div>
+            <div class="action-items-section">
+              <h4>Action Steps</h4>
+              <div class="add-action-item">
+                <input type="text" id="livingActionInput" placeholder="Add a new action step...">
+                <button type="button" onclick="addActionItem('livingEnvironment')" class="btn-primary">Add Action Step</button>
+              </div>
+              <div id="livingActionList" class="action-items-list">
+                <!-- Action items will be populated here -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Career & Purpose -->
+        <div class="dream-category" data-category="career">
+          <div class="category-header" onclick="toggleCategory('career')">
+            <span class="category-icon">💼</span>
+            <h3>Career & Purpose</h3>
+            <span class="expand-icon">▼</span>
+            <div class="category-progress">
+              <span class="progress-text">0 of 0 completed</span>
+            </div>
+          </div>
+          <div class="category-content" style="display: none;">
+            <div class="vision-section">
+              <label for="careerVision">What does your ideal career and life purpose look like?</label>
+              <textarea id="careerVision" placeholder="Envision your dream career, the impact you want to make, and how you want to spend your working hours..."></textarea>
+            </div>
+            <div class="action-items-section">
+              <h4>Action Steps</h4>
+              <div class="add-action-item">
+                <input type="text" id="careerActionInput" placeholder="Add a new action step...">
+                <button type="button" onclick="addActionItem('career')" class="btn-primary">Add Action Step</button>
+              </div>
+              <div id="careerActionList" class="action-items-list">
+                <!-- Action items will be populated here -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Relationships & Social Life -->
+        <div class="dream-category" data-category="relationships">
+          <div class="category-header" onclick="toggleCategory('relationships')">
+            <span class="category-icon">❤️</span>
+            <h3>Relationships & Social Life</h3>
+            <span class="expand-icon">▼</span>
+            <div class="category-progress">
+              <span class="progress-text">0 of 0 completed</span>
+            </div>
+          </div>
+          <div class="category-content" style="display: none;">
+            <div class="vision-section">
+              <label for="relationshipsVision">Envision your ideal relationships and social connections...</label>
+              <textarea id="relationshipsVision" placeholder="What kind of relationships do you want to cultivate? How do you want to feel in your social connections?"></textarea>
+            </div>
+            <div class="action-items-section">
+              <h4>Action Steps</h4>
+              <div class="add-action-item">
+                <input type="text" id="relationshipsActionInput" placeholder="Add a new action step...">
+                <button type="button" onclick="addActionItem('relationships')" class="btn-primary">Add Action Step</button>
+              </div>
+              <div id="relationshipsActionList" class="action-items-list">
+                <!-- Action items will be populated here -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Health & Wellness -->
+        <div class="dream-category" data-category="health">
+          <div class="category-header" onclick="toggleCategory('health')">
+            <span class="category-icon">🌱</span>
+            <h3>Health & Wellness</h3>
+            <span class="expand-icon">▼</span>
+            <div class="category-progress">
+              <span class="progress-text">0 of 0 completed</span>
+            </div>
+          </div>
+          <div class="category-content" style="display: none;">
+            <div class="vision-section">
+              <label for="healthVision">What does optimal health and wellness mean to you?</label>
+              <textarea id="healthVision" placeholder="Envision your ideal physical, mental, and emotional well-being..."></textarea>
+            </div>
+            <div class="action-items-section">
+              <h4>Action Steps</h4>
+              <div class="add-action-item">
+                <input type="text" id="healthActionInput" placeholder="Add a new action step...">
+                <button type="button" onclick="addActionItem('health')" class="btn-primary">Add Action Step</button>
+              </div>
+              <div id="healthActionList" class="action-items-list">
+                <!-- Action items will be populated here -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Personal Growth & Hobbies -->
+        <div class="dream-category" data-category="personalGrowth">
+          <div class="category-header" onclick="toggleCategory('personalGrowth')">
+            <span class="category-icon">✨</span>
+            <h3>Personal Growth & Hobbies</h3>
+            <span class="expand-icon">▼</span>
+            <div class="category-progress">
+              <span class="progress-text">0 of 0 completed</span>
+            </div>
+          </div>
+          <div class="category-content" style="display: none;">
+            <div class="vision-section">
+              <label for="personalGrowthVision">What personal growth and creative pursuits call to you?</label>
+              <textarea id="personalGrowthVision" placeholder="What skills do you want to develop? What creative outlets call to your soul?"></textarea>
+            </div>
+            <div class="action-items-section">
+              <h4>Action Steps</h4>
+              <div class="add-action-item">
+                <input type="text" id="personalGrowthActionInput" placeholder="Add a new action step...">
+                <button type="button" onclick="addActionItem('personalGrowth')" class="btn-primary">Add Action Step</button>
+              </div>
+              <div id="personalGrowthActionList" class="action-items-list">
+                <!-- Action items will be populated here -->
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 

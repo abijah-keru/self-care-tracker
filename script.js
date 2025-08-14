@@ -2761,6 +2761,9 @@ async function initializeApp() {
   updateAchievementCard();
   updateMoodWinsCard();
   
+  // Initialize Dream Life Vision functionality
+  initializeDreamLifeVision();
+  
   // The splash screen will show first, then auth screen based on auth state
   // This is handled by the HTML inline script and auth state listener
   
@@ -3189,3 +3192,330 @@ document.addEventListener('click', (e) => {
 if (window.location.hash && window.location.hash.includes('dashboard')) {
   setTimeout(loadDashboardData, 200);
 }
+
+// Dream Life Vision Data Structure
+let dreamLifeData = {
+  livingEnvironment: {
+    vision: "",
+    actionItems: []
+  },
+  career: {
+    vision: "",
+    actionItems: []
+  },
+  relationships: {
+    vision: "",
+    actionItems: []
+  },
+  health: {
+    vision: "",
+    actionItems: []
+  },
+  personalGrowth: {
+    vision: "",
+    actionItems: []
+  }
+};
+
+// Initialize Dream Life Vision functionality
+function initializeDreamLifeVision() {
+  loadDreamLifeData();
+  setupDreamLifeEventListeners();
+  renderDreamLifeData();
+}
+
+// Load dream life data from localStorage
+function loadDreamLifeData() {
+  try {
+    const saved = localStorage.getItem('dreamLifeData');
+    if (saved) {
+      dreamLifeData = JSON.parse(saved);
+    }
+  } catch (error) {
+    console.log('Could not load dream life data:', error);
+  }
+}
+
+// Save dream life data to localStorage
+function saveDreamLifeData() {
+  try {
+    localStorage.setItem('dreamLifeData', JSON.stringify(dreamLifeData));
+  } catch (error) {
+    console.log('Could not save dream life data:', error);
+  }
+}
+
+// Setup event listeners for dream life page
+function setupDreamLifeEventListeners() {
+  // Vision textarea auto-save
+  const visionTextareas = [
+    'livingVision', 'careerVision', 'relationshipsVision', 
+    'healthVision', 'personalGrowthVision'
+  ];
+  
+  visionTextareas.forEach(id => {
+    const textarea = document.getElementById(id);
+    if (textarea) {
+      textarea.addEventListener('input', debounce(() => {
+        const category = getCategoryFromTextareaId(id);
+        if (category) {
+          dreamLifeData[category].vision = textarea.value;
+          saveDreamLifeData();
+        }
+      }, 500));
+    }
+  });
+
+  // Action input enter key handling
+  const actionInputs = [
+    'livingActionInput', 'careerActionInput', 'relationshipsActionInput',
+    'healthActionInput', 'personalGrowthActionInput'
+  ];
+  
+  actionInputs.forEach(id => {
+    const input = document.getElementById(id);
+    if (input) {
+      input.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          const category = getCategoryFromInputId(id);
+          if (category) {
+            addActionItem(category);
+          }
+        }
+      });
+    }
+  });
+}
+
+// Get category name from textarea ID
+function getCategoryFromTextareaId(textareaId) {
+  const mapping = {
+    'livingVision': 'livingEnvironment',
+    'careerVision': 'career',
+    'relationshipsVision': 'relationships',
+    'healthVision': 'health',
+    'personalGrowthVision': 'personalGrowth'
+  };
+  return mapping[textareaId];
+}
+
+// Get category name from input ID
+function getCategoryFromInputId(inputId) {
+  const mapping = {
+    'livingActionInput': 'livingEnvironment',
+    'careerActionInput': 'career',
+    'relationshipsActionInput': 'relationships',
+    'healthActionInput': 'health',
+    'personalGrowthActionInput': 'personalGrowth'
+  };
+  return mapping[inputId];
+}
+
+// Toggle category expand/collapse
+function toggleCategory(category) {
+  const categoryElement = document.querySelector(`[data-category="${category}"]`);
+  const content = categoryElement.querySelector('.category-content');
+  const expandIcon = categoryElement.querySelector('.expand-icon');
+  
+  if (content.style.display === 'none') {
+    content.style.display = 'block';
+    categoryElement.classList.add('expanded');
+    expandIcon.style.transform = 'rotate(180deg)';
+  } else {
+    content.style.display = 'none';
+    categoryElement.classList.remove('expanded');
+    expandIcon.style.transform = 'rotate(0deg)';
+  }
+}
+
+// Add new action item to a category
+function addActionItem(category) {
+  const inputId = `${category.replace(/([A-Z])/g, (match, p1) => p1.toLowerCase())}ActionInput`;
+  const input = document.getElementById(inputId);
+  
+  if (!input || !input.value.trim()) return;
+  
+  const newItem = {
+    id: Date.now(),
+    text: input.value.trim(),
+    completed: false
+  };
+  
+  dreamLifeData[category].actionItems.push(newItem);
+  saveDreamLifeData();
+  
+  // Clear input
+  input.value = '';
+  
+  // Re-render the category
+  renderCategory(category);
+  
+  // Show celebration
+  showActionItemAdded(newItem.text);
+}
+
+// Toggle action item completion
+function toggleActionItem(category, itemId) {
+  const item = dreamLifeData[category].actionItems.find(item => item.id === itemId);
+  if (item) {
+    item.completed = !item.completed;
+    saveDreamLifeData();
+    renderCategory(category);
+    
+    if (item.completed) {
+      showActionItemCompleted(item.text);
+    }
+  }
+}
+
+// Delete action item
+function deleteActionItem(category, itemId) {
+  dreamLifeData[category].actionItems = dreamLifeData[category].actionItems.filter(item => item.id !== itemId);
+  saveDreamLifeData();
+  renderCategory(category);
+}
+
+// Render all dream life data
+function renderDreamLifeData() {
+  Object.keys(dreamLifeData).forEach(category => {
+    renderCategory(category);
+  });
+}
+
+// Render a specific category
+function renderCategory(category) {
+  const categoryData = dreamLifeData[category];
+  const categoryElement = document.querySelector(`[data-category="${category}"]`);
+  
+  if (!categoryElement) return;
+  
+  // Update vision textarea
+  const textareaId = `${category.replace(/([A-Z])/g, (match, p1) => p1.toLowerCase())}Vision`;
+  const textarea = document.getElementById(textareaId);
+  if (textarea && textarea.value !== categoryData.vision) {
+    textarea.value = categoryData.vision;
+  }
+  
+  // Update action items list
+  const actionListId = `${category.replace(/([A-Z])/g, (match, p1) => p1.toLowerCase())}ActionList`;
+  const actionList = document.getElementById(actionListId);
+  if (actionList) {
+    renderActionItemsList(actionList, category, categoryData.actionItems);
+  }
+  
+  // Update progress
+  updateCategoryProgress(category, categoryData.actionItems);
+}
+
+// Render action items list
+function renderActionItemsList(container, category, actionItems) {
+  container.innerHTML = '';
+  
+  if (actionItems.length === 0) {
+    container.innerHTML = '<div class="empty-state">No action steps yet. Add your first step above! ✨</div>';
+    return;
+  }
+  
+  actionItems.forEach(item => {
+    const itemElement = createActionItemElement(category, item);
+    container.appendChild(itemElement);
+  });
+}
+
+// Create action item element
+function createActionItemElement(category, item) {
+  const div = document.createElement('div');
+  div.className = `action-item ${item.completed ? 'completed' : ''}`;
+  div.dataset.id = item.id;
+  
+  div.innerHTML = `
+    <input type="checkbox" class="action-checkbox" ${item.completed ? 'checked' : ''}>
+    <span class="action-text">${item.text}</span>
+    <button class="delete-action-btn" onclick="deleteActionItem('${category}', ${item.id})" title="Delete">🗑️</button>
+  `;
+  
+  // Add checkbox event listener
+  const checkbox = div.querySelector('.action-checkbox');
+  checkbox.addEventListener('change', () => {
+    toggleActionItem(category, item.id);
+  });
+  
+  return div;
+}
+
+// Update category progress display
+function updateCategoryProgress(category, actionItems) {
+  const categoryElement = document.querySelector(`[data-category="${category}"]`);
+  if (!categoryElement) return;
+  
+  const progressElement = categoryElement.querySelector('.progress-text');
+  const total = actionItems.length;
+  const completed = actionItems.filter(item => item.completed).length;
+  
+  if (progressElement) {
+    progressElement.textContent = `${completed} of ${total} completed`;
+  }
+}
+
+// Show celebration when action item is added
+function showActionItemAdded(text) {
+  showTemporaryMessage(`✨ Added: ${text}`, 'success');
+}
+
+// Show celebration when action item is completed
+function showActionItemCompleted(text) {
+  showTemporaryMessage(`🎉 Completed: ${text}`, 'success');
+}
+
+// Show temporary message
+function showTemporaryMessage(message, type = 'info') {
+  const messageDiv = document.createElement('div');
+  messageDiv.className = `temp-message temp-message-${type}`;
+  messageDiv.textContent = message;
+  
+  // Style the message
+  messageDiv.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: ${type === 'success' ? 'var(--accent)' : '#4A5568'};
+    color: white;
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-medium);
+    z-index: 1000;
+    animation: slideInRight 0.3s ease-out;
+    font-weight: 500;
+    max-width: 300px;
+    word-wrap: break-word;
+  `;
+  
+  document.body.appendChild(messageDiv);
+  
+  // Remove after 3 seconds
+  setTimeout(() => {
+    if (messageDiv.parentNode) {
+      messageDiv.style.animation = 'slideOutRight 0.3s ease-out';
+      setTimeout(() => {
+        if (messageDiv.parentNode) {
+          messageDiv.parentNode.removeChild(messageDiv);
+        }
+      }, 300);
+    }
+  }, 3000);
+}
+
+// Debounce function for auto-save
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
+
+// ... existing code ...
