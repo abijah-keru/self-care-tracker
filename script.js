@@ -121,7 +121,7 @@ function initializeMoodTracking() {
         // Save to Firebase
         await saveMoodToFirebase(moodData);
       } else {
-        localStorage.setItem('currentMood', JSON.stringify(moodData));
+      localStorage.setItem('currentMood', JSON.stringify(moodData));
       }
       
       // Visual feedback
@@ -599,7 +599,7 @@ function showIntentionCelebration(intention) {
 // Enhanced Wins Visualization
 function initializeEnhancedWins() {
   // Add organic animations to win cards
-  const winCards = document.querySelectorAll('.win-card.organic-card');
+  const winCards = document.querySelectorAll('.win-card');
   
   winCards.forEach((card, index) => {
     // Stagger entrance animation
@@ -2218,10 +2218,20 @@ function setupNavigation() {
       updateBreadcrumbs(targetPage);
       
       // Load page-specific data
-      if (targetPage === 'dashboard') {
+      if (targetPage === 'home') {
+        // Home page - update greeting and achievement card
+        updateDynamicGreeting();
+        updateAchievementCard();
+        updateMoodWinsCard();
+      } else if (targetPage === 'dashboard') {
         loadDashboardData();
       } else if (targetPage === 'daily-anchors') {
         loadProgress();
+      } else if (targetPage === 'dream-life') {
+        // Dream Life page - ensure data is loaded
+        if (typeof renderDreamLifeData === 'function') {
+          renderDreamLifeData();
+        }
       }
     });
   });
@@ -2257,10 +2267,20 @@ function setupNavigation() {
         updateBreadcrumbs(page);
         
         // Load page-specific data
-        if (page === 'dashboard') {
+        if (page === 'home') {
+          // Home page - update greeting and achievement card
+          updateDynamicGreeting();
+          updateAchievementCard();
+          updateMoodWinsCard();
+        } else if (page === 'dashboard') {
           loadDashboardData();
         } else if (page === 'daily-anchors') {
           loadProgress();
+        } else if (page === 'dream-life') {
+          // Dream Life page - ensure data is loaded
+          if (typeof renderDreamLifeData === 'function') {
+            renderDreamLifeData();
+          }
         }
         
         closeAux();
@@ -2300,10 +2320,20 @@ function setupNavigation() {
         updateBreadcrumbs(page);
         
         // Load page-specific data
-        if (page === 'dashboard') {
+        if (page === 'home') {
+          // Home page - update greeting and achievement card
+          updateDynamicGreeting();
+          updateAchievementCard();
+          updateMoodWinsCard();
+        } else if (page === 'dashboard') {
           loadDashboardData();
         } else if (page === 'daily-anchors') {
           loadProgress();
+        } else if (page === 'dream-life') {
+          // Dream Life page - ensure data is loaded
+          if (typeof renderDreamLifeData === 'function') {
+            renderDreamLifeData();
+          }
         }
         
         hamburgerSheet.classList.remove('active');
@@ -2474,7 +2504,7 @@ function setupEventListeners() {
   
   if (resetBtn) {
     resetBtn.addEventListener("click", clearAll);
-  }
+    }
     
     // Empty state buttons for Your Wins
     const emptyGoAnchorsBtn = document.getElementById("emptyGoAnchorsBtn");
@@ -3195,19 +3225,11 @@ if (window.location.hash && window.location.hash.includes('dashboard')) {
 
 // Dream Life Vision Data Structure
 let dreamLifeData = {
-  livingEnvironment: {
-    vision: "",
-    actionItems: []
-  },
   career: {
     vision: "",
     actionItems: []
   },
   relationships: {
-    vision: "",
-    actionItems: []
-  },
-  health: {
     vision: "",
     actionItems: []
   },
@@ -3217,19 +3239,54 @@ let dreamLifeData = {
   }
 };
 
+// Custom categories array
+let customCategories = [];
+
 // Initialize Dream Life Vision functionality
 function initializeDreamLifeVision() {
   loadDreamLifeData();
   setupDreamLifeEventListeners();
   renderDreamLifeData();
+  loadCustomCategories();
 }
 
 // Load dream life data from localStorage
 function loadDreamLifeData() {
   try {
     const saved = localStorage.getItem('dreamLifeData');
+    const savedCustom = localStorage.getItem('customCategories');
+    
     if (saved) {
-      dreamLifeData = JSON.parse(saved);
+      const loadedData = JSON.parse(saved);
+      // Only load data for remaining categories
+      dreamLifeData = {
+        career: loadedData.career || { vision: "", actionItems: [] },
+        relationships: loadedData.relationships || { vision: "", actionItems: [] },
+        personalGrowth: loadedData.personalGrowth || { vision: "", actionItems: [] }
+      };
+    }
+    
+    if (savedCustom) {
+      customCategories = JSON.parse(savedCustom);
+      // Load custom category data
+      customCategories.forEach(category => {
+        if (saved) {
+          const loadedData = JSON.parse(saved);
+          if (loadedData[category.id]) {
+            dreamLifeData[category.id] = loadedData[category.id];
+          } else {
+            dreamLifeData[category.id] = {
+              vision: '',
+              actionItems: []
+            };
+          }
+        } else {
+          dreamLifeData[category.id] = {
+            vision: '',
+            actionItems: []
+          };
+        }
+      });
     }
   } catch (error) {
     console.log('Could not load dream life data:', error);
@@ -3240,6 +3297,7 @@ function loadDreamLifeData() {
 function saveDreamLifeData() {
   try {
     localStorage.setItem('dreamLifeData', JSON.stringify(dreamLifeData));
+    localStorage.setItem('customCategories', JSON.stringify(customCategories));
   } catch (error) {
     console.log('Could not save dream life data:', error);
   }
@@ -3249,8 +3307,7 @@ function saveDreamLifeData() {
 function setupDreamLifeEventListeners() {
   // Vision textarea auto-save
   const visionTextareas = [
-    'livingVision', 'careerVision', 'relationshipsVision', 
-    'healthVision', 'personalGrowthVision'
+    'careerVision', 'relationshipsVision', 'personalGrowthVision'
   ];
   
   visionTextareas.forEach(id => {
@@ -3268,8 +3325,7 @@ function setupDreamLifeEventListeners() {
 
   // Action input enter key handling
   const actionInputs = [
-    'livingActionInput', 'careerActionInput', 'relationshipsActionInput',
-    'healthActionInput', 'personalGrowthActionInput'
+    'careerActionInput', 'relationshipsActionInput', 'personalGrowthActionInput'
   ];
   
   actionInputs.forEach(id => {
@@ -3290,37 +3346,87 @@ function setupDreamLifeEventListeners() {
 // Get category name from textarea ID
 function getCategoryFromTextareaId(textareaId) {
   const mapping = {
-    'livingVision': 'livingEnvironment',
     'careerVision': 'career',
     'relationshipsVision': 'relationships',
-    'healthVision': 'health',
     'personalGrowthVision': 'personalGrowth'
   };
-  return mapping[textareaId];
+  
+  // Check for custom categories
+  const customCategory = customCategories.find(cat => 
+    textareaId === `${cat.id}Vision`
+  );
+  
+  return mapping[textareaId] || (customCategory ? customCategory.id : null);
 }
 
 // Get category name from input ID
 function getCategoryFromInputId(inputId) {
   const mapping = {
-    'livingActionInput': 'livingEnvironment',
     'careerActionInput': 'career',
     'relationshipsActionInput': 'relationships',
-    'healthActionInput': 'health',
     'personalGrowthActionInput': 'personalGrowth'
   };
-  return mapping[inputId];
+  
+  // Check for custom categories
+  const customCategory = customCategories.find(cat => 
+    inputId === `${cat.id}ActionInput`
+  );
+  
+  return mapping[inputId] || (customCategory ? customCategory.id : null);
+}
+
+// Get input ID from category
+function getCategoryInputId(category) {
+  const mapping = {
+    'career': 'careerActionInput',
+    'relationships': 'relationshipsActionInput',
+    'personalGrowth': 'personalGrowthActionInput'
+  };
+  
+  return mapping[category] || `${category}ActionInput`;
+}
+
+// Get textarea ID from category
+function getCategoryTextareaId(category) {
+  const mapping = {
+    'career': 'careerVision',
+    'relationships': 'relationshipsVision',
+    'personalGrowth': 'personalGrowthVision'
+  };
+  
+  return mapping[category] || `${category}Vision`;
+}
+
+// Get action list ID from category
+function getCategoryActionListId(category) {
+  const mapping = {
+    'career': 'careerActionList',
+    'relationships': 'relationshipsActionList',
+    'personalGrowth': 'personalGrowthActionList'
+  };
+  
+  return mapping[category] || `${category}ActionList`;
 }
 
 // Toggle category expand/collapse
 function toggleCategory(category) {
   const categoryElement = document.querySelector(`[data-category="${category}"]`);
+  if (!categoryElement) return;
+  
   const content = categoryElement.querySelector('.category-content');
   const expandIcon = categoryElement.querySelector('.expand-icon');
   
-  if (content.style.display === 'none') {
+  if (!content || !expandIcon) return;
+  
+  if (content.style.display === 'none' || content.style.display === '') {
     content.style.display = 'block';
     categoryElement.classList.add('expanded');
     expandIcon.style.transform = 'rotate(180deg)';
+    
+    // Add smooth animation
+    content.classList.remove('animate-in');
+    void content.offsetWidth; // reflow
+    content.classList.add('animate-in');
   } else {
     content.style.display = 'none';
     categoryElement.classList.remove('expanded');
@@ -3330,7 +3436,7 @@ function toggleCategory(category) {
 
 // Add new action item to a category
 function addActionItem(category) {
-  const inputId = `${category.replace(/([A-Z])/g, (match, p1) => p1.toLowerCase())}ActionInput`;
+  const inputId = getCategoryInputId(category);
   const input = document.getElementById(inputId);
   
   if (!input || !input.value.trim()) return;
@@ -3390,14 +3496,14 @@ function renderCategory(category) {
   if (!categoryElement) return;
   
   // Update vision textarea
-  const textareaId = `${category.replace(/([A-Z])/g, (match, p1) => p1.toLowerCase())}Vision`;
+  const textareaId = getCategoryTextareaId(category);
   const textarea = document.getElementById(textareaId);
   if (textarea && textarea.value !== categoryData.vision) {
     textarea.value = categoryData.vision;
   }
   
   // Update action items list
-  const actionListId = `${category.replace(/([A-Z])/g, (match, p1) => p1.toLowerCase())}ActionList`;
+  const actionListId = getCategoryActionListId(category);
   const actionList = document.getElementById(actionListId);
   if (actionList) {
     renderActionItemsList(actionList, category, categoryData.actionItems);
@@ -3431,13 +3537,19 @@ function createActionItemElement(category, item) {
   div.innerHTML = `
     <input type="checkbox" class="action-checkbox" ${item.completed ? 'checked' : ''}>
     <span class="action-text">${item.text}</span>
-    <button class="delete-action-btn" onclick="deleteActionItem('${category}', ${item.id})" title="Delete">🗑️</button>
+    <button class="delete-action-btn" title="Delete">🗑️</button>
   `;
   
   // Add checkbox event listener
   const checkbox = div.querySelector('.action-checkbox');
   checkbox.addEventListener('change', () => {
     toggleActionItem(category, item.id);
+  });
+  
+  // Add delete button event listener
+  const deleteBtn = div.querySelector('.delete-action-btn');
+  deleteBtn.addEventListener('click', () => {
+    deleteActionItem(category, item.id);
   });
   
   return div;
@@ -3517,5 +3629,245 @@ function debounce(func, wait) {
     timeout = setTimeout(later, wait);
   };
 }
+
+// Custom Category Functions
+// Show add category modal
+function showAddCategoryModal() {
+  document.getElementById('addCategoryModal').style.display = 'flex';
+  document.getElementById('categoryName').focus();
+}
+
+// Hide add category modal
+function hideAddCategoryModal() {
+  document.getElementById('addCategoryModal').style.display = 'none';
+  // Clear form
+  document.getElementById('categoryName').value = '';
+  document.getElementById('categoryIcon').value = '';
+  document.getElementById('categoryPlaceholder').value = '';
+}
+
+// Create custom category
+function createCustomCategory() {
+  const name = document.getElementById('categoryName').value.trim();
+  const icon = document.getElementById('categoryIcon').value.trim() || '📝';
+  const placeholder = document.getElementById('categoryPlaceholder').value.trim() || 
+    'Describe your vision for this area of your life...';
+  
+  if (!name) {
+    alert('Please enter a category name');
+    return;
+  }
+  
+  // Check for duplicate names
+  const allCategories = [...Object.keys(dreamLifeData), ...customCategories.map(c => c.id)];
+  const categoryId = `custom_${Date.now()}`;
+  
+  if (allCategories.some(cat => cat.includes(categoryId))) {
+    alert('A similar category already exists');
+    return;
+  }
+  
+  const customCategory = {
+    id: categoryId,
+    name: name,
+    icon: icon,
+    placeholder: placeholder,
+    vision: '',
+    actionItems: []
+  };
+  
+  customCategories.push(customCategory);
+  dreamLifeData[categoryId] = {
+    vision: '',
+    actionItems: []
+  };
+  
+  // Create and append the new category
+  createCustomCategoryElement(customCategory);
+  
+  hideAddCategoryModal();
+  showTemporaryMessage(`✨ Created category: ${name}`, 'success');
+  saveDreamLifeData();
+}
+
+// Create custom category DOM element
+function createCustomCategoryElement(category) {
+  const categoriesContainer = document.querySelector('.dream-categories');
+  const addCategoryCard = document.querySelector('.add-category-card');
+  
+  const categoryElement = document.createElement('div');
+  categoryElement.className = 'dream-category';
+  categoryElement.dataset.category = category.id;
+  categoryElement.dataset.custom = 'true';
+  
+  categoryElement.innerHTML = `
+    <div class="category-header" onclick="toggleCategory('${category.id}')">
+      <div class="category-title-row">
+        <span class="category-icon">${category.icon}</span>
+        <h3>${category.name}</h3>
+        <span class="expand-icon">▼</span>
+      </div>
+      <div class="category-progress">
+        <span class="progress-text">0 of 0 completed</span>
+      </div>
+      <div class="custom-category-controls">
+        <button class="control-btn edit" onclick="editCustomCategory('${category.id}')" title="Edit">✏️</button>
+        <button class="control-btn delete" onclick="deleteCustomCategory('${category.id}')" title="Delete">🗑️</button>
+      </div>
+    </div>
+    <div class="category-content" style="display: none;">
+      <div class="vision-section">
+        <label for="${category.id}Vision">Describe your vision for ${category.name}...</label>
+        <textarea id="${category.id}Vision" placeholder="${category.placeholder}"></textarea>
+      </div>
+      <div class="action-items-section">
+        <h4>Action Steps</h4>
+        <div class="add-action-item">
+          <input type="text" id="${category.id}ActionInput" placeholder="Add a new action step...">
+          <button type="button" onclick="addActionItem('${category.id}')" class="btn-primary">Add Action Step</button>
+        </div>
+        <div id="${category.id}ActionList" class="action-items-list">
+          <div class="empty-state">No action steps yet. Add your first step above! ✨</div>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  // Insert before the add category card
+  categoriesContainer.insertBefore(categoryElement, addCategoryCard);
+  
+  // Set up event listeners for the new category
+  setupCustomCategoryEventListeners(category);
+}
+
+// Set up event listeners for custom category
+function setupCustomCategoryEventListeners(category) {
+  const textarea = document.getElementById(`${category.id}Vision`);
+  const actionInput = document.getElementById(`${category.id}ActionInput`);
+  
+  if (textarea) {
+    textarea.addEventListener('input', debounce(() => {
+      dreamLifeData[category.id].vision = textarea.value;
+      saveDreamLifeData();
+      updateCategoryProgress(category.id, dreamLifeData[category.id].actionItems);
+    }, 500));
+  }
+  
+  if (actionInput) {
+    actionInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        addActionItem(category.id);
+      }
+    });
+  }
+}
+
+// Edit custom category
+function editCustomCategory(categoryId) {
+  const category = customCategories.find(c => c.id === categoryId);
+  if (!category) return;
+  
+  // Pre-fill modal with existing data
+  document.getElementById('categoryName').value = category.name;
+  document.getElementById('categoryIcon').value = category.icon;
+  document.getElementById('categoryPlaceholder').value = category.placeholder;
+  
+  showAddCategoryModal();
+  
+  // Change the create button to update
+  const createBtn = document.querySelector('.modal-footer .btn-primary');
+  createBtn.textContent = 'Update Category';
+  createBtn.onclick = () => updateCustomCategory(categoryId);
+}
+
+// Update custom category
+function updateCustomCategory(categoryId) {
+  const name = document.getElementById('categoryName').value.trim();
+  const icon = document.getElementById('categoryIcon').value.trim() || '📝';
+  const placeholder = document.getElementById('categoryPlaceholder').value.trim() || 
+    'Describe your vision for this area of your life...';
+  
+  if (!name) {
+    alert('Please enter a category name');
+    return;
+  }
+  
+  const categoryIndex = customCategories.findIndex(c => c.id === categoryId);
+  if (categoryIndex === -1) return;
+  
+  customCategories[categoryIndex] = {
+    ...customCategories[categoryIndex],
+    name,
+    icon,
+    placeholder
+  };
+  
+  // Update the DOM element
+  const categoryElement = document.querySelector(`[data-category="${categoryId}"]`);
+  if (categoryElement) {
+    categoryElement.querySelector('.category-icon').textContent = icon;
+    categoryElement.querySelector('h3').textContent = name;
+    categoryElement.querySelector('label').textContent = `Describe your vision for ${name}...`;
+    categoryElement.querySelector('textarea').placeholder = placeholder;
+  }
+  
+  hideAddCategoryModal();
+  showTemporaryMessage(`✨ Updated category: ${name}`, 'success');
+  saveDreamLifeData();
+  
+  // Reset button
+  const createBtn = document.querySelector('.modal-footer .btn-primary');
+  createBtn.textContent = 'Create Category';
+  createBtn.onclick = createCustomCategory;
+}
+
+// Delete custom category
+function deleteCustomCategory(categoryId) {
+  const category = customCategories.find(c => c.id === categoryId);
+  if (!category) return;
+  
+  if (!confirm(`Are you sure you want to delete "${category.name}"? This will remove all vision text and action items.`)) {
+    return;
+  }
+  
+  // Remove from arrays
+  customCategories = customCategories.filter(c => c.id !== categoryId);
+  delete dreamLifeData[categoryId];
+  
+  // Remove from DOM
+  const categoryElement = document.querySelector(`[data-category="${categoryId}"]`);
+  if (categoryElement) {
+    categoryElement.remove();
+  }
+  
+  showTemporaryMessage(`🗑️ Deleted category: ${category.name}`, 'success');
+  saveDreamLifeData();
+}
+
+// Load custom categories on initialization
+function loadCustomCategories() {
+  customCategories.forEach(category => {
+    createCustomCategoryElement(category);
+  });
+}
+
+
+
+// Event listeners for modal
+document.addEventListener('click', function(e) {
+  const modal = document.getElementById('addCategoryModal');
+  if (e.target === modal) {
+    hideAddCategoryModal();
+  }
+});
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    const modal = document.getElementById('addCategoryModal');
+    if (modal.style.display === 'flex') {
+      hideAddCategoryModal();
+    }
+  }
+});
 
 // ... existing code ...
