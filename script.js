@@ -1303,11 +1303,7 @@ function navigateToHomepage() {
       console.error('Home section not found');
     }
     
-    // Update breadcrumbs to show homepage
-    if (typeof updateBreadcrumbs === 'function') {
-      updateBreadcrumbs('home');
-      console.log('Breadcrumbs updated to home');
-    }
+
     
     // Ensure bottom navigation shows home as active
     const bottomHomeLink = document.querySelector('.bottom-nav .nav-link[data-page="home"]');
@@ -1440,10 +1436,9 @@ function updateUserInfo() {
 
 // Sign up with email/password
 async function signUp() {
-  const firstName = document.getElementById("firstNameInput").value.trim();
-  const lastName = document.getElementById("lastNameInput").value.trim();
-  const email = document.getElementById("emailInput").value;
-  const password = document.getElementById("passwordInput").value;
+  const firstName = document.getElementById("signupFirstNameInput").value.trim();
+  const email = document.getElementById("signupEmailInput").value;
+  const password = document.getElementById("signupPasswordInput").value;
   
   if (!firstName) {
     alert("Please enter your first name");
@@ -1467,13 +1462,13 @@ async function signUp() {
     
     // Update user profile with name
     await user.updateProfile({
-      displayName: lastName ? `${firstName} ${lastName}` : firstName
+      displayName: firstName
     });
     
     // Store name data in Firebase for additional access
     await db.collection("userProfiles").doc(user.uid).set({
       firstName: firstName,
-      lastName: lastName || "",
+      lastName: "",
       email: email,
       createdAt: new Date(),
       lastUpdated: new Date()
@@ -1481,9 +1476,6 @@ async function signUp() {
     
     // Store name locally for immediate use
     localStorage.setItem(`user_${user.uid}_firstName`, firstName);
-    if (lastName) {
-      localStorage.setItem(`user_${user.uid}_lastName`, lastName);
-    }
     
     console.log("User signed up successfully with name - will redirect to homepage");
   } catch (error) {
@@ -1494,8 +1486,8 @@ async function signUp() {
 
 // Sign in with email/password
 async function signIn() {
-  const email = document.getElementById("emailInput").value;
-  const password = document.getElementById("passwordInput").value;
+  const email = document.getElementById("signinEmailInput").value;
+  const password = document.getElementById("signinPasswordInput").value;
   
   if (!email || !password) {
     alert("Please enter email and password");
@@ -1515,14 +1507,11 @@ async function signIn() {
           if (userData.firstName) {
             // Update user profile with name
             await user.updateProfile({
-              displayName: userData.lastName ? `${userData.firstName} ${userData.lastName}` : userData.firstName
+              displayName: userData.firstName
             });
             
             // Store name locally
             localStorage.setItem(`user_${user.uid}_firstName`, userData.firstName);
-            if (userData.lastName) {
-              localStorage.setItem(`user_${user.uid}_lastName`, userData.lastName);
-            }
           }
         }
       } catch (profileError) {
@@ -1538,50 +1527,7 @@ async function signIn() {
 }
 
 // Sign in with Google
-async function signInWithGoogle() {
-  try {
-    const provider = new firebase.auth.GoogleAuthProvider();
-    const userCredential = await auth.signInWithPopup(provider);
-    const user = userCredential.user;
-    
-    // Google provides displayName, but let's ensure it's stored in our database
-    if (user && user.displayName) {
-      try {
-        // Check if we already have this user's profile
-        const userDoc = await db.collection("userProfiles").doc(user.uid).get();
-        if (!userDoc.exists) {
-          // Extract first and last name from Google displayName
-          const nameParts = user.displayName.split(' ');
-          const firstName = nameParts[0] || '';
-          const lastName = nameParts.slice(1).join(' ') || '';
-          
-          // Store in our database
-          await db.collection("userProfiles").doc(user.uid).set({
-            firstName: firstName,
-            lastName: lastName,
-            email: user.email,
-            createdAt: new Date(),
-            lastUpdated: new Date(),
-            source: 'google'
-          });
-          
-          // Store locally
-          localStorage.setItem(`user_${user.uid}_firstName`, firstName);
-          if (lastName) {
-            localStorage.setItem(`user_${user.uid}_lastName`, lastName);
-          }
-        }
-      } catch (profileError) {
-        console.log("Could not store Google user profile:", profileError);
-      }
-    }
-    
-    console.log("Google sign in successful - will redirect to homepage");
-  } catch (error) {
-    console.error("Google sign in error:", error);
-    alert("Google sign in failed: " + error.message);
-  }
-}
+
 
 // Sign in anonymously (for guests)
 async function signInAnonymously() {
@@ -2214,8 +2160,7 @@ function setupNavigation() {
         setTimeout(() => { mainContent.style.opacity = '1'; }, 50);
       }
 
-      // Update breadcrumbs
-      updateBreadcrumbs(targetPage);
+
       
       // Load page-specific data
       if (targetPage === 'home') {
@@ -2264,7 +2209,6 @@ function setupNavigation() {
         if (targetEl) targetEl.classList.add('active');
         const correspondingTopLink = document.querySelector(`.nav-link[data-page="${page}"]`);
         if (correspondingTopLink) correspondingTopLink.classList.add('active');
-        updateBreadcrumbs(page);
         
         // Load page-specific data
         if (page === 'home') {
@@ -2317,7 +2261,6 @@ function setupNavigation() {
         if (targetEl) targetEl.classList.add('active');
         const correspondingBottomLink = document.querySelector(`.bottom-nav .nav-link[data-page="${page}"]`);
         if (correspondingBottomLink) correspondingBottomLink.classList.add('active');
-        updateBreadcrumbs(page);
         
         // Load page-specific data
         if (page === 'home') {
@@ -2343,33 +2286,7 @@ function setupNavigation() {
   }
 }
 
-function updateBreadcrumbs(page) {
-  const map = {
-    'home': ['Home'],
-    'dashboard': ['Home', 'Your Wins'],
-    'daily-anchors': ['Home', 'Your Anchors'],
-    'dream-life': ['Home', 'Dream Life'],
-    'about': ['Home', 'About'],
-    'profile': ['Home', 'Profile'],
-    'contact': ['Home', 'Contact']
-  };
-  const crumbs = map[page] || ['Home'];
-  const el = document.getElementById('breadcrumbs');
-  if (!el) return;
-  el.innerHTML = '';
-  crumbs.forEach((c, idx) => {
-    const a = document.createElement('a');
-    a.href = '#';
-    a.textContent = c;
-    el.appendChild(a);
-    if (idx < crumbs.length - 1) {
-      const div = document.createElement('span');
-      div.className = 'divider';
-      div.textContent = '/';
-      el.appendChild(div);
-    }
-  });
-}
+
 
 function setupContactForm() {
   const contactForm = document.getElementById('contactForm');
@@ -2422,8 +2339,6 @@ function applyTheme(theme) {
 function setupSettingsHandlers() {
   const themeSelect = document.getElementById('themeSelect');
   const reminderInput = document.getElementById('dailyReminder');
-  const exportBtn = document.getElementById('exportDataBtn');
-  const clearBtn = document.getElementById('clearDataBtn');
 
   if (themeSelect) {
     themeSelect.addEventListener('change', (e) => {
@@ -2440,59 +2355,9 @@ function setupSettingsHandlers() {
       // Push notification scheduling would go here if using Notifications API + Service Worker
     });
   }
-
-  if (exportBtn) {
-    exportBtn.addEventListener('click', () => {
-      const data = collectExportData();
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'daily-anchors-export.json';
-      a.click();
-      URL.revokeObjectURL(url);
-    });
-  }
-
-  if (clearBtn) {
-    clearBtn.addEventListener('click', () => {
-      if (confirm('This will clear local settings and cached progress for this device. Continue?')) {
-        clearLocalData();
-        applySavedSettings();
-        alert('Local data cleared');
-      }
-    });
-  }
 }
 
-function collectExportData() {
-  const payload = { settings: {}, progress: {} };
-  payload.settings.theme = localStorage.getItem('settings_theme') || 'system';
-  payload.settings.dailyReminder = localStorage.getItem('settings_dailyReminder') || '';
 
-  // If signed in, include user-prefixed items
-  if (currentUser) {
-    const prefix = `user_${currentUser.uid}_`;
-    const keys = Object.keys(localStorage).filter(k => k.startsWith(prefix));
-    keys.forEach(k => { payload.progress[k] = localStorage.getItem(k); });
-  }
-
-  return payload;
-}
-
-function clearLocalData() {
-  // Clear settings
-  localStorage.removeItem('settings_theme');
-  localStorage.removeItem('settings_dailyReminder');
-
-  // Clear user data if signed in
-  if (currentUser) {
-    const prefix = `user_${currentUser.uid}_`;
-    Object.keys(localStorage)
-      .filter(k => k.startsWith(prefix))
-      .forEach(k => localStorage.removeItem(k));
-  }
-}
 
 // ----------------------------
 // Event Listeners
@@ -2627,16 +2492,27 @@ function setupEventListeners() {
   // Auth functionality
   const signUpBtn = document.getElementById("signUpBtn");
   const signInBtn = document.getElementById("signInBtn");
-  const googleSignInBtn = document.getElementById("googleSignInBtn");
   const guestSignInBtn = document.getElementById("guestSignInBtn");
-  const signOutBtn = document.getElementById("signOutBtn");
   const editProfileBtn = document.getElementById("editProfileBtn");
+  
+  // Auth tabs
+  const authTabs = document.querySelectorAll('.auth-tab');
   
   // Mood booster
   const moodSpinBtn = document.getElementById('moodSpinBtn');
   const moodSpinAgainBtn = document.getElementById('moodSpinAgainBtn');
   const moodDoItBtn = document.getElementById('moodDoItBtn');
   const moodResultEl = document.getElementById('moodResult');
+  
+  // Setup auth tab switching
+  if (authTabs.length > 0) {
+    authTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const formType = tab.dataset.form;
+        switchAuthForm(formType);
+      });
+    });
+  }
   
   if (signUpBtn) {
     signUpBtn.addEventListener("click", signUp);
@@ -2646,16 +2522,8 @@ function setupEventListeners() {
     signInBtn.addEventListener("click", signIn);
   }
   
-  if (googleSignInBtn) {
-    googleSignInBtn.addEventListener("click", signInWithGoogle);
-  }
-  
   if (guestSignInBtn) {
     guestSignInBtn.addEventListener("click", signInAnonymously);
-  }
-  
-  if (signOutBtn) {
-    signOutBtn.addEventListener("click", signOut);
   }
 
   if (editProfileBtn) {
@@ -2711,18 +2579,61 @@ function setupEventListeners() {
   if (moodSpinAgainBtn) moodSpinAgainBtn.addEventListener('click', spinMood);
 
   // Enter key support for auth inputs
-  const emailInput = document.getElementById("emailInput");
-  const passwordInput = document.getElementById("passwordInput");
+  const signinEmailInput = document.getElementById("signinEmailInput");
+  const signinPasswordInput = document.getElementById("signinPasswordInput");
+  const signupFirstNameInput = document.getElementById("signupFirstNameInput");
+  const signupEmailInput = document.getElementById("signupEmailInput");
+  const signupPasswordInput = document.getElementById("signupPasswordInput");
   
-  if (emailInput && passwordInput) {
-    const handleEnterKey = (event) => {
+  if (signinEmailInput && signinPasswordInput) {
+    signinEmailInput.addEventListener('keypress', (event) => {
       if (event.key === 'Enter') {
         signIn();
       }
-    };
-    
-    emailInput.addEventListener("keypress", handleEnterKey);
-    passwordInput.addEventListener("keypress", handleEnterKey);
+    });
+    signinPasswordInput.addEventListener('keypress', (event) => {
+      if (event.key === 'Enter') {
+        signIn();
+      }
+    });
+  }
+  
+  if (signupFirstNameInput && signupEmailInput && signupPasswordInput) {
+    signupFirstNameInput.addEventListener('keypress', (event) => {
+      if (event.key === 'Enter') {
+        signUp();
+      }
+    });
+    signupEmailInput.addEventListener('keypress', (event) => {
+      if (event.key === 'Enter') {
+        signUp();
+      }
+    });
+    signupPasswordInput.addEventListener('keypress', (event) => {
+      if (event.key === 'Enter') {
+        signUp();
+      }
+    });
+  }
+}
+
+// Auth form switching function
+function switchAuthForm(formType) {
+  const signinForm = document.getElementById('signinForm');
+  const signupForm = document.getElementById('signupForm');
+  const signinTab = document.querySelector('[data-form="signin"]');
+  const signupTab = document.querySelector('[data-form="signup"]');
+  
+  if (formType === 'signin') {
+    signinForm.style.display = 'block';
+    signupForm.style.display = 'none';
+    signinTab.classList.add('active');
+    signupTab.classList.remove('active');
+  } else if (formType === 'signup') {
+    signinForm.style.display = 'none';
+    signupForm.style.display = 'block';
+    signinTab.classList.remove('active');
+    signupTab.classList.add('active');
   }
 }
 
@@ -2747,8 +2658,7 @@ async function initializeApp() {
   // Apply saved settings
   applySavedSettings();
 
-  // Initialize breadcrumbs
-  updateBreadcrumbs('home');
+
 
   // Show onboarding for first-time users (no local streak and no entries)
   try {
@@ -3239,73 +3149,37 @@ let dreamLifeData = {
   }
 };
 
+// Track editing modes for each category
+let editingModes = {
+  career: false,
+  relationships: false,
+  personalGrowth: false
+};
+
 // Custom categories array
 let customCategories = [];
 
 // Initialize Dream Life Vision functionality
 function initializeDreamLifeVision() {
-  loadDreamLifeData();
   setupDreamLifeEventListeners();
   renderDreamLifeData();
-  loadCustomCategories();
 }
 
-// Load dream life data from localStorage
+// Load dream life data from memory (localStorage removed for compatibility)
 function loadDreamLifeData() {
-  try {
-    const saved = localStorage.getItem('dreamLifeData');
-    const savedCustom = localStorage.getItem('customCategories');
-    
-    if (saved) {
-      const loadedData = JSON.parse(saved);
-      // Only load data for remaining categories
-      dreamLifeData = {
-        career: loadedData.career || { vision: "", actionItems: [] },
-        relationships: loadedData.relationships || { vision: "", actionItems: [] },
-        personalGrowth: loadedData.personalGrowth || { vision: "", actionItems: [] }
-      };
-    }
-    
-    if (savedCustom) {
-      customCategories = JSON.parse(savedCustom);
-      // Load custom category data
-      customCategories.forEach(category => {
-        if (saved) {
-          const loadedData = JSON.parse(saved);
-          if (loadedData[category.id]) {
-            dreamLifeData[category.id] = loadedData[category.id];
-          } else {
-            dreamLifeData[category.id] = {
-              vision: '',
-              actionItems: []
-            };
-          }
-        } else {
-          dreamLifeData[category.id] = {
-            vision: '',
-            actionItems: []
-          };
-        }
-      });
-    }
-  } catch (error) {
-    console.log('Could not load dream life data:', error);
-  }
+  // Data will persist only during the session
+  // You can implement your own storage solution if needed
 }
 
-// Save dream life data to localStorage
+// Save dream life data to memory
 function saveDreamLifeData() {
-  try {
-    localStorage.setItem('dreamLifeData', JSON.stringify(dreamLifeData));
-    localStorage.setItem('customCategories', JSON.stringify(customCategories));
-  } catch (error) {
-    console.log('Could not save dream life data:', error);
-  }
+  // Data saved in memory only - implement your own storage if needed
+  console.log('Dream life data saved to memory');
 }
 
 // Setup event listeners for dream life page
 function setupDreamLifeEventListeners() {
-  // Vision textarea auto-save
+  // Vision textarea change tracking
   const visionTextareas = [
     'careerVision', 'relationshipsVision', 'personalGrowthVision'
   ];
@@ -3313,31 +3187,35 @@ function setupDreamLifeEventListeners() {
   visionTextareas.forEach(id => {
     const textarea = document.getElementById(id);
     if (textarea) {
-      textarea.addEventListener('input', debounce(() => {
+      textarea.addEventListener('input', () => {
         const category = getCategoryFromTextareaId(id);
         if (category) {
-          dreamLifeData[category].vision = textarea.value;
-          saveDreamLifeData();
+          markAsUnsaved(category);
         }
-      }, 500));
+      });
     }
   });
 
-  // Action input enter key handling
-  const actionInputs = [
+  // Action textarea enter key handling and auto-expand
+  const actionTextareas = [
     'careerActionInput', 'relationshipsActionInput', 'personalGrowthActionInput'
   ];
   
-  actionInputs.forEach(id => {
-    const input = document.getElementById(id);
-    if (input) {
-      input.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
+  actionTextareas.forEach(id => {
+    const textarea = document.getElementById(id);
+    if (textarea) {
+      textarea.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
           const category = getCategoryFromInputId(id);
           if (category) {
             addActionItem(category);
           }
         }
+      });
+      
+      textarea.addEventListener('input', () => {
+        expandTextarea(textarea);
       });
     }
   });
@@ -3448,7 +3326,6 @@ function addActionItem(category) {
   };
   
   dreamLifeData[category].actionItems.push(newItem);
-  saveDreamLifeData();
   
   // Clear input
   input.value = '';
@@ -3465,7 +3342,6 @@ function toggleActionItem(category, itemId) {
   const item = dreamLifeData[category].actionItems.find(item => item.id === itemId);
   if (item) {
     item.completed = !item.completed;
-    saveDreamLifeData();
     renderCategory(category);
     
     if (item.completed) {
@@ -3477,7 +3353,6 @@ function toggleActionItem(category, itemId) {
 // Delete action item
 function deleteActionItem(category, itemId) {
   dreamLifeData[category].actionItems = dreamLifeData[category].actionItems.filter(item => item.id !== itemId);
-  saveDreamLifeData();
   renderCategory(category);
 }
 
@@ -3485,6 +3360,11 @@ function deleteActionItem(category, itemId) {
 function renderDreamLifeData() {
   Object.keys(dreamLifeData).forEach(category => {
     renderCategory(category);
+    
+    // Initialize display mode if vision text exists (without saved indicator)
+    if (dreamLifeData[category].vision && dreamLifeData[category].vision.trim() !== '') {
+      enterDisplayMode(category, dreamLifeData[category].vision, false);
+    }
   });
 }
 
@@ -3617,7 +3497,266 @@ function showTemporaryMessage(message, type = 'info') {
   }, 3000);
 }
 
-// Debounce function for auto-save
+// Vision Save and Review Functions
+function saveVision(category) {
+  const textarea = document.getElementById(`${category}Vision`);
+  if (!textarea) return;
+  
+  const text = textarea.value.trim();
+  
+  // Update save status to "Saving..."
+  updateSaveStatus(category, 'saving');
+  
+  // Simulate save delay
+  setTimeout(() => {
+    // Save the vision text
+    dreamLifeData[category].vision = text;
+    
+    // Enter display mode with saved indicator
+    enterDisplayMode(category, text, true);
+    
+    // Show brief success message
+    showTemporaryMessage(`✨ Vision saved for ${getCategoryDisplayName(category)}`, 'success');
+    
+    // Fade out saved indicator after 2.5 seconds
+    setTimeout(() => {
+      fadeOutSavedIndicator(category);
+    }, 2500);
+  }, 500);
+}
+
+// These functions are no longer needed with the new display mode approach
+// Keeping them commented out in case they're needed elsewhere
+/*
+function showVisionReview(category, text) {
+  const modal = document.getElementById('visionReviewModal');
+  const textDisplay = document.getElementById('visionTextDisplay');
+  
+  if (modal && textDisplay) {
+    textDisplay.textContent = text;
+    modal.style.display = 'flex';
+    
+    // Store current category for edit function
+    modal.dataset.currentCategory = category;
+  }
+}
+
+function hideVisionReviewModal() {
+  const modal = document.getElementById('visionReviewModal');
+  if (modal) {
+    modal.style.display = 'none';
+    modal.dataset.currentCategory = '';
+  }
+}
+
+function editVision() {
+  const modal = document.getElementById('visionReviewModal');
+  const category = modal.dataset.currentCategory;
+  
+  if (category) {
+    hideVisionReviewModal();
+    
+    // Expand the category and focus on the textarea
+    const categoryElement = document.querySelector(`[data-category="${category}"]`);
+    if (categoryElement) {
+      const content = categoryElement.querySelector('.category-content');
+      const expandIcon = categoryElement.querySelector('.expand-icon');
+      
+      if (content.style.display === 'none') {
+        content.style.display = 'block';
+        categoryElement.classList.add('expanded');
+        expandIcon.style.transform = 'rotate(180deg)';
+      }
+      
+      // Focus on the textarea
+      const textarea = document.getElementById(`${category}Vision`);
+      if (textarea) {
+        textarea.focus();
+        textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+      }
+    }
+  }
+}
+*/
+
+function markAsUnsaved(category) {
+  updateSaveStatus(category, 'unsaved');
+}
+
+function updateSaveStatus(category, status) {
+  const statusElement = document.getElementById(`${category}Status`);
+  if (!statusElement) return;
+  
+  // Remove all status classes
+  statusElement.classList.remove('no-changes', 'unsaved', 'saving', 'saved');
+  
+  // Add new status class
+  statusElement.classList.add(status);
+  
+  // Update text content
+  const statusTexts = {
+    'no-changes': 'No changes',
+    'unsaved': 'Unsaved changes',
+    'saving': 'Saving...',
+    'saved': 'Saved ✓'
+  };
+  
+  statusElement.textContent = statusTexts[status] || 'No changes';
+  
+  // Update save button state and text
+  const saveButton = statusElement.parentElement.querySelector('.btn-save');
+  if (saveButton) {
+    saveButton.disabled = status === 'saving' || status === 'saved';
+    
+    // Update button text based on status
+    if (status === 'saving') {
+      saveButton.textContent = 'Saving...';
+    } else if (status === 'saved') {
+      saveButton.textContent = 'Save & Review';
+    } else {
+      saveButton.textContent = 'Save & Review';
+    }
+  }
+}
+
+function expandTextarea(textarea) {
+  // Reset height to auto to get the correct scrollHeight
+  textarea.style.height = 'auto';
+  
+  // Set height to scrollHeight, but respect min and max heights
+  const newHeight = Math.max(50, Math.min(120, textarea.scrollHeight));
+  textarea.style.height = newHeight + 'px';
+}
+
+// Display Mode Functions
+function enterDisplayMode(category, text, showSavedIndicator = false) {
+  const textarea = document.getElementById(`${category}Vision`);
+  const visionControls = textarea.parentElement.querySelector('.vision-controls');
+  const displayMode = document.getElementById(`${category}VisionDisplay`);
+  const textDisplay = document.getElementById(`${category}VisionTextDisplay`);
+  
+  if (!textarea || !visionControls || !displayMode || !textDisplay) return;
+  
+  // Hide textarea and save controls
+  textarea.style.display = 'none';
+  visionControls.style.display = 'none';
+  
+  // Show display mode and populate with formatted text
+  displayMode.style.display = 'block';
+  textDisplay.innerHTML = formatDisplayText(text);
+  
+  // Handle saved indicator based on parameter
+  const savedIndicator = displayMode.querySelector('.saved-indicator');
+  if (savedIndicator) {
+    if (showSavedIndicator) {
+      // Show saved indicator for new saves
+      savedIndicator.style.display = 'inline';
+      savedIndicator.style.opacity = '1';
+      savedIndicator.textContent = '✓ Saved';
+    } else {
+      // Hide saved indicator for existing content
+      savedIndicator.style.display = 'none';
+      savedIndicator.style.opacity = '0';
+    }
+  }
+  
+  // Update editing mode state
+  editingModes[category] = false;
+}
+
+function enterEditMode(category) {
+  const textarea = document.getElementById(`${category}Vision`);
+  const visionControls = textarea.parentElement.querySelector('.vision-controls');
+  const displayMode = document.getElementById(`${category}VisionDisplay`);
+  
+  if (!textarea || !visionControls || !displayMode) return;
+  
+  // Show textarea and save controls
+  textarea.style.display = 'block';
+  visionControls.style.display = 'flex';
+  
+  // Hide display mode
+  displayMode.style.display = 'none';
+  
+  // Focus on textarea
+  textarea.focus();
+  textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+  
+  // Update editing mode state
+  editingModes[category] = true;
+  
+  // Mark as unsaved since user is editing
+  markAsUnsaved(category);
+}
+
+function formatDisplayText(text) {
+  if (!text || text.trim() === '') {
+    return '<em class="empty-text">No vision text yet. Click Edit to add your vision.</em>';
+  }
+  
+  // Check if text is long enough to truncate
+  if (text.length > 300) {
+    const truncatedText = text.substring(0, 250) + '...';
+    const fullText = text;
+    
+    return `
+      <div class="truncated-text">
+        <div class="text-preview">${truncatedText}</div>
+        <span class="see-more-toggle" onclick="toggleTextExpansion(this, '${fullText.replace(/'/g, "\\'")}')">See more</span>
+      </div>
+      <div class="full-text" style="display: none;">
+        <div class="text-content">${fullText}</div>
+        <span class="see-more-toggle" onclick="toggleTextExpansion(this, '${truncatedText.replace(/'/g, "\\'")}')">See less</span>
+      </div>
+    `;
+  }
+  
+  // Return full text for shorter content
+  return `<div class="text-content">${text}</div>`;
+}
+
+function toggleTextExpansion(toggleElement, textToShow) {
+  const container = toggleElement.closest('.vision-text-display');
+  const truncatedDiv = container.querySelector('.truncated-text');
+  const fullDiv = container.querySelector('.full-text');
+  
+  if (truncatedDiv.style.display !== 'none') {
+    // Show full text
+    truncatedDiv.style.display = 'none';
+    fullDiv.style.display = 'block';
+  } else {
+    // Show truncated text
+    truncatedDiv.style.display = 'block';
+    fullDiv.style.display = 'none';
+  }
+}
+
+function getCategoryDisplayName(category) {
+  const names = {
+    'career': 'Career & Purpose',
+    'relationships': 'Relationships & Social Life',
+    'personalGrowth': 'Personal Growth & Hobbies'
+  };
+  return names[category] || category;
+}
+
+function fadeOutSavedIndicator(category) {
+  const displayMode = document.getElementById(`${category}VisionDisplay`);
+  if (!displayMode) return;
+  
+  const savedIndicator = displayMode.querySelector('.saved-indicator');
+  if (!savedIndicator) return;
+  
+  // Fade out the saved indicator
+  savedIndicator.style.transition = 'opacity 0.5s ease';
+  savedIndicator.style.opacity = '0';
+  
+  // Hide completely after fade animation
+  setTimeout(() => {
+    savedIndicator.style.display = 'none';
+  }, 500);
+}
+
 function debounce(func, wait) {
   let timeout;
   return function executedFunction(...args) {
@@ -3687,7 +3826,6 @@ function createCustomCategory() {
   
   hideAddCategoryModal();
   showTemporaryMessage(`✨ Created category: ${name}`, 'success');
-  saveDreamLifeData();
 }
 
 // Create custom category DOM element
@@ -3707,9 +3845,6 @@ function createCustomCategoryElement(category) {
         <h3>${category.name}</h3>
         <span class="expand-icon">▼</span>
       </div>
-      <div class="category-progress">
-        <span class="progress-text">0 of 0 completed</span>
-      </div>
       <div class="custom-category-controls">
         <button class="control-btn edit" onclick="editCustomCategory('${category.id}')" title="Edit">✏️</button>
         <button class="control-btn delete" onclick="deleteCustomCategory('${category.id}')" title="Delete">🗑️</button>
@@ -3719,15 +3854,31 @@ function createCustomCategoryElement(category) {
       <div class="vision-section">
         <label for="${category.id}Vision">Describe your vision for ${category.name}...</label>
         <textarea id="${category.id}Vision" placeholder="${category.placeholder}"></textarea>
+        <div class="vision-controls">
+          <button class="btn-save" onclick="saveVision('${category.id}')">Save & Review</button>
+          <span class="save-status" id="${category.id}Status">No changes</span>
+        </div>
+        <div class="vision-display-mode" id="${category.id}VisionDisplay" style="display: none;">
+          <div class="vision-text-display" id="${category.id}VisionTextDisplay"></div>
+          <div class="vision-controls-display">
+            <span class="saved-indicator" style="display: none; opacity: 0;">✓ Saved</span>
+            <button class="btn-edit" onclick="enterEditMode('${category.id}')">Edit</button>
+          </div>
+        </div>
       </div>
       <div class="action-items-section">
         <h4>Action Steps</h4>
         <div class="add-action-item">
-          <input type="text" id="${category.id}ActionInput" placeholder="Add a new action step...">
+          <textarea class="action-input-textarea" id="${category.id}ActionInput" placeholder="Add a new action step..." rows="1"></textarea>
           <button type="button" onclick="addActionItem('${category.id}')" class="btn-primary">Add Action Step</button>
         </div>
         <div id="${category.id}ActionList" class="action-items-list">
           <div class="empty-state">No action steps yet. Add your first step above! ✨</div>
+        </div>
+        
+        <!-- Progress indicator moved here -->
+        <div class="category-progress">
+          <span class="progress-text">0 of 0 completed</span>
         </div>
       </div>
     </div>
@@ -3746,18 +3897,21 @@ function setupCustomCategoryEventListeners(category) {
   const actionInput = document.getElementById(`${category.id}ActionInput`);
   
   if (textarea) {
-    textarea.addEventListener('input', debounce(() => {
-      dreamLifeData[category.id].vision = textarea.value;
-      saveDreamLifeData();
-      updateCategoryProgress(category.id, dreamLifeData[category.id].actionItems);
-    }, 500));
+    textarea.addEventListener('input', () => {
+      markAsUnsaved(category.id);
+    });
   }
   
   if (actionInput) {
     actionInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
         addActionItem(category.id);
       }
+    });
+    
+    actionInput.addEventListener('input', () => {
+      expandTextarea(actionInput);
     });
   }
 }
@@ -3813,7 +3967,6 @@ function updateCustomCategory(categoryId) {
   
   hideAddCategoryModal();
   showTemporaryMessage(`✨ Updated category: ${name}`, 'success');
-  saveDreamLifeData();
   
   // Reset button
   const createBtn = document.querySelector('.modal-footer .btn-primary');
@@ -3841,7 +3994,6 @@ function deleteCustomCategory(categoryId) {
   }
   
   showTemporaryMessage(`🗑️ Deleted category: ${category.name}`, 'success');
-  saveDreamLifeData();
 }
 
 // Load custom categories on initialization
@@ -3853,18 +4005,20 @@ function loadCustomCategories() {
 
 
 
-// Event listeners for modal
+// Event listeners for modals
 document.addEventListener('click', function(e) {
-  const modal = document.getElementById('addCategoryModal');
-  if (e.target === modal) {
+  const addCategoryModal = document.getElementById('addCategoryModal');
+  
+  if (e.target === addCategoryModal) {
     hideAddCategoryModal();
   }
 });
 
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') {
-    const modal = document.getElementById('addCategoryModal');
-    if (modal.style.display === 'flex') {
+    const addCategoryModal = document.getElementById('addCategoryModal');
+    
+    if (addCategoryModal && addCategoryModal.style.display === 'flex') {
       hideAddCategoryModal();
     }
   }

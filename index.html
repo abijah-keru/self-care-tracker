@@ -30,42 +30,61 @@
 
   <!-- Authentication Screen -->
   <div class="auth-screen" id="authScreen" style="display: none;">
-    <div class="auth-content">
-      <div class="auth-logo">🌱</div>
-              <h2 class="auth-title">Your Anchors</h2>
-      <p class="auth-subtitle">Sign in to your self-care journey</p>
+      <div class="auth-content">
+    <div class="auth-card">
+      <!-- Gradient Header Section -->
+      <div class="auth-header">
+        <div class="auth-logo">🌱</div>
+        <h2 class="auth-title">Your Anchors</h2>
+      </div>
+      
+      <!-- Auth Tabs -->
+      <div class="auth-tabs">
+        <button class="auth-tab active" data-form="signin">Sign In</button>
+        <button class="auth-tab" data-form="signup">Sign Up</button>
+      </div>
       
       <div class="auth-container">
-        <div class="float-field">
-          <input type="text" id="firstNameInput" placeholder=" " required />
-          <label for="firstNameInput">First Name</label>
-        </div>
-        <div class="float-field optional-field">
-          <input type="text" id="lastNameInput" placeholder=" " />
-          <label for="lastNameInput">Last Name (Optional)</label>
-        </div>
-        <div class="float-field">
-          <input type="email" id="emailInput" placeholder=" " required />
-          <label for="emailInput">Email</label>
-        </div>
-        <div class="float-field">
-          <input type="password" id="passwordInput" placeholder=" " required />
-          <label for="passwordInput">Password</label>
+        <!-- Sign In Form -->
+        <div class="auth-form" id="signinForm">
+          <div class="float-field">
+            <input type="email" id="signinEmailInput" placeholder=" " required />
+            <label for="signinEmailInput">Email</label>
+          </div>
+          <div class="float-field">
+            <input type="password" id="signinPasswordInput" placeholder=" " required />
+            <label for="signinPasswordInput">Password</label>
+          </div>
+          
+          <button id="signInBtn" class="auth-submit-btn">Sign In</button>
         </div>
         
-        <div class="auth-buttons">
-          <button id="signInBtn">Sign In</button>
-          <button id="signUpBtn">Sign Up</button>
+        <!-- Sign Up Form -->
+        <div class="auth-form" id="signupForm" style="display: none;">
+          <div class="float-field">
+            <input type="text" id="signupFirstNameInput" placeholder=" " required />
+            <label for="signupFirstNameInput">First Name</label>
+          </div>
+          <div class="float-field">
+            <input type="email" id="signupEmailInput" placeholder=" " required />
+            <label for="signupEmailInput">Email</label>
+        </div>
+        <div class="float-field">
+          <input type="password" id="signupPasswordInput" placeholder=" " required />
+          <label for="signupPasswordInput">Password</label>
         </div>
         
-        <div class="auth-divider">— or —</div>
-        
-        <div class="social-auth">
-          <button id="googleSignInBtn">🔍 Sign in with Google</button>
-          <button id="guestSignInBtn">👤 Continue as Guest</button>
-        </div>
+        <button id="signUpBtn" class="auth-submit-btn">Sign Up</button>
+      </div>
+      
+      <div class="auth-divider">— or —</div>
+      
+      <div class="social-auth">
+        <button id="guestSignInBtn">👤 Continue as Guest</button>
       </div>
     </div>
+  </div>
+</div>
   </div>
 
   <!-- Bottom Navigation -->
@@ -107,7 +126,6 @@
 
   <!-- Main Content Container -->
   <div class="main-content" id="mainContent" style="display: none;">
-    <nav class="breadcrumbs" id="breadcrumbs"></nav>
     
     <!-- Onboarding Overlay -->
     <div id="onboardingOverlay" class="onboarding-overlay" aria-hidden="true">
@@ -411,91 +429,130 @@
       <div class="dream-categories">
         <!-- Career & Purpose -->
         <div class="dream-category" data-category="career">
-          <div class="category-header" onclick="toggleCategory('career')">
-            <div class="category-title-row">
-              <span class="category-icon">🎯</span>
-              <h3>Career & Purpose</h3>
-              <span class="expand-icon">▼</span>
+                  <div class="category-header" onclick="toggleCategory('career')">
+          <div class="category-title-row">
+            <span class="category-icon">🚀</span>
+            <h3>Career & Purpose</h3>
+            <span class="expand-icon">▼</span>
+          </div>
+        </div>
+          <div class="category-content" style="display: none;">
+                    <div class="vision-section">
+          <label for="careerVision">What does your ideal career and life purpose look like?</label>
+          <textarea id="careerVision" placeholder="Envision your dream career, the impact you want to make, and how you want to spend your working hours..."></textarea>
+          <div class="vision-controls">
+            <button class="btn-save" onclick="saveVision('career')">Save & Review</button>
+            <span class="save-status" id="careerStatus">No changes</span>
+          </div>
+          <div class="vision-display-mode" id="careerVisionDisplay" style="display: none;">
+            <div class="vision-text-display" id="careerVisionTextDisplay"></div>
+            <div class="vision-controls-display">
+              <span class="saved-indicator" style="display: none; opacity: 0;">✓ Saved</span>
+              <button class="btn-edit" onclick="enterEditMode('career')">Edit</button>
             </div>
+          </div>
+        </div>
+                      <div class="action-items-section">
+            <h4>Action Steps</h4>
+            <div class="add-action-item">
+              <textarea class="action-input-textarea" id="careerActionInput" placeholder="Add a new action step..." rows="1"></textarea>
+              <button type="button" onclick="addActionItem('career')" class="btn-primary">Add Action Step</button>
+            </div>
+            <div id="careerActionList" class="action-items-list">
+              <div class="empty-state">No action steps yet. Add your first step above! ✨</div>
+            </div>
+            
+            <!-- Progress indicator moved here -->
             <div class="category-progress">
               <span class="progress-text">0 of 0 completed</span>
             </div>
           </div>
-          <div class="category-content" style="display: none;">
-            <div class="vision-section">
-              <label for="careerVision">What does your ideal career and life purpose look like?</label>
-              <textarea id="careerVision" placeholder="Envision your dream career, the impact you want to make, and how you want to spend your working hours..."></textarea>
-            </div>
-            <div class="action-items-section">
-              <h4>Action Steps</h4>
-              <div class="add-action-item">
-                <input type="text" id="careerActionInput" placeholder="Add a new action step...">
-                <button type="button" onclick="addActionItem('career')" class="btn-primary">Add Action Step</button>
-              </div>
-              <div id="careerActionList" class="action-items-list">
-                <div class="empty-state">No action steps yet. Add your first step above! ✨</div>
-              </div>
-            </div>
           </div>
         </div>
 
         <!-- Relationships & Social Life -->
         <div class="dream-category" data-category="relationships">
-          <div class="category-header" onclick="toggleCategory('relationships')">
-            <div class="category-title-row">
-              <span class="category-icon">❤️</span>
-              <h3>Relationships & Social Life</h3>
-              <span class="expand-icon">▼</span>
+                  <div class="category-header" onclick="toggleCategory('relationships')">
+          <div class="category-title-row">
+            <span class="category-icon">❤️</span>
+            <h3>Relationships & Social Life</h3>
+            <span class="expand-icon">▼</span>
+          </div>
+        </div>
+          <div class="category-content" style="display: none;">
+                    <div class="vision-section">
+          <label for="relationshipsVision">Envision your ideal relationships and social connections...</label>
+          <textarea id="relationshipsVision" placeholder="What kind of relationships do you want to cultivate? How do you want to feel in your social connections?"></textarea>
+          <div class="vision-controls">
+            <button class="btn-save" onclick="saveVision('relationships')">Save & Review</button>
+            <span class="save-status" id="relationshipsStatus">No changes</span>
+          </div>
+          <div class="vision-display-mode" id="relationshipsVisionDisplay" style="display: none;">
+            <div class="vision-text-display" id="relationshipsVisionTextDisplay"></div>
+            <div class="vision-controls-display">
+              <span class="saved-indicator" style="display: none; opacity: 0;">✓ Saved</span>
+              <button class="btn-edit" onclick="enterEditMode('relationships')">Edit</button>
             </div>
+          </div>
+        </div>
+                      <div class="action-items-section">
+            <h4>Action Steps</h4>
+            <div class="add-action-item">
+              <textarea class="action-input-textarea" id="relationshipsActionInput" placeholder="Add a new action step..." rows="1"></textarea>
+              <button type="button" onclick="addActionItem('relationships')" class="btn-primary">Add Action Step</button>
+            </div>
+            <div id="relationshipsActionList" class="action-items-list">
+              <div class="empty-state">No action steps yet. Add your first step above! ✨</div>
+            </div>
+            
+            <!-- Progress indicator moved here -->
             <div class="category-progress">
               <span class="progress-text">0 of 0 completed</span>
             </div>
           </div>
-          <div class="category-content" style="display: none;">
-            <div class="vision-section">
-              <label for="relationshipsVision">Envision your ideal relationships and social connections...</label>
-              <textarea id="relationshipsVision" placeholder="What kind of relationships do you want to cultivate? How do you want to feel in your social connections?"></textarea>
-            </div>
-            <div class="action-items-section">
-              <h4>Action Steps</h4>
-              <div class="add-action-item">
-                <input type="text" id="relationshipsActionInput" placeholder="Add a new action step...">
-                <button type="button" onclick="addActionItem('relationships')" class="btn-primary">Add Action Step</button>
-              </div>
-              <div id="relationshipsActionList" class="action-items-list">
-                <div class="empty-state">No action steps yet. Add your first step above! ✨</div>
-              </div>
-            </div>
           </div>
         </div>
 
         <!-- Personal Growth & Hobbies -->
         <div class="dream-category" data-category="personalGrowth">
-          <div class="category-header" onclick="toggleCategory('personalGrowth')">
-            <div class="category-title-row">
-              <span class="category-icon">✨</span>
-              <h3>Personal Growth & Hobbies</h3>
-              <span class="expand-icon">▼</span>
+                  <div class="category-header" onclick="toggleCategory('personalGrowth')">
+          <div class="category-title-row">
+            <span class="category-icon">✨</span>
+            <h3>Personal Growth & Hobbies</h3>
+            <span class="expand-icon">▼</span>
+          </div>
+        </div>
+          <div class="category-content" style="display: none;">
+                    <div class="vision-section">
+          <label for="personalGrowthVision">What personal growth and creative pursuits call to you?</label>
+          <textarea id="personalGrowthVision" placeholder="What skills do you want to develop? What creative outlets call to your soul?"></textarea>
+          <div class="vision-controls">
+            <button class="btn-save" onclick="saveVision('personalGrowth')">Save & Review</button>
+            <span class="save-status" id="personalGrowthStatus">No changes</span>
+          </div>
+          <div class="vision-display-mode" id="personalGrowthVisionDisplay" style="display: none;">
+            <div class="vision-text-display" id="personalGrowthVisionTextDisplay"></div>
+            <div class="vision-controls-display">
+              <span class="saved-indicator" style="display: none; opacity: 0;">✓ Saved</span>
+              <button class="btn-edit" onclick="enterEditMode('personalGrowth')">Edit</button>
             </div>
+          </div>
+        </div>
+                      <div class="action-items-section">
+            <h4>Action Steps</h4>
+            <div class="add-action-item">
+              <textarea class="action-input-textarea" id="personalGrowthActionInput" placeholder="Add a new action step..." rows="1"></textarea>
+              <button type="button" onclick="addActionItem('personalGrowth')" class="btn-primary">Add Action Step</button>
+            </div>
+            <div id="personalGrowthActionList" class="action-items-list">
+              <div class="empty-state">No action steps yet. Add your first step above! ✨</div>
+            </div>
+            
+            <!-- Progress indicator moved here -->
             <div class="category-progress">
               <span class="progress-text">0 of 0 completed</span>
             </div>
           </div>
-          <div class="category-content" style="display: none;">
-            <div class="vision-section">
-              <label for="personalGrowthVision">What personal growth and creative pursuits call to you?</label>
-              <textarea id="personalGrowthVision" placeholder="What skills do you want to develop? What creative outlets call to your soul?"></textarea>
-            </div>
-            <div class="action-items-section">
-              <h4>Action Steps</h4>
-              <div class="add-action-item">
-                <input type="text" id="personalGrowthActionInput" placeholder="Add a new action step...">
-                <button type="button" onclick="addActionItem('personalGrowth')" class="btn-primary">Add Action Step</button>
-              </div>
-              <div id="personalGrowthActionList" class="action-items-list">
-                <div class="empty-state">No action steps yet. Add your first step above! ✨</div>
-              </div>
-                    </div>
       </div>
     </div>
     
@@ -537,6 +594,8 @@
     </div>
   </div>
 </div>
+
+<!-- Vision Review Modal - No longer needed with new display mode approach -->
 
 <!-- About Page -->
     <div id="about" class="page-section">
@@ -580,7 +639,6 @@
         </div>
         <div class="profile-actions">
           <button id="editProfileBtn" class="btn-secondary">Edit Profile</button>
-          <button id="signOutBtn" class="btn-danger">Sign Out</button>
         </div>
       </div>
 
@@ -606,13 +664,7 @@
           </div>
         </div>
 
-        <div class="settings-section">
-          <h3>Data</h3>
-          <div class="setting-row">
-            <button id="exportDataBtn" class="btn-secondary">Export Data</button>
-            <button id="clearDataBtn" class="btn-danger">Clear Local Data</button>
-          </div>
-        </div>
+
       </div>
     </div>
 
