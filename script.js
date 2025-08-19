@@ -1906,6 +1906,255 @@ auth.onAuthStateChanged(async (user) => {
 });
 
 // ----------------------------
+// New User Onboarding Flow
+// ----------------------------
+function checkIfUserHasExistingData() {
+  // Check if user has any existing data in localStorage or Firebase
+  const hasLocalData = localStorage.getItem('currentStreak') || 
+                       localStorage.getItem('totalWins') ||
+                       localStorage.getItem('lastProgressDate');
+  
+  // If user is authenticated, also check Firebase data
+  if (currentUser && !currentUser.isAnonymous) {
+    // For now, just check local data since Firebase data loading happens after auth
+    // This can be enhanced later to check Firebase collections
+    return hasLocalData;
+  }
+  
+  console.log("Checking if user has existing data:", hasLocalData);
+  return hasLocalData;
+}
+
+function setupNewUserOnboarding() {
+  console.log("Setting up new user onboarding flow...");
+  
+  const optionBalance = document.getElementById('optionBalance');
+  const optionDreams = document.getElementById('optionDreams');
+  const dontAskAgain = document.getElementById('dontAskAgain');
+  
+  if (optionBalance) {
+    optionBalance.addEventListener('click', () => {
+      console.log("User selected: Find my balance");
+      completeNewUserOnboarding('balance', dontAskAgain?.checked || false);
+      navigateToSection('daily-anchors');
+    });
+  }
+  
+  if (optionDreams) {
+    optionDreams.addEventListener('click', () => {
+      console.log("User selected: Start shaping my dream life");
+      completeNewUserOnboarding('dreams', dontAskAgain?.checked || false);
+      navigateToSection('dream-life');
+    });
+  }
+}
+
+function completeNewUserOnboarding(preference, dontAskAgain = false) {
+  // Store user preference and mark onboarding as complete
+  localStorage.setItem('new_user_onboarding_shown', 'true');
+  localStorage.setItem('user_onboarding_preference', preference);
+  
+  // If user checked "don't ask again", store this preference
+  if (dontAskAgain) {
+    localStorage.setItem('never_ask_onboarding', 'true');
+    console.log("User chose to never show onboarding again");
+  }
+  
+  // Hide the onboarding overlay
+  const newUserOnboarding = document.getElementById('newUserOnboarding');
+  if (newUserOnboarding) {
+    newUserOnboarding.classList.remove('active');
+    newUserOnboarding.setAttribute('aria-hidden', 'true');
+  }
+  
+  console.log(`New user onboarding completed. Preference: ${preference}, Don't ask again: ${dontAskAgain}`);
+}
+
+function navigateToSection(sectionName) {
+  // Remove active class from all navigation links and page sections
+  document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+  document.querySelectorAll('.page-section').forEach(section => section.classList.remove('active'));
+  
+  // Activate the selected section's navigation link
+  const sectionLink = document.querySelector(`.nav-link[data-page="${sectionName}"]`);
+  if (sectionLink) {
+    sectionLink.classList.add('active');
+  }
+  
+  // Show the selected section
+  const section = document.getElementById(sectionName);
+  if (section) {
+    section.classList.add('active');
+    // Add smooth animation
+    section.classList.remove('animate-in');
+    void section.offsetWidth; // reflow
+    section.classList.add('animate-in');
+  }
+  
+  // Ensure bottom navigation shows the correct section as active
+  const bottomNavLink = document.querySelector(`.bottom-nav .nav-link[data-page="${sectionName}"]`);
+  if (bottomNavLink) {
+    bottomNavLink.classList.add('active');
+  }
+  
+  // Show welcome message for first-time visitors if coming from onboarding
+  showWelcomeMessageIfNeeded(sectionName);
+  
+  console.log(`Successfully navigated to ${sectionName} section`);
+}
+
+function showWelcomeMessageIfNeeded(sectionName) {
+  // Check if user just completed onboarding and this is their first visit to this section
+  const onboardingPreference = localStorage.getItem('user_onboarding_preference');
+  const welcomeShown = localStorage.getItem(`${sectionName}_welcome_shown`);
+  
+  if (onboardingPreference && !welcomeShown) {
+    const welcomeMessage = document.getElementById(`${sectionName.replace('-', '')}WelcomeMessage`);
+    if (welcomeMessage) {
+      welcomeMessage.style.display = 'block';
+      console.log(`Showing welcome message for ${sectionName}`);
+    }
+  }
+}
+
+function dismissWelcomeMessage(sectionName) {
+  // Hide the welcome message
+  const welcomeMessage = document.getElementById(`${sectionName}WelcomeMessage`);
+  if (welcomeMessage) {
+    welcomeMessage.style.display = 'none';
+  }
+  
+  // Mark as shown for this section
+  localStorage.setItem(`${sectionName}_welcome_shown`, 'true');
+  
+  console.log(`Welcome message dismissed for ${sectionName}`);
+}
+
+// Function to manually trigger onboarding for testing (can be removed in production)
+function triggerOnboardingForTesting() {
+  // Clear onboarding flags
+  localStorage.removeItem('new_user_onboarding_shown');
+  localStorage.removeItem('user_onboarding_preference');
+  localStorage.removeItem('daily-anchors_welcome_shown');
+  localStorage.removeItem('dream-life_welcome_shown');
+  
+  // Show onboarding
+  const newUserOnboarding = document.getElementById('newUserOnboarding');
+  if (newUserOnboarding) {
+    newUserOnboarding.classList.add('active');
+    newUserOnboarding.setAttribute('aria-hidden', 'false');
+    setupNewUserOnboarding();
+    console.log("Onboarding triggered for testing");
+  }
+}
+
+// ----------------------------
+// Weekly Path Reflection
+// ----------------------------
+function setupWeeklyPathReflection() {
+  console.log("Setting up weekly path reflection...");
+  
+  const weeklyBalance = document.getElementById('weeklyBalance');
+  const weeklyDreams = document.getElementById('weeklyDreams');
+  const weeklyDontAskAgain = document.getElementById('weeklyDontAskAgain');
+  
+  if (weeklyBalance) {
+    weeklyBalance.addEventListener('click', () => {
+      console.log("User selected weekly: Find my balance");
+      completeWeeklyReflection('balance', weeklyDontAskAgain?.checked || false);
+      navigateToSection('daily-anchors');
+    });
+  }
+  
+  if (weeklyDreams) {
+    weeklyDreams.addEventListener('click', () => {
+      console.log("User selected weekly: Start shaping my dream life");
+      completeWeeklyReflection('dreams', weeklyDontAskAgain?.checked || false);
+      navigateToSection('dream-life');
+    });
+  }
+}
+
+function completeWeeklyReflection(preference, dontAskAgain = false) {
+  // Store weekly preference and timestamp
+  localStorage.setItem('weekly_path_preference', preference);
+  localStorage.setItem('weekly_reflection_date', new Date().toISOString());
+  
+  // If user checked "don't ask again", store this preference
+  if (dontAskAgain) {
+    localStorage.setItem('never_ask_weekly', 'true');
+    console.log("User chose to never show weekly reflection again");
+  }
+  
+  // Hide the weekly reflection overlay
+  const weeklyReflection = document.getElementById('weeklyPathReflection');
+  if (weeklyReflection) {
+    weeklyReflection.classList.remove('active');
+    weeklyReflection.setAttribute('aria-hidden', 'true');
+  }
+  
+  console.log(`Weekly reflection completed. Preference: ${preference}, Don't ask again: ${dontAskAgain}`);
+}
+
+function shouldShowWeeklyReflection() {
+  // Check if user has opted out of weekly reflections
+  if (localStorage.getItem('never_ask_weekly') === 'true') {
+    return false;
+  }
+  
+  // Check if user has opted out of all onboarding
+  if (localStorage.getItem('never_ask_onboarding') === 'true') {
+    return false;
+  }
+  
+  // Get the last weekly reflection date
+  const lastReflectionDate = localStorage.getItem('weekly_reflection_date');
+  
+  if (!lastReflectionDate) {
+    // First time user, show after 7 days
+    return true;
+  }
+  
+  // Check if it's been at least 7 days since last reflection
+  const lastDate = new Date(lastReflectionDate);
+  const currentDate = new Date();
+  const daysDifference = (currentDate - lastDate) / (1000 * 60 * 60 * 24);
+  
+  console.log(`Days since last weekly reflection: ${daysDifference.toFixed(1)}`);
+  
+  return daysDifference >= 7;
+}
+
+function showWeeklyReflectionIfNeeded() {
+  if (shouldShowWeeklyReflection()) {
+    const weeklyReflection = document.getElementById('weeklyPathReflection');
+    if (weeklyReflection) {
+      weeklyReflection.classList.add('active');
+      weeklyReflection.setAttribute('aria-hidden', 'false');
+      setupWeeklyPathReflection();
+      console.log("Weekly path reflection displayed");
+    }
+  }
+}
+
+// Function to manually trigger weekly reflection for testing
+function triggerWeeklyReflectionForTesting() {
+  // Clear weekly reflection flags
+  localStorage.removeItem('weekly_path_preference');
+  localStorage.removeItem('weekly_reflection_date');
+  localStorage.removeItem('never_ask_weekly');
+  
+  // Show weekly reflection
+  const weeklyReflection = document.getElementById('weeklyPathReflection');
+  if (weeklyReflection) {
+    weeklyReflection.classList.add('active');
+    weeklyReflection.setAttribute('aria-hidden', 'false');
+    setupWeeklyPathReflection();
+    console.log("Weekly reflection triggered for testing");
+  }
+}
+
+// ----------------------------
 // Display Save Message
 // ----------------------------
 function displaySaveMessage(progressData) {
@@ -2072,7 +2321,7 @@ function initializeSplashScreen() {
         splashScreen.style.display = 'none';
       }, 500);
     }
-  }, 2500);
+  }, 2700);
 }
 
 function setupNavigation() {
@@ -2660,32 +2909,35 @@ async function initializeApp() {
 
 
 
-  // Show onboarding for first-time users (no local streak and no entries)
+  // Show new user onboarding flow for first-time users
   try {
-    const shown = localStorage.getItem('onboarding_shown') === 'true';
-    const overlay = document.getElementById('onboardingOverlay');
-    if (!shown && overlay) {
-      overlay.classList.add('active');
-      overlay.setAttribute('aria-hidden', 'false');
-      const skip = document.getElementById('onboardingSkip');
-      const got = document.getElementById('onboardingGotIt');
-      const complete = () => {
-        overlay.classList.remove('active');
-        overlay.setAttribute('aria-hidden', 'true');
-        localStorage.setItem('onboarding_shown', 'true');
-      };
-      if (skip) skip.addEventListener('click', complete);
-      if (got) got.addEventListener('click', complete);
+    const onboardingShown = localStorage.getItem('new_user_onboarding_shown') === 'true';
+    const hasExistingData = checkIfUserHasExistingData();
+    const newUserOnboarding = document.getElementById('newUserOnboarding');
+    
+    console.log("Onboarding setup - shown:", onboardingShown, "hasData:", hasExistingData, "element:", !!newUserOnboarding);
+    
+    if (!onboardingShown && !hasExistingData && newUserOnboarding) {
+      // Show the new user onboarding for truly new users
+      newUserOnboarding.classList.add('active');
+      newUserOnboarding.setAttribute('aria-hidden', 'false');
+      
+      // Set up event listeners for the onboarding options
+      setupNewUserOnboarding();
+      console.log("New user onboarding displayed");
     }
-  } catch (e) { /* ignore */ }
+  } catch (e) { 
+    console.error("Error setting up new user onboarding:", e); 
+  }
 
-  // Optional interactive coach tutorial (one-time)
+  // Check if weekly path reflection should be shown
   try {
-    const coachShown = localStorage.getItem('coach_shown') === 'true';
-    if (!coachShown) {
-      setupCoachTutorial();
-    }
-  } catch (e) { /* ignore */ }
+    showWeeklyReflectionIfNeeded();
+  } catch (e) {
+    console.error("Error setting up weekly path reflection:", e);
+  }
+
+
   
   // Initialize the breathing design system
   try {
@@ -2709,24 +2961,7 @@ async function initializeApp() {
   
   console.log("App initialized successfully!");
 }
-function setupCoachTutorial() {
-  const overlay = document.getElementById('coachOverlay');
-  if (!overlay) return;
 
-  const steps = [
-          {
-        selector: '.bottom-nav .nav-link[data-page="dashboard"]',
-        text: 'This is Your Wins. Tap here anytime to view your achievements and progress.',
-        position: 'top'
-      },
-    {
-      selector: '.bottom-nav .nav-link[data-page="daily-anchors"]',
-      text: 'Your Daily Anchors live here. Tap to check off today\'s habits.',
-      position: 'top'
-    }
-  ];
-
-  let current = 0;
 
   const renderStep = () => {
     if (current >= steps.length) {
@@ -2791,9 +3026,7 @@ function setupCoachTutorial() {
     };
   };
 
-  // Render after small delay to ensure layout is ready
-  setTimeout(renderStep, 400);
-}
+
 
 // Start the app when DOM is loaded
 if (document.readyState === 'loading') {
@@ -3161,20 +3394,45 @@ let customCategories = [];
 
 // Initialize Dream Life Vision functionality
 function initializeDreamLifeVision() {
+  // Load saved data from localStorage first
+  loadDreamLifeData();
+  
   setupDreamLifeEventListeners();
   renderDreamLifeData();
 }
 
-// Load dream life data from memory (localStorage removed for compatibility)
+// Load dream life data from localStorage
 function loadDreamLifeData() {
-  // Data will persist only during the session
-  // You can implement your own storage solution if needed
+  try {
+    const userPrefix = getUserPrefix();
+    const savedData = localStorage.getItem(`${userPrefix}dreamLifeData`);
+    const savedCustomCategories = localStorage.getItem(`${userPrefix}customCategories`);
+    
+    if (savedData) {
+      dreamLifeData = JSON.parse(savedData);
+      console.log('Dream life data loaded from localStorage');
+    }
+    
+    if (savedCustomCategories) {
+      customCategories = JSON.parse(savedCustomCategories);
+      console.log('Custom categories loaded from localStorage');
+    }
+  } catch (error) {
+    console.error('Error loading dream life data:', error);
+    // Keep default data if loading fails
+  }
 }
 
-// Save dream life data to memory
+// Save dream life data to localStorage
 function saveDreamLifeData() {
-  // Data saved in memory only - implement your own storage if needed
-  console.log('Dream life data saved to memory');
+  try {
+    const userPrefix = getUserPrefix();
+    localStorage.setItem(`${userPrefix}dreamLifeData`, JSON.stringify(dreamLifeData));
+    localStorage.setItem(`${userPrefix}customCategories`, JSON.stringify(customCategories));
+    console.log('Dream life data saved to localStorage');
+  } catch (error) {
+    console.error('Error saving dream life data:', error);
+  }
 }
 
 // Setup event listeners for dream life page
@@ -3327,6 +3585,9 @@ function addActionItem(category) {
   
   dreamLifeData[category].actionItems.push(newItem);
   
+  // Save to localStorage
+  saveDreamLifeData();
+  
   // Clear input
   input.value = '';
   
@@ -3342,6 +3603,10 @@ function toggleActionItem(category, itemId) {
   const item = dreamLifeData[category].actionItems.find(item => item.id === itemId);
   if (item) {
     item.completed = !item.completed;
+    
+    // Save to localStorage
+    saveDreamLifeData();
+    
     renderCategory(category);
     
     if (item.completed) {
@@ -3353,6 +3618,10 @@ function toggleActionItem(category, itemId) {
 // Delete action item
 function deleteActionItem(category, itemId) {
   dreamLifeData[category].actionItems = dreamLifeData[category].actionItems.filter(item => item.id !== itemId);
+  
+  // Save to localStorage
+  saveDreamLifeData();
+  
   renderCategory(category);
 }
 
@@ -3511,6 +3780,9 @@ function saveVision(category) {
   setTimeout(() => {
     // Save the vision text
     dreamLifeData[category].vision = text;
+    
+    // Save to localStorage
+    saveDreamLifeData();
     
     // Enter display mode with saved indicator
     enterDisplayMode(category, text, true);
@@ -3824,6 +4096,9 @@ function createCustomCategory() {
   // Create and append the new category
   createCustomCategoryElement(customCategory);
   
+  // Save to localStorage
+  saveDreamLifeData();
+  
   hideAddCategoryModal();
   showTemporaryMessage(`✨ Created category: ${name}`, 'success');
 }
@@ -3968,6 +4243,9 @@ function updateCustomCategory(categoryId) {
   hideAddCategoryModal();
   showTemporaryMessage(`✨ Updated category: ${name}`, 'success');
   
+  // Save to localStorage
+  saveDreamLifeData();
+  
   // Reset button
   const createBtn = document.querySelector('.modal-footer .btn-primary');
   createBtn.textContent = 'Create Category';
@@ -3992,6 +4270,9 @@ function deleteCustomCategory(categoryId) {
   if (categoryElement) {
     categoryElement.remove();
   }
+  
+  // Save to localStorage
+  saveDreamLifeData();
   
   showTemporaryMessage(`🗑️ Deleted category: ${category.name}`, 'success');
 }

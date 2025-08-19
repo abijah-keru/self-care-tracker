@@ -2128,33 +2128,7 @@ input[type=checkbox]:checked {
 .onboarding-steps { display: grid; gap: 8px; margin-top: 8px; }
 .onboarding-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
 
-/* Coach marks tutorial */
-.coach-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 2100;
-  pointer-events: none;
-}
-.coach-highlight {
-  position: fixed;
-  width: 64px; height: 64px;
-  border-radius: 9999px;
-  border: 3px solid var(--accent);
-  box-shadow: 0 0 0 8px rgba(76,167,160,0.18);
-  pointer-events: none;
-}
-.coach-tooltip {
-  position: fixed;
-  max-width: 260px;
-  background: #fff;
-  color: #111827;
-  border-radius: 12px;
-  padding: 12px;
-  box-shadow: var(--hover-shadow);
-  pointer-events: auto;
-}
-.coach-tooltip .coach-text { font-size: 14px; line-height: 1.4; }
-.coach-tooltip .coach-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 10px; }
+
 
 /* Main Content Layout */
 .main-content {
@@ -2754,50 +2728,401 @@ input[type=checkbox]:checked {
   margin-top: 12px; 
 }
 
-/* Enhanced Coach Tutorial */
-.coach-overlay {
+/* New User Onboarding Flow */
+.new-user-onboarding {
   position: fixed;
   inset: 0;
-  z-index: 2100;
-  pointer-events: none;
+  background: rgba(0, 0, 0, 0.6);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 2500;
+  backdrop-filter: blur(8px);
+  animation: fadeIn 0.4s ease-out;
 }
 
-.coach-highlight {
-  position: fixed;
-  width: 64px; 
-  height: 64px;
-  border-radius: 9999px;
-  border: 3px solid var(--accent);
-  box-shadow: 0 0 0 8px rgba(76,167,160,0.18);
-  pointer-events: none;
-  animation: gentlePulse 2s ease-in-out infinite;
-}
-
-.coach-tooltip {
-  position: fixed;
-  max-width: 260px;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  color: var(--text-primary);
-  border-radius: var(--radius-md);
-  padding: var(--space-sm);
-  box-shadow: var(--shadow-medium);
-  pointer-events: auto;
-  border: 1px solid rgba(76, 167, 160, 0.1);
-}
-
-.coach-tooltip .coach-text { 
-  font-size: 14px; 
-  line-height: 1.4; 
-  margin-bottom: var(--space-sm);
-}
-
-.coach-tooltip .coach-actions { 
+.new-user-onboarding.active {
   display: flex;
-  gap: 8px; 
-  justify-content: flex-end; 
-  margin-top: 10px; 
 }
+
+.new-user-onboarding-card {
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(25px);
+  border-radius: 24px;
+  padding: 32px;
+  width: min(95%, 480px);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  animation: slideInUp 0.6s ease-out;
+}
+
+.onboarding-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.onboarding-header h2 {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0 0 12px 0;
+  line-height: 1.2;
+  font-family: "Nunito Sans", sans-serif;
+}
+
+.onboarding-subtitle {
+  font-size: 16px;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.5;
+  font-family: "Nunito Sans", sans-serif;
+}
+
+.onboarding-options {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.onboarding-option {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fdfc 100%);
+  border: 2px solid #e5e7eb;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: left;
+  width: 100%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.onboarding-option:hover {
+  border-color: var(--accent);
+  box-shadow: 0 8px 25px rgba(76, 167, 160, 0.15);
+  transform: translateY(-2px);
+}
+
+.onboarding-option:active {
+  transform: translateY(0);
+}
+
+.option-icon {
+  font-size: 32px;
+  flex-shrink: 0;
+}
+
+.option-content {
+  flex: 1;
+}
+
+.option-content h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 6px 0;
+  font-family: "Nunito Sans", sans-serif;
+}
+
+.option-content p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.4;
+  font-family: "Nunito Sans", sans-serif;
+}
+
+.option-arrow {
+  font-size: 20px;
+  color: var(--accent);
+  font-weight: 700;
+  flex-shrink: 0;
+  transition: transform 0.3s ease;
+}
+
+.onboarding-option:hover .option-arrow {
+  transform: translateX(4px);
+}
+
+/* Animation keyframes */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Welcome Messages for First-time Visitors */
+.welcome-message {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 1px solid #bae6fd;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+  text-align: center;
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.welcome-content {
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.welcome-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.welcome-content h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 12px 0;
+  font-family: "Nunito Sans", sans-serif;
+}
+
+.welcome-content p {
+  font-size: 16px;
+  color: var(--text-secondary);
+  margin: 0 0 20px 0;
+  line-height: 1.5;
+  font-family: "Nunito Sans", sans-serif;
+}
+
+.welcome-dismiss {
+  background: linear-gradient(135deg, var(--accent), var(--accent-light));
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: "Nunito Sans", sans-serif;
+}
+
+.welcome-dismiss:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(76, 167, 160, 0.25);
+}
+
+.welcome-dismiss:active {
+  transform: translateY(0);
+}
+
+/* Onboarding Footer with Don't Ask Again */
+.onboarding-footer, .weekly-footer {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #e5e7eb;
+  text-align: center;
+}
+
+.dont-ask-again {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-secondary);
+  font-family: "Nunito Sans", sans-serif;
+  transition: color 0.3s ease;
+}
+
+.dont-ask-again:hover {
+  color: var(--text-primary);
+}
+
+.dont-ask-again input[type="checkbox"] {
+  display: none;
+}
+
+.checkmark {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #d1d5db;
+  border-radius: 4px;
+  display: inline-block;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.dont-ask-again input[type="checkbox"]:checked + .checkmark {
+  background-color: var(--accent);
+  border-color: var(--accent);
+}
+
+.dont-ask-again input[type="checkbox"]:checked + .checkmark::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+/* Weekly Path Reflection */
+.weekly-path-reflection {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 2500;
+  backdrop-filter: blur(8px);
+  animation: fadeIn 0.4s ease-out;
+}
+
+.weekly-path-reflection.active {
+  display: flex;
+}
+
+.weekly-path-card {
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(25px);
+  border-radius: 24px;
+  padding: 32px;
+  width: min(95%, 480px);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  animation: slideInUp 0.6s ease-out;
+}
+
+.weekly-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.weekly-header h2 {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0 0 12px 0;
+  line-height: 1.2;
+  font-family: "Nunito Sans", sans-serif;
+}
+
+.weekly-subtitle {
+  font-size: 16px;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.5;
+  font-family: "Nunito Sans", sans-serif;
+}
+
+.weekly-options {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.weekly-option {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fdfc 100%);
+  border: 2px solid #e5e7eb;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: left;
+  width: 100%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.weekly-option:hover {
+  border-color: var(--accent);
+  box-shadow: 0 8px 25px rgba(76, 167, 160, 0.15);
+  transform: translateY(-2px);
+}
+
+.weekly-option:active {
+  transform: translateY(0);
+}
+
+/* Mobile responsiveness for onboarding */
+@media (max-width: 480px) {
+  .new-user-onboarding-card,
+  .weekly-path-card {
+    padding: 24px 20px;
+    width: 95%;
+    margin: 20px;
+  }
+  
+  .onboarding-header h2,
+  .weekly-header h2 {
+    font-size: 24px;
+  }
+  
+  .onboarding-subtitle,
+  .weekly-subtitle {
+    font-size: 15px;
+  }
+  
+  .onboarding-option,
+  .weekly-option {
+    padding: 16px;
+    gap: 12px;
+  }
+  
+  .option-icon {
+    font-size: 28px;
+  }
+  
+  .option-content h3 {
+    font-size: 16px;
+  }
+  
+  .option-content p {
+    font-size: 13px;
+  }
+  
+  .welcome-message {
+    padding: 20px;
+    margin: 16px;
+  }
+  
+  .welcome-content h3 {
+    font-size: 18px;
+  }
+  
+  .welcome-content p {
+    font-size: 15px;
+  }
+  
+  .onboarding-footer,
+  .weekly-footer {
+    margin-top: 20px;
+    padding-top: 16px;
+  }
+  
+  .dont-ask-again {
+    font-size: 13px;
+  }
+}
+
+
 
 /* Enhanced Buttons */
 .btn {

@@ -143,8 +143,83 @@
       </div>
     </div>
 
-    <!-- Coach Tutorial Overlay (hidden by default) -->
-    <div id="coachOverlay" class="coach-overlay" style="display:none;" aria-hidden="true"></div>
+    <!-- New User Onboarding Flow -->
+    <div id="newUserOnboarding" class="new-user-onboarding" aria-hidden="true">
+      <div class="new-user-onboarding-card">
+        <div class="onboarding-header">
+          <h2>What do you need most right now?</h2>
+          <p class="onboarding-subtitle">Choose your starting point for today's journey</p>
+        </div>
+        
+        <div class="onboarding-options">
+          <button class="onboarding-option" id="optionBalance">
+            <div class="option-icon">🌱</div>
+            <div class="option-content">
+              <h3>Find my balance</h3>
+              <p>Get grounded with simple daily practices</p>
+            </div>
+            <div class="option-arrow">→</div>
+          </button>
+          
+          <button class="onboarding-option" id="optionDreams">
+            <div class="option-icon">🌟</div>
+            <div class="option-content">
+              <h3>Start shaping my dream life</h3>
+              <p>Explore what's possible for your future</p>
+            </div>
+            <div class="option-arrow">→</div>
+          </button>
+        </div>
+        
+        <div class="onboarding-footer">
+          <label class="dont-ask-again">
+            <input type="checkbox" id="dontAskAgain">
+            <span class="checkmark"></span>
+            Don't ask again
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Weekly Path Reflection -->
+    <div id="weeklyPathReflection" class="weekly-path-reflection" aria-hidden="true">
+      <div class="weekly-path-card">
+        <div class="weekly-header">
+          <h2>Weekly Reflection</h2>
+          <p class="weekly-subtitle">What do you need most this week?</p>
+        </div>
+        
+        <div class="weekly-options">
+          <button class="weekly-option" id="weeklyBalance">
+            <div class="option-icon">🌱</div>
+            <div class="option-content">
+              <h3>Find my balance</h3>
+              <p>Get grounded with simple daily practices</p>
+            </div>
+            <div class="option-arrow">→</div>
+          </button>
+          
+          <button class="weekly-option" id="weeklyDreams">
+            <div class="option-icon">🌟</div>
+            <div class="option-content">
+              <h3>Start shaping my dream life</h3>
+              <p>Explore what's possible for your future</p>
+            </div>
+            <div class="option-arrow">→</div>
+          </button>
+        </div>
+        
+        <div class="weekly-footer">
+          <label class="dont-ask-again">
+            <input type="checkbox" id="weeklyDontAskAgain">
+            <span class="checkmark"></span>
+            Don't ask again
+          </label>
+        </div>
+      </div>
+    </div>
+
+
     
     <!-- Home Page - Transformed with Breathing Design -->
     <div id="home" class="page-section active">
@@ -325,6 +400,16 @@
 
     <!-- Daily Anchors Page - Enhanced with Breathing Interactions -->
     <div id="daily-anchors" class="page-section">
+      <!-- Welcome message for first-time visitors -->
+      <div id="anchorsWelcomeMessage" class="welcome-message" style="display: none;">
+        <div class="welcome-content">
+          <div class="welcome-icon">🌱</div>
+          <h3>Welcome to Your Daily Anchors!</h3>
+          <p>This is your space to build sustainable self-care habits. Start with the basics below and add your own as you discover what works for you.</p>
+          <button class="welcome-dismiss" onclick="dismissWelcomeMessage('anchors')">Got it</button>
+        </div>
+      </div>
+      
       <div class="anchors-header">
         <h1>Your Anchors</h1>
         <p class="anchors-subtitle">Small steps, big transformations</p>
@@ -418,6 +503,16 @@
 
     <!-- Dream Life Page - Enhanced with Interactive Life Planning -->
     <div id="dream-life" class="page-section">
+      <!-- Welcome message for first-time visitors -->
+      <div id="dreamsWelcomeMessage" class="welcome-message" style="display: none;">
+        <div class="welcome-content">
+          <div class="welcome-icon">🌟</div>
+          <h3>Welcome to Your Dream Life Vision!</h3>
+          <p>This is your space to explore what's possible and break down your dreams into actionable steps. Take your time - there's no rush to figure everything out at once.</p>
+          <button class="welcome-dismiss" onclick="dismissWelcomeMessage('dreams')">Got it</button>
+        </div>
+      </div>
+      
       <div class="dream-header">
       <h1>Your Dream Life Vision</h1>
         <p class="dream-subtitle">Your body knows the life you're meant to live</p>
