@@ -1,5 +1,5 @@
 // service-worker.js (scoped to /self-care-tracker/)
-const CACHE_NAME = "selfcare-tracker-v11 "; // Update to invalidate old caches
+const CACHE_NAME = "selfcare-tracker-v19"; // Update to invalidate old caches
 
 // Compute scope-aware base path for this service worker files
 const SCOPE_PATH = new URL('./', self.location).pathname; // e.g., "/self-care-tracker/"
