@@ -21,7 +21,7 @@
     <div class="splash-content">
       <div class="splash-logo">🌱</div>
               <h1 class="splash-title">Your Anchors</h1>
-      <p class="splash-message">Building your <u>best self</u>, one day at a time</p>
+      <p class="splash-message">This is your life companion for hard days, steady days, and dream days. Whether you need anchors, habits, or vision, it adapts to you.</p>
       <div class="splash-loader">
         <div class="loader-bar"></div>
       </div>
@@ -93,17 +93,14 @@
       <span class="icon">🏠</span>
       <span class="label">Home</span>
     </a>
-    <a href="#" class="nav-link bottom-nav-link" data-page="dashboard" aria-label="Your Wins">
-      <span class="icon">🏆</span>
-      <span class="label">Your Wins</span>
-    </a>
+    
     <a href="#" class="nav-link bottom-nav-link" data-page="daily-anchors" aria-label="Your Anchors">
       <span class="icon">🎯</span>
       <span class="label">Anchors</span>
     </a>
-    <a href="#" class="nav-link bottom-nav-link" data-page="mood-booster" aria-label="Mood Booster">
-      <span class="icon">✨</span>
-      <span class="label">Booster</span>
+    <a href="#" class="nav-link bottom-nav-link" data-page="habits" aria-label="Habits">
+      <span class="icon">🌱</span>
+      <span class="label">Habits</span>
     </a>
     <a href="#" class="nav-link bottom-nav-link" data-page="dream-life" aria-label="Dream Life">
       <span class="icon">🌟</span>
@@ -134,7 +131,7 @@
         <div class="onboarding-steps">
           <div>🎯 Tap Anchors to check off today's habits</div>
           <div>📊 See your trends in Dashboard</div>
-          <div>✨ Need a nudge? Try Mood Booster</div>
+          <div>🌟 Explore your dreams and goals</div>
         </div>
         <div class="onboarding-actions">
           <button id="onboardingSkip" class="btn-secondary">Skip</button>
@@ -181,43 +178,7 @@
       </div>
     </div>
 
-    <!-- Weekly Path Reflection -->
-    <div id="weeklyPathReflection" class="weekly-path-reflection" aria-hidden="true">
-      <div class="weekly-path-card">
-        <div class="weekly-header">
-          <h2>Weekly Reflection</h2>
-          <p class="weekly-subtitle">What do you need most this week?</p>
-        </div>
-        
-        <div class="weekly-options">
-          <button class="weekly-option" id="weeklyBalance">
-            <div class="option-icon">🌱</div>
-            <div class="option-content">
-              <h3>Find my balance</h3>
-              <p>Get grounded with simple daily practices</p>
-            </div>
-            <div class="option-arrow">→</div>
-          </button>
-          
-          <button class="weekly-option" id="weeklyDreams">
-            <div class="option-icon">🌟</div>
-            <div class="option-content">
-              <h3>Start shaping my dream life</h3>
-              <p>Explore what's possible for your future</p>
-            </div>
-            <div class="option-arrow">→</div>
-          </button>
-        </div>
-        
-        <div class="weekly-footer">
-          <label class="dont-ask-again">
-            <input type="checkbox" id="weeklyDontAskAgain">
-            <span class="checkmark"></span>
-            Don't ask again
-          </label>
-        </div>
-      </div>
-    </div>
+
 
 
     
@@ -237,166 +198,184 @@
         <div class="hero-content">
           <div class="greeting-container">
             <h1 class="hero-greeting" id="heroGreeting">Good morning, Beautiful Soul ✨</h1>
-            <p class="hero-insight" id="heroInsight">Yesterday you chose to care for yourself - how beautiful is that?</p>
+            <p class="hero-insight" id="heroInsight">Ready for today?</p>
           </div>
         </div>
       </div>
 
-      <!-- Achievement Celebration Zone -->
-      <div class="achievement-zone">
-        <div class="achievement-card" id="achievementCard">
-          <div class="achievement-icon">🏆</div>
-          <h3 class="achievement-title" id="achievementTitle">Celebrating Your Wins!</h3>
-          <p class="achievement-text" id="achievementText">Loading your achievements...</p>
-          <div class="achievement-stats" id="achievementStats">
-            <div class="stat-item">
-              <span class="stat-icon">🔥</span>
-              <span class="stat-value" id="currentStreakDisplay">0</span>
-              <span class="stat-label">Day Streak</span>
+      <!-- New User Home (Blank State) -->
+      <div class="blank-state-home" id="blankStateHome" style="display: none;">
+        <div class="compassionate-cards">
+          <!-- Anchors Card -->
+          <div class="compassionate-card anchors-card" onclick="navigateToPage('daily-anchors')">
+            <div class="card-header">
+              <div class="card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                </svg>
+              </div>
+              <div class="card-header-content">
+                <h3>Your Anchors</h3>
+                <p>Small steps that help when everything feels hard</p>
+              </div>
             </div>
-            <div class="stat-item">
-              <span class="stat-icon">⭐</span>
-              <span class="stat-value" id="totalWinsDisplay">0</span>
-              <span class="stat-label">Total Wins</span>
+            <div class="card-arrow">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
             </div>
           </div>
-          <div class="achievement-sparkles">
-            <span class="sparkle">✨</span>
-            <span class="sparkle">✨</span>
-            <span class="sparkle">✨</span>
+
+          <!-- Habits Card -->
+          <div class="compassionate-card habits-card" onclick="navigateToPage('habits')">
+            <div class="card-header">
+              <div class="card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+                  <path d="M9 11l3 3L22 4"/>
+                </svg>
+              </div>
+              <div class="card-header-content">
+                <h3>Your Habits</h3>
+                <p>Start small, grow steadily, celebrate progress</p>
+              </div>
+            </div>
+            <div class="card-arrow">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </div>
+          </div>
+
+          <!-- Dream Card -->
+          <div class="compassionate-card dream-card" onclick="navigateToPage('dream-life')">
+            <div class="card-header">
+              <div class="card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                </svg>
+              </div>
+              <div class="card-header-content">
+                <h3>Your Dreams</h3>
+                <p>Dream it, plan it, create it step by step</p>
+              </div>
+            </div>
+            <div class="card-arrow">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </div>
           </div>
         </div>
-          </div>
-          
-      <!-- Mood Check-in Section -->
-      <div class="mood-checkin-section">
-          <div class="mood-checkin">
-            <h3 class="mood-title">How are you feeling right now?</h3>
-            <div class="mood-emoji-grid">
-              <button class="mood-emoji" data-mood="amazing" aria-label="Feeling amazing">
-                <span class="emoji">😊</span>
-                <span class="mood-label">Amazing</span>
-              </button>
-              <button class="mood-emoji" data-mood="good" aria-label="Feeling good">
-                <span class="emoji">😌</span>
-                <span class="mood-label">Good</span>
-              </button>
-              <button class="mood-emoji" data-mood="okay" aria-label="Feeling okay">
-                <span class="emoji">😐</span>
-                <span class="mood-label">Okay</span>
-              </button>
-              <button class="mood-emoji" data-mood="rough" aria-label="Having a rough time">
-                <span class="emoji">😔</span>
-                <span class="mood-label">Rough</span>
-              </button>
-              <button class="mood-emoji" data-mood="struggling" aria-label="Really struggling">
-                <span class="emoji">😢</span>
-                <span class="mood-label">Struggling</span>
-            </button>
-          </div>
+
+        <div class="bottom-message">
+          <p>Start wherever you are right now — there's no wrong place to begin your journey.</p>
         </div>
       </div>
 
-
-
-      <!-- Onboarding Card (Hidden by default) -->
-      <div class="onboarding-card" id="onboardingCard" style="display:none;">
-        <h3 class="section-header">Getting Started</h3>
-        <p>Welcome! Here are a few quick steps to begin:</p>
-        <ul>
-          <li>Go to Your Anchors and check what you complete today</li>
-          <li>Set a daily reminder time in Profile → Settings</li>
-          <li>Visit Dashboard to see your progress over time</li>
-        </ul>
-        <div style="margin-top:12px; display:flex; gap:8px;">
-          <button id="onboardingStartBtn" class="btn-secondary">Go to Your Anchors</button>
-          <button id="onboardingDismissBtn" class="btn-primary">Got it</button>
+      <!-- Returning User Home (Active State) -->
+      <div class="active-state-home" id="activeStateHome" style="display: none;">
+        <div class="progress-cards">
+              <!-- Anchors Progress Card -->
+    <div class="progress-card anchors-progress" onclick="navigateToPage('daily-anchors')">
+      <div class="card-header">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
         </div>
+        <div class="card-header-content">
+          <h3>Your Anchors</h3>
+        </div>
+      </div>
+      <div class="card-content">
+        <div class="progress-summary" id="anchorsProgressSummary">
+          <span class="summary-text">3 gentle actions ready • Used 1 anchor today 🌱</span>
+          <div class="progress-indicator">
+            <div class="progress-dots">
+              <span class="dot active"></span>
+              <span class="dot active"></span>
+              <span class="dot"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card-arrow">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
       </div>
     </div>
 
-    <!-- Your Wins Page - Enhanced with Organic Visualizations -->
-    <div id="dashboard" class="page-section">
-      <div class="wins-header">
-        <h1 class="wins-title">Your Wins</h1>
-        <p class="wins-subtitle">Celebrating your self-care journey</p>
-      </div>
-      
-      <!-- Wins Grid with Professional Design -->
-      <div class="wins-grid" id="winsGrid">
-        <div class="win-card streak">
-          <div class="card-header">
-            <svg class="card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-            <div class="win-label">Current Streak</div>
-          </div>
-          <div class="win-value" id="currentStreakValue">0</div>
-          <div class="win-description">Keep the momentum going!</div>
+    <!-- Habits Progress Card -->
+    <div class="progress-card habits-progress" onclick="navigateToPage('habits')">
+      <div class="card-header">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+            <path d="M9 11l3 3L22 4"/>
+          </svg>
         </div>
-        
-        <div class="win-card monthly">
-          <div class="card-header">
-            <svg class="card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-            </svg>
-            <div class="win-label">This Month</div>
-          </div>
-          <div class="win-value" id="monthlyValue">0%</div>
-          <div class="progress-bar">
-            <div class="progress-fill" id="monthlyProgressBar" style="width: 0%"></div>
-          </div>
-          <div class="win-description">Consistency is key</div>
-        </div>
-        
-        <div class="win-card mood">
-          <div class="card-header">
-            <svg class="card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
-            </svg>
-            <div class="win-label">Mood Wellness</div>
-          </div>
-          <div class="win-value" id="moodValue">-</div>
-          <div class="win-description" id="moodDescription">Your emotional journey</div>
-        </div>
-        
-        <div class="win-card favorite">
-          <div class="card-header">
-            <svg class="card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.88a1 1 0 00-.363 1.118l1.518-4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
-            </svg>
-            <div class="win-label">Favorite Anchor</div>
-          </div>
-          <div class="win-value" id="favoriteValue">-</div>
-          <div class="win-description">Your go-to daily win</div>
+        <div class="card-header-content">
+          <h3>Your Habits</h3>
         </div>
       </div>
-
-      <!-- Recent Activity -->
-      <div class="recent-activity">
-        <div class="activity-header">
-          <span style="font-size: 1.5rem;">📅</span>
-          <h2 class="activity-title">Recent Activity</h2>
-        </div>
-        
-        <div id="activityContent">
-          <ul class="activity-list" id="recentActivityList">
-            <!-- Dynamically populated -->
-          </ul>
-          
-          <div class="empty-state" id="dashboardEmptyState" style="display: none;">
-            <div class="empty-emoji">🌱</div>
-            <p>You're just getting started — your progress will show here.</p>
-            <div class="empty-actions">
-              <button class="btn btn-primary" id="emptyGoAnchorsBtn">Start Your Anchors</button>
-              <button class="btn btn-secondary" id="emptySetReminderBtn">Set Daily Reminder</button>
+      <div class="card-content">
+        <div class="progress-summary" id="habitsProgressSummary">
+          <span class="summary-text">2 habits growing • 🔥 5-day momentum</span>
+          <div class="progress-indicator">
+            <div class="weekly-progress">
+              <span class="week-day">M</span>
+              <span class="week-day">T</span>
+              <span class="week-day">W</span>
+              <span class="week-day">T</span>
+              <span class="week-day">F</span>
+              <span class="week-day">S</span>
+              <span class="week-day">S</span>
             </div>
           </div>
-          
-          <div class="loading-state" id="dashboardLoadingState" style="display: none;">Loading...</div>
         </div>
       </div>
+      <div class="card-arrow">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+      </div>
     </div>
+
+    <!-- Dream Progress Card -->
+    <div class="progress-card dream-progress" onclick="navigateToPage('dream-life')">
+      <div class="card-header">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+          </svg>
+        </div>
+        <div class="card-header-content">
+          <h3>Your Dreams</h3>
+        </div>
+      </div>
+      <div class="card-content">
+        <div class="progress-summary" id="dreamProgressSummary">
+          <span class="summary-text">Dream vision written • 2 steps in progress ✨</span>
+        </div>
+      </div>
+      <div class="card-arrow">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+      </div>
+    </div>
+        </div>
+
+        <div class="bottom-message" id="bottomMessage">
+          <p>Every small step is moving you forward.</p>
+        </div>
+      </div>
+      </div>
+    </div>
+
+
 
     <!-- Daily Anchors Page - Enhanced with Breathing Interactions -->
     <div id="daily-anchors" class="page-section">
@@ -413,92 +392,121 @@
       <div class="anchors-header">
         <h1>Your Anchors</h1>
         <p class="anchors-subtitle">Small steps, big transformations</p>
-        <p class="anchors-description">Your anchors are the little joys and steady habits that you choose and curate to help you feel grounded</p>
+        <p class="anchors-description">Pick-me-ups for when the day feels heavy</p>
       </div>
       
-      <div class="anchor" id="addAnchorRow">
-        <label style="flex:1; display:flex; align-items:center; gap:8px;">
-          <span class="icon-inline">➕</span>
-          <input type="text" id="newAnchorInput" placeholder="Add a custom anchor (e.g., Meditate)" style="flex:1; border:1px solid #D0D5DD; border-radius:8px; padding:8px; font-size:16px;" />
-        </label>
-        <button id="addAnchorBtn" class="btn-primary" style="flex:0 0 auto;">Add</button>
+      <!-- Add Custom Anchor Card -->
+      <div class="add-anchor-card" id="addAnchorRow">
+        <div class="add-anchor-content">
+          <span class="add-anchor-icon">➕</span>
+          <input type="text" id="newAnchorInput" placeholder="Add a custom anchor (e.g., Meditate)" />
+          <button id="addAnchorBtn" class="add-anchor-btn">Add</button>
+        </div>
       </div>
       
+      <!-- Pre-filled Anchor Items -->
       <div class="anchor" data-default="true" data-id="makeBed">
-        <label><input type="checkbox" id="makeBed"> Make bed</label>
-        <button data-action="remove" class="btn-danger remove-anchor-btn" style="display: none; margin-left:8px; flex:0 0 auto;">Remove</button>
+        <label class="anchor-label">
+          <input type="checkbox" id="makeBed" class="anchor-checkbox">
+          <span class="anchor-text">Make your bed</span>
+        </label>
       </div>
 
       <div class="anchor" data-default="true" data-id="bodyMovement">
-        <label><input type="checkbox" id="bodyMovement"> Move your body</label>
-        <button data-action="remove" class="btn-danger remove-anchor-btn" style="display: none; margin-left:8px; flex:0 0 auto;">Remove</button>
-      </div>
-      <div class="anchor" data-default="true" data-id="musicDance">
-        <label><input type="checkbox" id="musicDance"> Music / Dance</label>
-        <button data-action="remove" class="btn-danger remove-anchor-btn" style="display: none; margin-left:8px; flex:0 0 auto;">Remove</button>
-      </div>
-      <div class="anchor" data-default="true" data-id="watchShow">
-        <label>
-          <input type="checkbox" id="watchShow"> Watch something you enjoy
+        <label class="anchor-label">
+          <input type="checkbox" id="bodyMovement" class="anchor-checkbox">
+          <span class="anchor-text">Move your body</span>
         </label>
-        <button data-action="remove" class="btn-danger remove-anchor-btn" style="display: none; margin-left:8px; flex:0 0 auto;">Remove</button>
+      </div>
+      
+      <div class="anchor" data-default="true" data-id="musicDance">
+        <label class="anchor-label">
+          <input type="checkbox" id="musicDance" class="anchor-checkbox">
+          <span class="anchor-text">Music / Dance</span>
+        </label>
+      </div>
+      
+      <div class="anchor" data-default="true" data-id="watchShow">
+        <label class="anchor-label">
+          <input type="checkbox" id="watchShow" class="anchor-checkbox">
+          <span class="anchor-text">Watch something you enjoy</span>
+        </label>
       </div>
       
       <div class="anchor" data-default="true" data-id="journalAboutApp">
-        <label><input type="checkbox" id="journalAboutApp"> Journal your thoughts</label>
-        <button data-action="remove" class="btn-danger remove-anchor-btn" style="display: none; margin-left:8px; flex:0 0 auto;">Remove</button>
+        <label class="anchor-label">
+          <input type="checkbox" id="journalAboutApp" class="anchor-checkbox">
+          <span class="anchor-text">Journal your thoughts</span>
+        </label>
       </div>
 
       <div class="anchor" data-default="true" data-id="selfCare">
-        <label><input type="checkbox" id="selfCare"> Self-care</label>
-        <select id="selfCareOption">
-          <option value="">--choose--</option>
-          <option>Cook</option>
-          <option>Clean</option>
-          <option>Organize</option>
-          <option>Journal</option>
-        </select>
-        <button data-action="remove" class="btn-danger remove-anchor-btn" style="display: none; margin-left:8px; flex:0 0 auto;">Remove</button>
+        <label class="anchor-label">
+          <input type="checkbox" id="selfCare" class="anchor-checkbox">
+          <span class="anchor-text">Self-care</span>
+        </label>
       </div>
 
-      <div class="progress-indicator" id="progressIndicator">Completed 0/5</div>
+      <!-- Progress Section -->
+      <div class="anchors-progress">
+        <div class="progress-text" id="progressIndicator">Completed 0 of 6 — every step counts 🌱</div>
+        <div class="progress-bar-subtle">
+          <div class="progress-fill-subtle" id="progressFill"></div>
+        </div>
+      </div>
 
-      <div class="buttons">
-        <button id="resetBtn" class="clear-today-btn">
+      <!-- Reset Option -->
+      <div class="reset-section">
+        <button id="resetBtn" class="start-fresh-btn">
           <span class="btn-icon">🔄</span>
           <span class="btn-text">Start Fresh</span>
         </button>
       </div>
 
-      <div id="streakSection">
-        <div id="streakIcons"></div>
-        <div id="streakMessage"></div>
-      </div>  
-
-      <div id="message">🌱 Progress Saved! You're blooming today! 🌞</div>
+      <!-- Gentle Streak Tracker -->
+      <div class="streak-section" id="streakSection">
+        <div class="streak-message" id="streakMessage">You've anchored for 0 days 🌿 Keep going at your own pace.</div>
+      </div>
     </div>
 
-    <!-- Mood Booster Page - Enhanced with Breathing Interactions -->
-    <div id="mood-booster" class="page-section">
-      <div class="mood-header">
-      <h1>Mood Booster</h1>
-        <p class="mood-subtitle">Need a gentle nudge? We're here for you</p>
+    <!-- Habits Page - Growth Mode Habit Tracking -->
+    <div id="habits" class="page-section">
+      <!-- Header -->
+      <div class="habits-header">
+        <h1>Habits</h1>
       </div>
-      
-      <div class="mood-card">
-        <p class="mood-desc">Need a pick-me-up or a quick nudge? Tap the button to randomly pick one of your anchors to do now. Tap again for another suggestion.</p>
-        <div class="mood-wheel">
-          <button id="moodSpinBtn" class="mood-button breathing-button" aria-label="Pick a random anchor">
-            <span class="button-text">Boost</span>
-            <div class="breathing-ripple"></div>
-          </button>
+
+      <!-- Progress Summary -->
+      <div class="habits-progress-summary">
+        <div class="progress-stats">
+          <div class="stat-item">
+            <div class="stat-value" id="totalHabitsCount">0</div>
+            <div class="stat-label">Active Habits</div>
+          </div>
+          <div class="stat-item highlight">
+            <div class="stat-value" id="longestStreak">0</div>
+            <div class="stat-label">Longest Streak</div>
+          </div>
         </div>
-        <div class="mood-result" id="moodResult">Try me ✨</div>
-        <div class="mood-actions">
-          <button id="moodDoItBtn" class="btn-primary" disabled>Mark as Done</button>
-          <button id="moodSpinAgainBtn" class="btn-secondary">Spin Again</button>
+        <div class="motivational-message">
+          Consistency matters more than perfection ✨
         </div>
       </div>
+
+      <!-- Habits List -->
+      <div class="habits-list" id="habitsList">
+        <!-- Habits will be dynamically added here -->
+        <div class="empty-habits-state" id="emptyHabitsState">
+          <div class="empty-icon">🌱</div>
+          <h3>No habits yet</h3>
+          <p>Start building your growth habits by tapping the + button</p>
+        </div>
+      </div>
+
+      <!-- Floating Add Button -->
+      <button id="floatingAddHabitBtn" class="floating-add-btn" aria-label="Add new habit">
+        <span class="floating-add-icon">+</span>
+      </button>
     </div>
 
     <!-- Dream Life Page - Enhanced with Interactive Life Planning -->
@@ -515,29 +523,31 @@
       
       <div class="dream-header">
       <h1>Your Dream Life Vision</h1>
-        <p class="dream-subtitle">Your body knows the life you're meant to live</p>
         <p class="dream-intro">
-          We all have an inner compass that guides us toward the life we're meant to live. Sometimes circumstances or limiting beliefs hold us back, but you have the power to work toward what truly matters to you. This space helps you pause, envision your dream life across key areas, and break it down into actionable steps. You're in the driver's seat of your transformation.
+          This space helps you pause, envision your dream life across key areas, and break it down into actionable steps.
         </p>
       </div>
       
       <div class="dream-categories">
         <!-- Career & Purpose -->
         <div class="dream-category" data-category="career">
-                  <div class="category-header" onclick="toggleCategory('career')">
-          <div class="category-title-row">
-            <span class="category-icon">🚀</span>
-            <h3>Career & Purpose</h3>
-            <span class="expand-icon">▼</span>
+          <div class="category-header" onclick="toggleCategory('career')">
+            <div class="category-title-row">
+              <div class="category-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                </svg>
+              </div>
+              <h3>Career & Purpose</h3>
+              <span class="expand-icon">▼</span>
+            </div>
           </div>
-        </div>
           <div class="category-content" style="display: none;">
                     <div class="vision-section">
           <label for="careerVision">What does your ideal career and life purpose look like?</label>
           <textarea id="careerVision" placeholder="Envision your dream career, the impact you want to make, and how you want to spend your working hours..."></textarea>
           <div class="vision-controls">
             <button class="btn-save" onclick="saveVision('career')">Save & Review</button>
-            <span class="save-status" id="careerStatus">No changes</span>
           </div>
           <div class="vision-display-mode" id="careerVisionDisplay" style="display: none;">
             <div class="vision-text-display" id="careerVisionTextDisplay"></div>
@@ -567,20 +577,26 @@
 
         <!-- Relationships & Social Life -->
         <div class="dream-category" data-category="relationships">
-                  <div class="category-header" onclick="toggleCategory('relationships')">
-          <div class="category-title-row">
-            <span class="category-icon">❤️</span>
-            <h3>Relationships & Social Life</h3>
-            <span class="expand-icon">▼</span>
+          <div class="category-header" onclick="toggleCategory('relationships')">
+            <div class="category-title-row">
+              <div class="category-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                  <circle cx="9" cy="7" r="4"/>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+              </div>
+              <h3>Relationships & Social Life</h3>
+              <span class="expand-icon">▼</span>
+            </div>
           </div>
-        </div>
           <div class="category-content" style="display: none;">
                     <div class="vision-section">
           <label for="relationshipsVision">Envision your ideal relationships and social connections...</label>
           <textarea id="relationshipsVision" placeholder="What kind of relationships do you want to cultivate? How do you want to feel in your social connections?"></textarea>
           <div class="vision-controls">
             <button class="btn-save" onclick="saveVision('relationships')">Save & Review</button>
-            <span class="save-status" id="relationshipsStatus">No changes</span>
           </div>
           <div class="vision-display-mode" id="relationshipsVisionDisplay" style="display: none;">
             <div class="vision-text-display" id="relationshipsVisionTextDisplay"></div>
@@ -610,20 +626,24 @@
 
         <!-- Personal Growth & Hobbies -->
         <div class="dream-category" data-category="personalGrowth">
-                  <div class="category-header" onclick="toggleCategory('personalGrowth')">
-          <div class="category-title-row">
-            <span class="category-icon">✨</span>
-            <h3>Personal Growth & Hobbies</h3>
-            <span class="expand-icon">▼</span>
+          <div class="category-header" onclick="toggleCategory('personalGrowth')">
+            <div class="category-title-row">
+              <div class="category-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                </svg>
+              </div>
+              <h3>Personal Growth & Hobbies</h3>
+              <span class="expand-icon">▼</span>
+            </div>
           </div>
-        </div>
           <div class="category-content" style="display: none;">
                     <div class="vision-section">
           <label for="personalGrowthVision">What personal growth and creative pursuits call to you?</label>
           <textarea id="personalGrowthVision" placeholder="What skills do you want to develop? What creative outlets call to your soul?"></textarea>
           <div class="vision-controls">
             <button class="btn-save" onclick="saveVision('personalGrowth')">Save & Review</button>
-            <span class="save-status" id="personalGrowthStatus">No changes</span>
           </div>
           <div class="vision-display-mode" id="personalGrowthVisionDisplay" style="display: none;">
             <div class="vision-text-display" id="personalGrowthVisionTextDisplay"></div>
@@ -658,6 +678,43 @@
         <h3>Add Custom Category</h3>
         <p>Create your own life area to focus on</p>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Habit Modal -->
+<div id="addHabitModal" class="modal-overlay" style="display: none;">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Create New Habit</h3>
+      <button class="modal-close" onclick="hideAddHabitModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label for="habitName">Habit Name *</label>
+        <input type="text" id="habitName" placeholder="e.g., Meditate 10 min" maxlength="100">
+      </div>
+      <div class="form-group">
+        <label for="habitFrequency">Frequency *</label>
+        <select id="habitFrequency">
+          <option value="daily">Daily</option>
+          <option value="3x-week">3x per week</option>
+          <option value="5x-week">5x per week</option>
+          <option value="custom">Custom</option>
+        </select>
+      </div>
+      <div class="form-group" id="customFrequencyGroup" style="display: none;">
+        <label for="customFrequency">Custom Frequency</label>
+        <input type="text" id="customFrequency" placeholder="e.g., Every Monday and Wednesday" maxlength="100">
+      </div>
+      <div class="form-group">
+        <label for="habitWhy">Why is this important to you?</label>
+        <textarea id="habitWhy" placeholder="This helps you stay motivated when things get tough..." rows="3" maxlength="200"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="hideAddHabitModal()">Cancel</button>
+      <button class="btn-primary" onclick="createHabit()">Create Habit</button>
     </div>
   </div>
 </div>
@@ -814,5 +871,40 @@
 
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <script src="script.js"></script>
+  
+  <script>
+    // Global functions for modal operations
+    function hideAddHabitModal() {
+      const modal = document.getElementById('addHabitModal');
+      if (modal) {
+        modal.style.display = 'none';
+        modal.setAttribute('aria-hidden', 'true');
+      }
+    }
+    
+    function createHabit() {
+      if (typeof window.createHabit === 'function') {
+        window.createHabit();
+      }
+    }
+    
+    function editHabit(habitId) {
+      if (typeof window.editHabit === 'function') {
+        window.editHabit(habitId);
+      }
+    }
+    
+    function deleteHabit(habitId) {
+      if (typeof window.deleteHabit === 'function') {
+        window.deleteHabit(habitId);
+      }
+    }
+    
+    function toggleHabitCompletion(habitId) {
+      if (typeof window.toggleHabitCompletion === 'function') {
+        window.toggleHabitCompletion(habitId);
+      }
+    }
+  </script>
 </body>
 </html>

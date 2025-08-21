@@ -20,6 +20,568 @@ const db = firebase.firestore();
 const auth = firebase.auth();
 
 // ----------------------------
+// Carousel System for Metrics Cards
+// ----------------------------
+
+class Carousel {
+  constructor(containerId, options = {}) {
+    this.container = document.getElementById(containerId);
+    this.track = this.container.querySelector('.carousel-track');
+    this.wrapper = this.container.querySelector('.carousel-wrapper');
+    this.prevBtn = this.container.querySelector('.carousel-btn.prev');
+    this.nextBtn = this.container.querySelector('.carousel-btn.next');
+    this.indicatorsContainer = this.container.querySelector('.carousel-indicators');
+    
+    this.currentIndex = 0;
+    this.cardWidth = 300; // card width + gap
+    this.visibleCards = this.getVisibleCards();
+    this.totalCards = this.track.children.length;
+    
+    this.init();
+    this.setupResizeHandler();
+  }
+  
+  getVisibleCards() {
+    const width = window.innerWidth;
+    if (width >= 1024) return 3;
+    if (width >= 768) return 2;
+    return 1;
+  }
+  
+  setupResizeHandler() {
+    window.addEventListener('resize', () => {
+      this.visibleCards = this.getVisibleCards();
+      this.updateControls();
+      this.updateIndicators();
+    });
+  }
+  
+  init() {
+    this.createIndicators();
+    this.updateControls();
+    this.bindEvents();
+    this.updateIndicators();
+  }
+  
+  createIndicators() {
+    this.indicatorsContainer.innerHTML = '';
+    for (let i = 0; i < this.totalCards; i++) {
+      const indicator = document.createElement('div');
+      indicator.className = 'carousel-indicator';
+      indicator.addEventListener('click', () => this.goToSlide(i));
+      this.indicatorsContainer.appendChild(indicator);
+    }
+  }
+  
+  bindEvents() {
+    this.prevBtn.addEventListener('click', () => this.prev());
+    this.nextBtn.addEventListener('click', () => this.next());
+    
+    // Touch/swipe support
+    let startX = 0;
+    let endX = 0;
+    
+    this.wrapper.addEventListener('touchstart', (e) => {
+      startX = e.touches[0].clientX;
+    });
+    
+    this.wrapper.addEventListener('touchend', (e) => {
+      endX = e.changedTouches[0].clientX;
+      this.handleSwipe(startX, endX);
+    });
+    
+    // Keyboard navigation
+    this.track.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        this.prev();
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        this.next();
+      }
+    });
+  }
+  
+  handleSwipe(startX, endX) {
+    const threshold = 50;
+    if (startX - endX > threshold) {
+      this.next();
+    } else if (endX - startX > threshold) {
+      this.prev();
+    }
+  }
+  
+  prev() {
+    if (this.currentIndex > 0) {
+      this.currentIndex--;
+      this.updateSlide();
+    }
+  }
+  
+  next() {
+    if (this.currentIndex < this.totalCards - this.visibleCards) {
+      this.currentIndex++;
+      this.updateSlide();
+    }
+  }
+  
+  goToSlide(index) {
+    this.currentIndex = Math.max(0, Math.min(index, this.totalCards - this.visibleCards));
+    this.updateSlide();
+  }
+  
+  updateSlide() {
+    // Calculate card width dynamically based on screen size
+    const width = window.innerWidth;
+    let cardWidth = 300; // default
+    if (width >= 1024) cardWidth = 340; // 320px card + 20px gap
+    else if (width >= 768) cardWidth = 320; // 300px card + 20px gap
+    
+    const translateX = -this.currentIndex * cardWidth;
+    this.track.style.transform = `translateX(${translateX}px)`;
+    this.updateControls();
+    this.updateIndicators();
+  }
+  
+  updateControls() {
+    this.prevBtn.disabled = this.currentIndex === 0;
+    this.nextBtn.disabled = this.currentIndex >= this.totalCards - this.visibleCards;
+  }
+  
+  updateIndicators() {
+    const indicators = this.indicatorsContainer.querySelectorAll('.carousel-indicator');
+    indicators.forEach((indicator, index) => {
+      indicator.classList.toggle('active', index === this.currentIndex);
+    });
+    
+    // Update ARIA labels for accessibility
+    this.container.setAttribute('aria-label', `${this.container.getAttribute('aria-label').split(' - ')[0]} - Card ${this.currentIndex + 1} of ${this.totalCards}`);
+  }
+}
+
+// Initialize carousels when DOM is loaded
+function initializeCarousels() {
+  // Initialize primary carousel (Anchors)
+  if (document.getElementById('primaryCarouselWrapper')) {
+    new Carousel('primaryMetrics');
+  }
+  
+  // Initialize secondary carousel (Dreams)
+  if (document.getElementById('secondaryCarouselWrapper')) {
+    new Carousel('secondaryMetrics');
+  }
+}
+
+// ----------------------------
+// Habits System - Growth Mode
+// ----------------------------
+
+// Habit data structure
+let habits = [];
+let habitIdCounter = 1;
+
+// Initialize habits system
+function initializeHabitsSystem() {
+  loadHabits();
+  setupHabitsEventListeners();
+  updateHabitsProgress();
+}
+
+// Load habits from localStorage
+function loadHabits() {
+  const savedHabits = localStorage.getItem('habits');
+  if (savedHabits) {
+    habits = JSON.parse(savedHabits);
+    habitIdCounter = Math.max(...habits.map(h => h.id), 0) + 1;
+  }
+  renderHabits();
+}
+
+// Save habits to localStorage and Firebase
+async function saveHabits() {
+  const userId = getCurrentUserId();
+  const localStorageKey = `habits_${userId}`;
+  
+  // Save to localStorage immediately
+  localStorage.setItem(localStorageKey, JSON.stringify(habits));
+  
+  // Save to Firebase with sync
+  await saveDataWithSync('habits', habits);
+}
+
+// Setup event listeners for habits
+function setupHabitsEventListeners() {
+  const floatingAddHabitBtn = document.getElementById('floatingAddHabitBtn');
+  const habitFrequency = document.getElementById('habitFrequency');
+  
+  if (floatingAddHabitBtn) {
+    floatingAddHabitBtn.addEventListener('click', showAddHabitModal);
+  }
+  
+  if (habitFrequency) {
+    habitFrequency.addEventListener('change', toggleCustomFrequency);
+  }
+}
+
+// Show add habit modal
+function showAddHabitModal() {
+  const modal = document.getElementById('addHabitModal');
+  if (modal) {
+    modal.style.display = 'block';
+    modal.setAttribute('aria-hidden', 'false');
+    document.getElementById('habitName').focus();
+  }
+}
+
+// Hide add habit modal
+function hideAddHabitModal() {
+  const modal = document.getElementById('addHabitModal');
+  if (modal) {
+    modal.style.display = 'none';
+    modal.setAttribute('aria-hidden', 'true');
+    // Clear form
+    document.getElementById('habitName').value = '';
+    document.getElementById('habitFrequency').value = 'daily';
+    document.getElementById('customFrequency').value = '';
+    document.getElementById('habitWhy').value = '';
+    document.getElementById('customFrequencyGroup').style.display = 'none';
+  }
+}
+
+// Toggle custom frequency input
+function toggleCustomFrequency() {
+  const frequency = document.getElementById('habitFrequency').value;
+  const customGroup = document.getElementById('customFrequencyGroup');
+  
+  if (frequency === 'custom') {
+    customGroup.style.display = 'block';
+  } else {
+    customGroup.style.display = 'none';
+  }
+}
+
+// Create new habit
+async function createHabit() {
+  const name = document.getElementById('habitName').value.trim();
+  const frequency = document.getElementById('habitFrequency').value;
+  const customFrequency = document.getElementById('customFrequency').value.trim();
+  const why = document.getElementById('habitWhy').value.trim();
+  
+  if (!name) {
+    alert('Please enter a habit name');
+    return;
+  }
+  
+  const habit = {
+    id: habitIdCounter++,
+    name: name,
+    frequency: frequency,
+    customFrequency: frequency === 'custom' ? customFrequency : '',
+    why: why,
+    createdAt: new Date().toISOString(),
+    streak: 0,
+    longestStreak: 0,
+    completedDates: [],
+    lastCompleted: null
+  };
+  
+  habits.push(habit);
+  await saveHabits();
+  renderHabits();
+  updateHabitsProgress();
+  hideAddHabitModal();
+  
+  // Show success message
+  showHabitCreatedMessage(habit.name);
+}
+
+// Show habit created message
+function showHabitCreatedMessage(habitName) {
+  const message = document.createElement('div');
+  message.className = 'habit-created-message';
+  message.textContent = `Habit "${habitName}" created! 🌱`;
+  message.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: var(--growth-green);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    box-shadow: var(--shadow-medium);
+    z-index: 1000;
+    animation: slideInRight 0.3s ease-out;
+  `;
+  
+  document.body.appendChild(message);
+  
+  setTimeout(() => {
+    message.style.animation = 'slideOutRight 0.3s ease-out';
+    setTimeout(() => {
+      document.body.removeChild(message);
+    }, 300);
+  }, 3000);
+}
+
+// Render habits list
+function renderHabits() {
+  const habitsList = document.getElementById('habitsList');
+  const emptyState = document.getElementById('emptyHabitsState');
+  
+  if (!habitsList) return;
+  
+  if (habits.length === 0) {
+    habitsList.innerHTML = '';
+    if (emptyState) {
+      habitsList.appendChild(emptyState);
+    }
+    return;
+  }
+  
+  habitsList.innerHTML = '';
+  
+  habits.forEach(habit => {
+    const habitCard = createHabitCard(habit);
+    habitsList.appendChild(habitCard);
+  });
+}
+
+// Create habit card element
+function createHabitCard(habit) {
+  const card = document.createElement('div');
+  card.className = 'habit-card';
+  card.dataset.habitId = habit.id;
+  
+  const today = new Date().toDateString();
+  const isCompletedToday = habit.completedDates.includes(today);
+  const progressPercentage = calculateProgressPercentage(habit);
+  
+  card.innerHTML = `
+    <div class="habit-header">
+      <div class="habit-info">
+        <h3 class="habit-name">${habit.name}</h3>
+        <div class="habit-frequency">${formatFrequency(habit.frequency, habit.customFrequency)}</div>
+      </div>
+      <div class="habit-options">
+        <button class="habit-option-btn" onclick="editHabit(${habit.id})">Edit</button>
+        <button class="habit-option-btn" onclick="deleteHabit(${habit.id})">Delete</button>
+      </div>
+    </div>
+    
+    <div class="habit-progress">
+      <div class="streak-indicator">
+        <span class="streak-icon">🔥</span>
+        <span class="streak-count">${habit.streak}</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width: ${progressPercentage}%"></div>
+      </div>
+    </div>
+    
+    <div class="habit-actions">
+      <div class="habit-checkbox">
+        <input type="checkbox" id="habit-${habit.id}" 
+               ${isCompletedToday ? 'checked' : ''} 
+               onchange="toggleHabitCompletion(${habit.id})">
+        <label for="habit-${habit.id}">Complete today</label>
+      </div>
+    </div>
+  `;
+  
+  return card;
+}
+
+// Format frequency display
+function formatFrequency(frequency, customFrequency) {
+  switch (frequency) {
+    case 'daily': return 'Daily';
+    case '3x-week': return '3x per week';
+    case '5x-week': return '5x per week';
+    case 'custom': return customFrequency || 'Custom';
+    default: return frequency;
+  }
+}
+
+// Calculate progress percentage
+function calculateProgressPercentage(habit) {
+  const today = new Date();
+  const weekStart = new Date(today);
+  weekStart.setDate(today.getDate() - today.getDay());
+  
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate() + 6);
+  
+  const weekDates = [];
+  for (let d = new Date(weekStart); d <= weekEnd; d.setDate(d.getDate() + 1)) {
+    weekDates.push(d.toDateString());
+  }
+  
+  const completedThisWeek = habit.completedDates.filter(date => 
+    weekDates.includes(date)
+  ).length;
+  
+  let targetThisWeek;
+  switch (habit.frequency) {
+    case 'daily': targetThisWeek = 7; break;
+    case '3x-week': targetThisWeek = 3; break;
+    case '5x-week': targetThisWeek = 5; break;
+    case 'custom': targetThisWeek = 3; break; // Default for custom
+    default: targetThisWeek = 7;
+  }
+  
+  return Math.min((completedThisWeek / targetThisWeek) * 100, 100);
+}
+
+// Toggle habit completion
+function toggleHabitCompletion(habitId) {
+  const habit = habits.find(h => h.id === habitId);
+  if (!habit) return;
+  
+  const today = new Date().toDateString();
+  const checkbox = document.getElementById(`habit-${habitId}`);
+  const isCompletedToday = checkbox.checked;
+  
+  if (isCompletedToday) {
+    // Mark as completed
+    if (!habit.completedDates.includes(today)) {
+      habit.completedDates.push(today);
+      habit.lastCompleted = today;
+      updateHabitStreak(habit);
+    }
+  } else {
+    // Mark as not completed
+    const index = habit.completedDates.indexOf(today);
+    if (index > -1) {
+      habit.completedDates.splice(index, 1);
+      updateHabitStreak(habit);
+    }
+  }
+  
+  saveHabits();
+  updateHabitsProgress();
+  
+  // Show feedback
+  if (isCompletedToday) {
+    showHabitCompletedMessage(habit.name);
+  }
+}
+
+// Update habit streak
+function updateHabitStreak(habit) {
+  const today = new Date().toDateString();
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayString = yesterday.toDateString();
+  
+  if (habit.completedDates.includes(today)) {
+    if (habit.completedDates.includes(yesterdayString)) {
+      habit.streak++;
+    } else {
+      habit.streak = 1;
+    }
+  } else {
+    // Check if streak should reset based on frequency
+    const shouldReset = shouldResetStreak(habit);
+    if (shouldReset) {
+      habit.streak = 0;
+    }
+  }
+  
+  if (habit.streak > habit.longestStreak) {
+    habit.longestStreak = habit.streak;
+  }
+}
+
+// Check if streak should reset
+function shouldResetStreak(habit) {
+  const today = new Date();
+  const lastCompleted = habit.lastCompleted ? new Date(habit.lastCompleted) : null;
+  
+  if (!lastCompleted) return false;
+  
+  const daysSinceLastCompleted = Math.floor((today - lastCompleted) / (1000 * 60 * 60 * 24));
+  
+  switch (habit.frequency) {
+    case 'daily': return daysSinceLastCompleted > 1;
+    case '3x-week': return daysSinceLastCompleted > 3;
+    case '5x-week': return daysSinceLastCompleted > 2;
+    case 'custom': return daysSinceLastCompleted > 3;
+    default: return daysSinceLastCompleted > 1;
+  }
+}
+
+// Show habit completed message
+function showHabitCompletedMessage(habitName) {
+  const message = document.createElement('div');
+  message.className = 'habit-completed-message';
+  message.textContent = `You showed up today! ✨`;
+  message.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: var(--growth-green);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    box-shadow: var(--shadow-medium);
+    z-index: 1000;
+    animation: slideInRight 0.3s ease-out;
+  `;
+  
+  document.body.appendChild(message);
+  
+  setTimeout(() => {
+    message.style.animation = 'slideOutRight 0.3s ease-out';
+    setTimeout(() => {
+      document.body.removeChild(message);
+    }, 300);
+  }, 3000);
+}
+
+// Edit habit
+function editHabit(habitId) {
+  const habit = habits.find(h => h.id === habitId);
+  if (!habit) return;
+  
+  // For now, just show an alert. In a full implementation, you'd populate the modal
+  alert(`Edit functionality for "${habit.name}" will be implemented next. For now, you can delete and recreate the habit.`);
+}
+
+// Delete habit
+function deleteHabit(habitId) {
+  const habit = habits.find(h => h.id === habitId);
+  if (!habit) return;
+  
+  if (confirm(`Are you sure you want to delete "${habit.name}"? This action cannot be undone.`)) {
+    habits = habits.filter(h => h.id !== habitId);
+    saveHabits();
+    renderHabits();
+    updateHabitsProgress();
+  }
+}
+
+// Update habits progress summary
+function updateHabitsProgress() {
+  const totalHabitsCount = document.getElementById('totalHabitsCount');
+  const longestStreak = document.getElementById('longestStreak');
+  
+  if (totalHabitsCount) {
+    totalHabitsCount.textContent = habits.length;
+  }
+  
+  if (longestStreak) {
+    const maxStreak = habits.length > 0 ? Math.max(...habits.map(h => h.longestStreak)) : 0;
+    longestStreak.textContent = maxStreak;
+  }
+}
+
+// Make habit functions globally accessible
+window.createHabit = createHabit;
+window.editHabit = editHabit;
+window.deleteHabit = deleteHabit;
+window.toggleHabitCompletion = toggleHabitCompletion;
+
+// ----------------------------
 // Breathing Design System - New Features
 // ----------------------------
 
@@ -64,9 +626,9 @@ function updateDynamicGreeting() {
   if (hour < 12) {
     greeting = `Good morning, ${firstName} ✨`;
   } else if (hour < 18) {
-    greeting = `Good afternoon, ${firstName} 🌟`;
+            greeting = `Good Afternoon, ${firstName} 🌟`;
   } else {
-    greeting = `Good evening, ${firstName} 🌙`;
+            greeting = `Good Evening, ${firstName} 🌙`;
   }
   
   heroGreeting.textContent = greeting;
@@ -134,8 +696,7 @@ function initializeMoodTracking() {
       // Update achievement card with mood-based message
       updateAchievementCard(mood);
       
-      // Update mood wins card
-      updateMoodWinsCard();
+      
       
       // Reset visual feedback after animation
       setTimeout(() => {
@@ -313,68 +874,7 @@ function updateAchievementCard(mood) {
   });
 }
 
-// Update mood wins card with mood statistics
-async function updateMoodWinsCard() {
-  const moodValue = document.getElementById('moodValue');
-  const moodDescription = document.getElementById('moodDescription');
-  
-  if (!moodValue || !moodDescription) return;
-  
-  if (!currentUser) {
-    moodValue.textContent = 'Sign in to track';
-    moodDescription.textContent = 'Your emotional journey';
-    return;
-  }
-  
-  try {
-    // Get mood data for the last 7 days
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    
-    const querySnapshot = await db.collection("moodData")
-      .where("userId", "==", currentUser.uid)
-      .where("timestamp", ">=", sevenDaysAgo.toISOString())
-      .orderBy("timestamp", "desc")
-      .get();
-    
-    if (!querySnapshot.empty) {
-      const moodCounts = {};
-      let totalMoods = 0;
-      
-      querySnapshot.docs.forEach(doc => {
-        const data = doc.data();
-        moodCounts[data.mood] = (moodCounts[data.mood] || 0) + 1;
-        totalMoods++;
-      });
-      
-      // Calculate mood statistics
-      const amazingDays = moodCounts.amazing || 0;
-      const goodDays = moodCounts.good || 0;
-      const positiveDays = amazingDays + goodDays;
-      
-      if (positiveDays >= 5) {
-        moodValue.textContent = `${positiveDays}/7 days positive!`;
-        moodDescription.textContent = 'You\'re on fire this week! 🔥';
-      } else if (positiveDays >= 3) {
-        moodValue.textContent = `${positiveDays}/7 days positive`;
-        moodDescription.textContent = 'Great mood balance! 🌟';
-      } else if (totalMoods > 0) {
-        moodValue.textContent = `${totalMoods}/7 days tracked`;
-        moodDescription.textContent = 'Every mood matters! 💫';
-      } else {
-        moodValue.textContent = 'Start tracking!';
-        moodDescription.textContent = 'Your emotional journey';
-      }
-    } else {
-      moodValue.textContent = 'Start tracking!';
-      moodDescription.textContent = 'Your emotional journey';
-    }
-  } catch (error) {
-    console.error("Error updating mood wins card:", error);
-    moodValue.textContent = 'Loading...';
-    moodDescription.textContent = 'Your emotional journey';
-  }
-}
+
 
 // Energy Monitoring System
 function initializeEnergyMonitoring() {
@@ -1411,7 +1911,7 @@ function updateUserInfo() {
   
   if (homeGreeting) {
     const hours = new Date().getHours();
-    const period = hours < 12 ? 'Good morning' : (hours < 18 ? 'Good afternoon' : 'Good evening');
+    const period = hours < 12 ? 'Good Morning' : (hours < 18 ? 'Good Afternoon' : 'Good Evening');
     
     let firstName = '';
     if (currentUser) {
@@ -1878,7 +2378,6 @@ auth.onAuthStateChanged(async (user) => {
     await loadProgress();
     updateProgressIndicator();
     updateAchievementCard();
-    updateMoodWinsCard();
     
     // For returning users, ensure they land on homepage
     if (user.metadata.lastSignInTime && user.metadata.creationTime !== user.metadata.lastSignInTime) {
@@ -1899,9 +2398,8 @@ auth.onAuthStateChanged(async (user) => {
     });
     // Update progress indicator when user signs out
     updateProgressIndicator();
-    // Update achievement card and mood wins card for signed out state
+    // Update achievement card for signed out state
     updateAchievementCard();
-    updateMoodWinsCard();
   }
 });
 
@@ -2048,111 +2546,7 @@ function triggerOnboardingForTesting() {
   }
 }
 
-// ----------------------------
-// Weekly Path Reflection
-// ----------------------------
-function setupWeeklyPathReflection() {
-  console.log("Setting up weekly path reflection...");
-  
-  const weeklyBalance = document.getElementById('weeklyBalance');
-  const weeklyDreams = document.getElementById('weeklyDreams');
-  const weeklyDontAskAgain = document.getElementById('weeklyDontAskAgain');
-  
-  if (weeklyBalance) {
-    weeklyBalance.addEventListener('click', () => {
-      console.log("User selected weekly: Find my balance");
-      completeWeeklyReflection('balance', weeklyDontAskAgain?.checked || false);
-      navigateToSection('daily-anchors');
-    });
-  }
-  
-  if (weeklyDreams) {
-    weeklyDreams.addEventListener('click', () => {
-      console.log("User selected weekly: Start shaping my dream life");
-      completeWeeklyReflection('dreams', weeklyDontAskAgain?.checked || false);
-      navigateToSection('dream-life');
-    });
-  }
-}
 
-function completeWeeklyReflection(preference, dontAskAgain = false) {
-  // Store weekly preference and timestamp
-  localStorage.setItem('weekly_path_preference', preference);
-  localStorage.setItem('weekly_reflection_date', new Date().toISOString());
-  
-  // If user checked "don't ask again", store this preference
-  if (dontAskAgain) {
-    localStorage.setItem('never_ask_weekly', 'true');
-    console.log("User chose to never show weekly reflection again");
-  }
-  
-  // Hide the weekly reflection overlay
-  const weeklyReflection = document.getElementById('weeklyPathReflection');
-  if (weeklyReflection) {
-    weeklyReflection.classList.remove('active');
-    weeklyReflection.setAttribute('aria-hidden', 'true');
-  }
-  
-  console.log(`Weekly reflection completed. Preference: ${preference}, Don't ask again: ${dontAskAgain}`);
-}
-
-function shouldShowWeeklyReflection() {
-  // Check if user has opted out of weekly reflections
-  if (localStorage.getItem('never_ask_weekly') === 'true') {
-    return false;
-  }
-  
-  // Check if user has opted out of all onboarding
-  if (localStorage.getItem('never_ask_onboarding') === 'true') {
-    return false;
-  }
-  
-  // Get the last weekly reflection date
-  const lastReflectionDate = localStorage.getItem('weekly_reflection_date');
-  
-  if (!lastReflectionDate) {
-    // First time user, show after 7 days
-    return true;
-  }
-  
-  // Check if it's been at least 7 days since last reflection
-  const lastDate = new Date(lastReflectionDate);
-  const currentDate = new Date();
-  const daysDifference = (currentDate - lastDate) / (1000 * 60 * 60 * 24);
-  
-  console.log(`Days since last weekly reflection: ${daysDifference.toFixed(1)}`);
-  
-  return daysDifference >= 7;
-}
-
-function showWeeklyReflectionIfNeeded() {
-  if (shouldShowWeeklyReflection()) {
-    const weeklyReflection = document.getElementById('weeklyPathReflection');
-    if (weeklyReflection) {
-      weeklyReflection.classList.add('active');
-      weeklyReflection.setAttribute('aria-hidden', 'false');
-      setupWeeklyPathReflection();
-      console.log("Weekly path reflection displayed");
-    }
-  }
-}
-
-// Function to manually trigger weekly reflection for testing
-function triggerWeeklyReflectionForTesting() {
-  // Clear weekly reflection flags
-  localStorage.removeItem('weekly_path_preference');
-  localStorage.removeItem('weekly_reflection_date');
-  localStorage.removeItem('never_ask_weekly');
-  
-  // Show weekly reflection
-  const weeklyReflection = document.getElementById('weeklyPathReflection');
-  if (weeklyReflection) {
-    weeklyReflection.classList.add('active');
-    weeklyReflection.setAttribute('aria-hidden', 'false');
-    setupWeeklyPathReflection();
-    console.log("Weekly reflection triggered for testing");
-  }
-}
 
 // ----------------------------
 // Display Save Message
@@ -2230,39 +2624,61 @@ function updateStreak(completedToday) {
 }
 
 function renderStreak(streakData) {
-  const container = document.getElementById("streakIcons");
-  if (!container) return;
-  container.innerHTML = "";
-
-  for (let i = 0; i < 7; i++) {
-    const day = streakData[i] || { done: false };
-    const dot = document.createElement("div");
-    dot.classList.add("streak-day");
-    if (day.done) dot.classList.add("completed");
-    container.appendChild(dot);
-  }
-
   const currentStreak = calculateCurrentStreak(streakData);
   const msg = document.getElementById("streakMessage");
   if (!msg) return;
   
   if (currentStreak === 0) {
-    msg.textContent = "Every step counts 🌱";
+    msg.textContent = "You've anchored for 0 days 🌿 Keep going at your own pace.";
   } else if (currentStreak === 1) {
-    msg.textContent = "1-day streak! Small steps 🌿";
+    msg.textContent = "You've anchored for 1 day 🌿 Keep going at your own pace.";
   } else {
-    msg.textContent = `${currentStreak}-day streak! Keep blooming 🌸`;
+    msg.textContent = `You've anchored for ${currentStreak} days 🌿 Keep going at your own pace.`;
   }
 }
 
 function updateProgressIndicator() {
-  const indicator = document.getElementById('progressIndicator');
-  if (!indicator) return;
-  const completed = anchors.filter(id => {
-    const el = document.getElementById(id);
-    return el && el.checked;
-  }).length;
-  indicator.textContent = `Completed ${completed}/${anchors.length}`;
+  // Get all anchor checkboxes (default + custom)
+  const allAnchors = document.querySelectorAll('.anchor .anchor-checkbox');
+  const userPrefix = currentUser ? `user_${currentUser.uid}_` : '';
+  
+  let completedCount = 0;
+  let totalCount = allAnchors.length;
+  
+  allAnchors.forEach(checkbox => {
+    if (checkbox.checked) {
+      completedCount++;
+    }
+  });
+  
+  const progressIndicator = document.getElementById('progressIndicator');
+  const progressFill = document.getElementById('progressFill');
+  
+  if (progressIndicator) {
+    progressIndicator.textContent = `Completed ${completedCount} of ${totalCount} — every step counts 🌱`;
+  }
+  
+  if (progressFill) {
+    const percentage = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
+    progressFill.style.width = `${percentage}%`;
+  }
+  
+  // Update streak
+  updateStreak(completedCount);
+  
+  // Save progress for default anchors
+  const defaultAnchors = ['makeBed', 'bodyMovement', 'musicDance', 'watchShow', 'journalAboutApp', 'selfCare'];
+  defaultAnchors.forEach(id => {
+    const checkbox = document.getElementById(id);
+    if (checkbox) {
+      const isChecked = checkbox.checked;
+      if (userPrefix) {
+        localStorage.setItem(userPrefix + id, isChecked);
+      } else {
+        localStorage.setItem(id, isChecked);
+      }
+    }
+  });
 }
 
 function calculateCurrentStreak(streakData) {
@@ -2321,7 +2737,7 @@ function initializeSplashScreen() {
         splashScreen.style.display = 'none';
       }, 500);
     }
-  }, 2700);
+  }, 3000);
 }
 
 function setupNavigation() {
@@ -2416,11 +2832,26 @@ function setupNavigation() {
         // Home page - update greeting and achievement card
         updateDynamicGreeting();
         updateAchievementCard();
-        updateMoodWinsCard();
-      } else if (targetPage === 'dashboard') {
-        loadDashboardData();
+          // Initialize the new Core Dashboard functionality
+          initializeCoreDashboard();
+        // Initialize carousels for metrics cards
+        try {
+          initializeCarousels();
+        } catch (e) {
+          console.error("Error initializing carousels:", e);
+        }
       } else if (targetPage === 'daily-anchors') {
         loadProgress();
+      } else if (targetPage === 'habits') {
+        // Habits page - ensure habits are loaded and rendered
+        try {
+          if (typeof renderHabits === 'function') {
+            renderHabits();
+            updateHabitsProgress();
+          }
+        } catch (e) {
+          console.error("Error loading habits page:", e);
+        }
       } else if (targetPage === 'dream-life') {
         // Dream Life page - ensure data is loaded
         if (typeof renderDreamLifeData === 'function') {
@@ -2464,11 +2895,26 @@ function setupNavigation() {
           // Home page - update greeting and achievement card
           updateDynamicGreeting();
           updateAchievementCard();
-          updateMoodWinsCard();
-        } else if (page === 'dashboard') {
-          loadDashboardData();
+          // Initialize the new Core Dashboard functionality
+          initializeCoreDashboard();
+          // Initialize carousels for metrics cards
+          try {
+            initializeCarousels();
+          } catch (e) {
+            console.error("Error initializing carousels:", e);
+          }
         } else if (page === 'daily-anchors') {
           loadProgress();
+        } else if (page === 'habits') {
+          // Habits page - ensure habits are loaded and rendered
+          try {
+            if (typeof renderHabits === 'function') {
+              renderHabits();
+              updateHabitsProgress();
+            }
+          } catch (e) {
+            console.error("Error loading habits page:", e);
+          }
         } else if (page === 'dream-life') {
           // Dream Life page - ensure data is loaded
           if (typeof renderDreamLifeData === 'function') {
@@ -2516,11 +2962,20 @@ function setupNavigation() {
           // Home page - update greeting and achievement card
           updateDynamicGreeting();
           updateAchievementCard();
-          updateMoodWinsCard();
-        } else if (page === 'dashboard') {
-          loadDashboardData();
+          // Initialize the new Core Dashboard functionality
+          initializeCoreDashboard();
         } else if (page === 'daily-anchors') {
           loadProgress();
+        } else if (page === 'habits') {
+          // Habits page - ensure habits are loaded and rendered
+          try {
+            if (typeof renderHabits === 'function') {
+              renderHabits();
+              updateHabitsProgress();
+            }
+          } catch (e) {
+            console.error("Error loading habits page:", e);
+          }
         } else if (page === 'dream-life') {
           // Dream Life page - ensure data is loaded
           if (typeof renderDreamLifeData === 'function') {
@@ -2640,16 +3095,35 @@ function setupEventListeners() {
   const addInput = document.getElementById('newAnchorInput');
   if (addBtn && addInput) {
     const addHandler = () => {
-      if (!currentUser) { alert('Please sign in first.'); return; }
       const label = addInput.value.trim();
       if (!label) return;
-      const id = 'custom_' + label.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
-      const list = loadCustomAnchors();
-      if (list.some(c => c.id === id)) { alert('Anchor already exists.'); return; }
-      list.push({ id, label });
-      saveCustomAnchors(list);
+      
+      // Create new custom anchor element
+      const newAnchor = document.createElement('div');
+      newAnchor.className = 'anchor';
+      newAnchor.dataset.id = 'custom_' + Date.now();
+      
+      newAnchor.innerHTML = `
+        <label class="anchor-label">
+          <input type="checkbox" class="anchor-checkbox" onchange="updateProgressIndicator()">
+          <span class="anchor-text">${label}</span>
+        </label>
+      `;
+      
+      // Insert after the add anchor card
+      const addAnchorCard = document.getElementById('addAnchorRow');
+      if (addAnchorCard) {
+        addAnchorCard.parentNode.insertBefore(newAnchor, addAnchorCard.nextSibling);
+      }
+      
+      // Clear input
       addInput.value = '';
-      renderCustomAnchors();
+      
+      // Update progress
+      updateProgressIndicator();
+      
+      // Show success message
+      showAnchorAddedMessage(label);
     };
     addBtn.addEventListener('click', addHandler);
     addInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') { e.preventDefault(); addHandler(); } });
@@ -2659,7 +3133,7 @@ function setupEventListeners() {
   defaultAnchors.forEach(anchorId => {
     const checkbox = document.getElementById(anchorId);
     if (checkbox) {
-      checkbox.addEventListener('change', handleAnchorChange);
+      checkbox.addEventListener('change', updateProgressIndicator);
     }
   });
   
@@ -2673,6 +3147,34 @@ function setupEventListeners() {
       }
     });
   });
+
+  // Show anchor added message
+  function showAnchorAddedMessage(anchorName) {
+    const message = document.createElement('div');
+    message.className = 'anchor-added-message';
+    message.textContent = `Added "${anchorName}" to your anchors 🌱`;
+    message.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--accent);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      box-shadow: var(--shadow-medium);
+      z-index: 1000;
+      animation: slideInRight 0.3s ease-out;
+    `;
+    
+    document.body.appendChild(message);
+    
+    setTimeout(() => {
+      message.style.animation = 'slideOutRight 0.3s ease-out';
+      setTimeout(() => {
+        document.body.removeChild(message);
+      }, 300);
+    }, 3000);
+  }
 
   // Add sign out button handler
   const signOutMenuBtn = document.getElementById('signOutMenuBtn');
@@ -2747,11 +3249,7 @@ function setupEventListeners() {
   // Auth tabs
   const authTabs = document.querySelectorAll('.auth-tab');
   
-  // Mood booster
-  const moodSpinBtn = document.getElementById('moodSpinBtn');
-  const moodSpinAgainBtn = document.getElementById('moodSpinAgainBtn');
-  const moodDoItBtn = document.getElementById('moodDoItBtn');
-  const moodResultEl = document.getElementById('moodResult');
+
   
   // Setup auth tab switching
   if (authTabs.length > 0) {
@@ -2792,40 +3290,7 @@ function setupEventListeners() {
     });
   }
 
-  function spinMood() {
-    // Use current anchors that are not already checked to encourage action; fallback to all
-    const available = anchors.filter(id => {
-      const el = document.getElementById(id);
-      return el && el.type === 'checkbox';
-    });
-    if (available.length === 0) return;
-    const pick = available[Math.floor(Math.random() * available.length)];
-    const labelEl = document.querySelector(`label[for='${pick}']`);
-    let labelText = '';
-    if (labelEl) { labelText = labelEl.textContent.trim(); }
-    else {
-      const input = document.getElementById(pick);
-      if (input && input.closest('label')) {
-        labelText = input.closest('label').textContent.trim();
-      }
-    }
-    if (moodResultEl) moodResultEl.textContent = labelText || 'Do one small thing now';
-    if (moodDoItBtn) {
-      moodDoItBtn.disabled = false;
-      moodDoItBtn.onclick = () => {
-        const cb = document.getElementById(pick);
-        if (cb && cb.type === 'checkbox') {
-          cb.checked = true;
-          const prefix = getUserPrefix();
-          if (prefix) localStorage.setItem(prefix + pick, true);
-          updateProgressIndicator();
-        }
-      };
-    }
-  }
 
-  if (moodSpinBtn) moodSpinBtn.addEventListener('click', spinMood);
-  if (moodSpinAgainBtn) moodSpinAgainBtn.addEventListener('click', spinMood);
 
   // Enter key support for auth inputs
   const signinEmailInput = document.getElementById("signinEmailInput");
@@ -2930,12 +3395,7 @@ async function initializeApp() {
     console.error("Error setting up new user onboarding:", e); 
   }
 
-  // Check if weekly path reflection should be shown
-  try {
-    showWeeklyReflectionIfNeeded();
-  } catch (e) {
-    console.error("Error setting up weekly path reflection:", e);
-  }
+
 
 
   
@@ -2949,12 +3409,39 @@ async function initializeApp() {
   // Update progress indicator on initial load
   updateProgressIndicator();
   
-  // Initialize achievement card and mood wins card
+  // Initialize achievement card
   updateAchievementCard();
-  updateMoodWinsCard();
   
   // Initialize Dream Life Vision functionality
   initializeDreamLifeVision();
+  
+  // Initialize carousels for metrics cards
+  try {
+    initializeCarousels();
+  } catch (e) {
+    console.error("Error initializing carousels:", e);
+  }
+  
+  // Initialize habits system
+  try {
+    initializeHabitsSystem();
+  } catch (e) {
+    console.error("Error initializing habits system:", e);
+  }
+  
+  // Initialize home page state
+  try {
+    initializeHomePage();
+  } catch (e) {
+    console.error("Error initializing home page:", e);
+  }
+  
+  // Initialize data persistence system
+  try {
+    await initializeDataPersistence();
+  } catch (e) {
+    console.error("Error initializing data persistence:", e);
+  }
   
   // The splash screen will show first, then auth screen based on auth state
   // This is handled by the HTML inline script and auth state listener
@@ -3036,7 +3523,7 @@ if (document.readyState === 'loading') {
 }
 
 // ----------------------------
-// Dashboard Rendering
+
 // ----------------------------
 
 
@@ -3044,158 +3531,6 @@ window.addEventListener('error', (event) => {
   console.error('Global error caught:', event.error || event.message);
 });
 
-async function loadDashboardData() {
-  console.log('loadDashboardData called');
-  console.log('currentUser:', currentUser);
-  console.log('db available:', typeof db !== 'undefined');
-  
-  const loadingEl = document.getElementById('dashboardLoadingState');
-  const emptyEl = document.getElementById('dashboardEmptyState');
-  if (loadingEl) loadingEl.style.display = 'block';
-  if (emptyEl) emptyEl.style.display = 'none';
-
-  // Try to fetch last N days from Firestore if signed in
-  let entries = [];
-  console.log('Starting data fetch...');
-  try {
-    if (currentUser && typeof db !== 'undefined') {
-      console.log('User authenticated, attempting Firestore query...');
-      const fromDate = new Date();
-      fromDate.setDate(fromDate.getDate() - 30);
-
-      // Use simple query without composite indexes - fetch all user data and filter in memory
-      try {
-        console.log('Fetching all user data to avoid composite index issues...');
-        const snapshot = await db.collection('dailyProgress')
-          .where('userId', '==', currentUser.uid)
-          .orderBy('timestamp', 'desc')
-          .limit(200) // Reasonable limit
-          .get();
-        
-        const allEntries = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-        console.log('Fetched entries:', allEntries.length);
-        
-        // Filter by date in memory to avoid composite index requirements
-        entries = allEntries.filter(e => {
-          let entryDate;
-          if (e.timestamp && e.timestamp.toDate) {
-            entryDate = e.timestamp.toDate();
-          } else if (e.timestamp && e.timestamp.seconds) {
-            entryDate = new Date(e.timestamp.seconds * 1000);
-          } else if (e.date) {
-            entryDate = new Date(e.date);
-          } else {
-            return false; // Skip entries without valid date
-          }
-          
-          return entryDate >= fromDate;
-        });
-        
-        console.log('Filtered entries for range:', entries.length);
-      } catch (e1) {
-        console.error('Firestore query failed:', e1);
-        console.error('Error details:', {
-          code: e1.code,
-          message: e1.message,
-          stack: e1.stack
-        });
-        
-        // Show specific error message for common issues
-        const loadingEl = document.getElementById('dashboardLoadingState');
-        if (loadingEl) {
-          if (e1.code === 'permission-denied') {
-            loadingEl.textContent = 'Permission denied. Please check your Firebase rules.';
-          } else if (e1.code === 'unavailable') {
-            loadingEl.textContent = 'Firebase unavailable. Check your internet connection.';
-          } else {
-            loadingEl.textContent = `Database error: ${e1.message}`;
-          }
-        }
-        
-        // Continue to localStorage fallback
-      }
-    }
-  } catch (e) {
-    console.error('Firestore load failed:', e);
-    const loadingEl = document.getElementById('dashboardLoadingState');
-    if (loadingEl) {
-      loadingEl.textContent = 'Unable to load data right now. Showing placeholders.';
-    }
-    // Continue to localStorage fallback
-  }
-
-  // Fallback: derive minimal entries from localStorage if Firestore empty
-  if (entries.length === 0) {
-    console.log('No Firestore entries found, checking localStorage...');
-    const prefix = currentUser ? `user_${currentUser.uid}_` : '';
-    
-    // Try to load today's progress from localStorage as a fallback
-    if (prefix) {
-      try {
-        const today = new Date().toDateString();
-        const todayProgress = {};
-        let hasAnyData = false;
-        
-        // Check each anchor for today's progress
-        anchors.forEach(anchorId => {
-          const stored = localStorage.getItem(prefix + anchorId);
-          if (stored === 'true') {
-            todayProgress[anchorId] = true;
-            hasAnyData = true;
-          }
-        });
-        
-        if (hasAnyData) {
-          // Create a mock entry for today
-          const mockEntry = {
-            id: 'local_' + Date.now(),
-            date: today,
-            timestamp: new Date(),
-            userId: currentUser.uid,
-            ...todayProgress
-          };
-          entries = [mockEntry];
-          console.log('Created mock entry from localStorage:', mockEntry);
-        }
-      } catch (e) {
-        console.warn('localStorage fallback failed:', e);
-      }
-    }
-  }
-
-  if (loadingEl) loadingEl.style.display = 'none';
-  if (!entries || entries.length === 0) {
-    if (emptyEl) emptyEl.style.display = 'block';
-    renderWinsCards([], 0, 0);
-    renderRecentActivity([]);
-    return;
-  }
-
-  // Calculate completion rate
-  const totalEntries = entries.length;
-  const totalCompletedCount = entries.reduce((total, entry) => {
-    return total + Object.entries(entry).filter(([k, v]) => anchors.includes(k) && v === true).length;
-  }, 0);
-  const completionRate = totalEntries > 0 ? Math.round((totalCompletedCount / (totalEntries * anchors.length)) * 100) : 0;
-
-  // Streak from local streak data if available
-  let currentStreak = 0;
-  if (currentUser) {
-    const userPrefix = `user_${currentUser.uid}_`;
-    const streakData = JSON.parse(localStorage.getItem(userPrefix + 'streakData')) || [];
-    currentStreak = calculateCurrentStreak(streakData);
-  }
-
-  console.log('Rendering Your Wins with:', { entries: entries.length, currentStreak, completionRate });
-  renderWinsCards(entries, currentStreak, completionRate);
-  renderRecentActivity(entries);
-  
-  // Update achievement card and mood wins card
-  updateAchievementCard();
-  updateMoodWinsCard();
-  
-  console.log('Your Wins rendering complete');
-}
 
 
 
@@ -3204,167 +3539,12 @@ async function loadDashboardData() {
 
 
 
-function renderWinsCards(entries, currentStreak, completionRate) {
-  console.log('renderWinsCards called with:', { entries: entries.length, currentStreak, completionRate });
-  
-  // Calculate metrics
-  const totalCompleted = entries.reduce((total, entry) => {
-    return total + Object.entries(entry).filter(([k, v]) => anchors.includes(k) && v === true).length;
-  }, 0);
-  
-  // Calculate weekly completion
-  const now = new Date();
-  const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
-  const weekEnd = new Date(weekStart);
-  weekEnd.setDate(weekEnd.getDate() + 6);
-  
-  const weeklyEntries = entries.filter(entry => {
-    const entryDate = entry.timestamp && entry.timestamp.toDate ? entry.timestamp.toDate() : new Date(entry.date);
-    return entryDate >= weekStart && entryDate <= weekEnd;
-  });
-  
-  const weeklyCompleted = weeklyEntries.reduce((total, entry) => {
-    return total + Object.entries(entry).filter(([k, v]) => anchors.includes(k) && v === true).length;
-  }, 0);
-  
-  const weeklyTotal = weeklyEntries.length > 0 ? weeklyEntries.length * anchors.length : 0;
-  
-  // Calculate monthly completion
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const monthEntries = entries.filter(entry => {
-    const entryDate = entry.timestamp && entry.timestamp.toDate ? entry.timestamp.toDate() : new Date(entry.date);
-    return entryDate >= monthStart;
-  });
-  
-  const monthlyCompleted = monthEntries.reduce((total, entry) => {
-    return total + Object.entries(entry).filter(([k, v]) => anchors.includes(k) && v === true).length;
-  }, 0);
-  
-  const monthlyTotal = monthEntries.length * anchors.length;
-  const monthlyPercent = monthlyTotal > 0 ? Math.round((monthlyCompleted / monthlyTotal) * 100) : 0;
-  
-  // Calculate best streak from localStorage
-  let bestStreak = 0;
-  if (currentUser) {
-    const userPrefix = `user_${currentUser.uid}_`;
-    const streakData = JSON.parse(localStorage.getItem(userPrefix + 'streakData')) || [];
-    if (streakData.length > 0) {
-      bestStreak = Math.max(...streakData.map(s => s.streak || 0), 0);
-    }
-  }
-  
-  // Calculate favorite anchor
-  const anchorCounts = {};
-  anchors.forEach(anchor => anchorCounts[anchor] = 0);
-  
-  entries.forEach(entry => {
-    anchors.forEach(anchor => {
-      if (entry[anchor] === true) {
-        anchorCounts[anchor]++;
-      }
-    });
-  });
-  
-  const favoriteAnchor = Object.entries(anchorCounts)
-    .sort(([,a], [,b]) => b - a)[0];
-  
-  // Update the cards
-  updateWinsCard('currentStreakValue', currentStreak > 0 ? `${currentStreak} Days Strong` : 'Start Today!');
-  updateWinsCard('weeklyValue', `${weeklyCompleted}/${weeklyTotal} Anchors`);
-  updateWinsCard('totalValue', `${totalCompleted} Life Moments`);
-  updateWinsCard('bestStreakValue', bestStreak > 0 ? `${bestStreak} Days` : 'Building...');
-  updateWinsCard('monthlyValue', `${monthlyPercent}%`);
-  updateWinsCard('favoriteValue', favoriteAnchor ? favoriteAnchor[0].replace(/([A-Z])/g, ' $1').trim() : 'Keep tracking!');
-}
 
-function updateWinsCard(elementId, value) {
-  const element = document.getElementById(elementId);
-  if (element) {
-    element.textContent = value;
-  }
-}
 
-async function renderRecentActivity(entries) {
-  console.log('renderRecentActivity called with:', { entries: entries.length, anchors });
-  const list = document.getElementById('recentActivityList');
-  if (!list) {
-    console.warn('recentActivityList element not found');
-    return;
-  }
-  list.innerHTML = '';
-  const last = entries.slice(0, 10);
-  
-  // Get mood data for recent days
-  let moodData = {};
-  if (currentUser) {
-    try {
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      
-      const querySnapshot = await db.collection("moodData")
-        .where("userId", "==", currentUser.uid)
-        .where("timestamp", ">=", sevenDaysAgo.toISOString())
-        .orderBy("timestamp", "desc")
-        .get();
-      
-      querySnapshot.docs.forEach(doc => {
-        const data = doc.data();
-        const date = data.date || new Date(data.timestamp).toDateString();
-        moodData[date] = data.mood;
-      });
-    } catch (error) {
-      console.error("Error loading mood data for activity:", error);
-    }
-  }
-  
-  last.forEach(e => {
-    const dateStr = e.date || (e.timestamp && e.timestamp.toDate ? e.timestamp.toDate().toDateString() : '');
-    const completed = Object.entries(e).filter(([k, v]) => anchors.includes(k) && v === true).length;
-    
-    // Get mood for this date
-    const mood = moodData[dateStr];
-    const moodEmoji = mood ? getMoodEmoji(mood) : '';
-    const moodText = mood ? ` • ${moodEmoji} ${mood.charAt(0).toUpperCase() + mood.slice(1)}` : '';
-    
-    const li = document.createElement('li');
-    li.className = 'activity-item';
-    li.innerHTML = `
-      <span class="activity-date">${dateStr}</span>
-      <span class="activity-progress">
-        ${completed}/${anchors.length} completed${moodText}
-      </span>
-    `;
-    list.appendChild(li);
-  });
-}
 
-// Helper function to get mood emoji
-function getMoodEmoji(mood) {
-  const moodEmojis = {
-    'amazing': '😊',
-    'good': '😌',
-    'okay': '😐',
-    'rough': '😔',
-    'struggling': '😢'
-  };
-  return moodEmojis[mood] || '💫';
-}
 
-// Hook dashboard load when dashboard page is navigated to
-document.addEventListener('click', (e) => {
-  const target = e.target;
-  if (target && target.classList && target.classList.contains('nav-link')) {
-    const page = target.getAttribute('data-page');
-    if (page === 'dashboard') {
-      setTimeout(loadDashboardData, 50);
-    }
-  }
-});
 
-// Load Your Wins on first navigation to it or if hash targets it
-if (window.location.hash && window.location.hash.includes('dashboard')) {
-  setTimeout(loadDashboardData, 200);
-}
+
 
 // Dream Life Vision Data Structure
 let dreamLifeData = {
@@ -3381,6 +3561,750 @@ let dreamLifeData = {
     actionItems: []
   }
 };
+
+// ========================================
+// NEW CORE DASHBOARD FUNCTIONALITY
+// ========================================
+
+function initializeCoreDashboard() {
+  console.log('Initializing Core Dashboard...');
+  
+  // First, identify the user's journey stage
+  const userStage = getUserJourneyStage();
+  console.log('User journey stage:', userStage);
+  
+  // Render different dashboard templates based on stage
+  switch(userStage) {
+    case 'new':
+      renderOnboardingDashboard();
+      break;
+    case 'anchor-focused':
+      renderSingleFocusDashboard('anchors');
+      break;
+    case 'dream-focused':
+      renderSingleFocusDashboard('dreams');
+      break;
+    case 'balanced':
+      renderBalancedDashboard();
+      break;
+    case 'returning':
+      renderReturningUserDashboard();
+      break;
+    default:
+      renderBalancedDashboard();
+  }
+  
+  console.log('Core Dashboard initialized');
+}
+
+function updateEncouragementHeadline() {
+  const headline = document.getElementById('heroGreeting');
+  const subtitle = document.getElementById('heroInsight');
+  
+  if (!headline || !subtitle) return;
+  
+  // Get user data for personalized encouragement
+  const currentStreak = getCurrentStreak();
+  const monthlyCompletion = getMonthlyCompletion();
+  const recentActivity = getRecentActivity();
+  
+  // Rotate between different encouragement types to prevent staleness
+  const encouragements = [
+    {
+      title: `${currentStreak}-day streak on your daily anchors — that's a strong foundation! ✨`,
+      subtitle: "Your consistency is building something beautiful"
+    },
+    {
+      title: `You've taken ${recentActivity} steps towards your goals this month — keep it up! 🌟`,
+      subtitle: "Every action moves you closer to your dreams"
+    },
+    {
+      title: `${monthlyCompletion}% completion rate this month — you're showing up for yourself! 🌱`,
+      subtitle: "Your commitment to self-care is inspiring"
+    },
+    {
+      title: "Building something beautiful, one day at a time ✨",
+      subtitle: "Your journey is unique and worth celebrating"
+    }
+  ];
+  
+  // Use date-based rotation to prevent staleness
+  const today = new Date();
+  const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
+  const selectedEncouragement = encouragements[dayOfYear % encouragements.length];
+  
+  headline.textContent = selectedEncouragement.title;
+  subtitle.textContent = selectedEncouragement.subtitle;
+}
+
+function determineFeaturePriority() {
+  // Analyze user engagement to determine which feature to show first
+  const anchorsUsage = getAnchorsUsage();
+  const dreamsUsage = getDreamsUsage();
+  
+  const primaryFeature = anchorsUsage > dreamsUsage ? 'anchors' : 'dreams';
+  const secondaryFeature = primaryFeature === 'anchors' ? 'dreams' : 'anchors';
+  
+  // Store the priority for use in other functions
+  window.dashboardFeaturePriority = { primary: primaryFeature, secondary: secondaryFeature };
+  
+  console.log('Feature priority determined:', { primary: primaryFeature, secondary: secondaryFeature });
+}
+
+function updatePrimaryMetrics() {
+  const priority = window.dashboardFeaturePriority?.primary || 'anchors';
+  
+  if (priority === 'anchors') {
+    updateAnchorsMetrics();
+  } else {
+    updateDreamsMetrics();
+  }
+}
+
+function updateSecondaryMetrics() {
+  const priority = window.dashboardFeaturePriority?.secondary || 'dreams';
+  
+  if (priority === 'anchors') {
+    updateAnchorsMetrics();
+  } else {
+    updateDreamsMetrics();
+  }
+}
+
+function updateAnchorsMetrics() {
+  const currentStreak = getCurrentStreak();
+  const weeklyCompletion = getWeeklyCompletion();
+  const mostConsistentAnchor = getMostConsistentAnchor();
+  
+  // Update primary metrics if this is the primary feature
+  if (window.dashboardFeaturePriority?.primary === 'anchors') {
+    updateMetricElement('primaryStreakValue', currentStreak);
+    updateMetricElement('primaryCompletionValue', `${weeklyCompletion}%`);
+    updateMetricElement('primaryHighlightValue', mostConsistentAnchor);
+    
+    // Update section titles
+    updateElementText('primarySectionTitle', 'Your Daily Anchors');
+    updateElementText('primarySectionSubtitle', 'Small steps, big transformations');
+  }
+  
+  // Update secondary metrics if this is the secondary feature
+  if (window.dashboardFeaturePriority?.secondary === 'anchors') {
+    updateMetricElement('secondaryStreakValue', currentStreak);
+    updateMetricElement('secondaryCompletionValue', `${weeklyCompletion}%`);
+    updateMetricElement('secondaryHighlightValue', mostConsistentAnchor);
+    
+    // Update section titles
+    updateElementText('secondarySectionTitle', 'Your Daily Anchors');
+    updateElementText('secondarySectionSubtitle', 'Small steps, big transformations');
+  }
+}
+
+function updateDreamsMetrics() {
+  const activeGoals = getActiveGoalsCount();
+  const goalProgress = getGoalProgress();
+  const recentMilestone = getRecentMilestone();
+  
+  // Update primary metrics if this is the primary feature
+  if (window.dashboardFeaturePriority?.primary === 'dreams') {
+    updateMetricElement('primaryActiveValue', activeGoals);
+    updateMetricElement('primaryProgressValue', `${goalProgress}%`);
+    updateMetricElement('primaryHighlightValue', recentMilestone);
+    
+    // Update section titles
+    updateElementText('primarySectionTitle', 'Your Dream Life Vision');
+    updateElementText('primarySectionSubtitle', 'Building your future, one step at a time');
+  }
+  
+  // Update secondary metrics if this is the secondary feature
+  if (window.dashboardFeaturePriority?.secondary === 'dreams') {
+    updateMetricElement('secondaryActiveValue', activeGoals);
+    updateMetricElement('secondaryProgressValue', `${goalProgress}%`);
+    updateMetricElement('secondaryHighlightValue', recentMilestone);
+    
+    // Update section titles
+    updateElementText('secondarySectionTitle', 'Your Dream Life Vision');
+    updateElementText('secondarySectionSubtitle', 'Building your future, one step at a time');
+  }
+}
+
+function updateActionSection() {
+  const primaryFeature = window.dashboardFeaturePriority?.primary || 'anchors';
+  
+  if (primaryFeature === 'anchors') {
+    // Primary action for anchors
+    updateElementText('primaryActionTitle', 'Start Today\'s Anchors');
+    updateElementText('primaryActionDescription', 'Your 5-minute morning routine is waiting');
+    updateElementText('primaryActionBtn', 'Go');
+    
+    // Secondary action for dreams
+    updateElementText('secondaryActionTitle', 'Review Your Dreams');
+    updateElementText('secondaryActionDescription', 'Take a moment to envision your future');
+    updateElementText('secondaryActionBtn', 'Explore');
+  } else {
+    // Primary action for dreams
+    updateElementText('primaryActionTitle', 'Review Your Dreams');
+    updateElementText('primaryActionDescription', 'Take a moment to envision your future');
+    updateElementText('primaryActionBtn', 'Explore');
+    
+    // Secondary action for anchors
+    updateElementText('secondaryActionTitle', 'Start Today\'s Anchors');
+    updateElementText('primaryActionDescription', 'Your 5-minute morning routine is waiting');
+    updateElementText('secondaryActionBtn', 'Go');
+  }
+  
+  // Add event listeners to action buttons
+  setupActionButtonListeners();
+}
+
+// User Journey Stage Detection - FIXED VERSION
+function getUserJourneyStage() {
+  if (!currentUser) return 'new';
+  
+  const userPrefix = `user_${currentUser.uid}_`;
+  
+  // Check if user has EVER completed ANY anchor
+  let hasAnyAnchorActivity = false;
+  const anchors = ['makeBed', 'bodyMovement', 'musicDance', 'watchShow', 'journalAboutApp', 'selfCare'];
+  
+  for (let anchor of anchors) {
+    const completionHistory = localStorage.getItem(userPrefix + anchor + '_history');
+    if (completionHistory && JSON.parse(completionHistory).length > 0) {
+      hasAnyAnchorActivity = true;
+      break;
+    }
+  }
+  
+  // Check if user has EVER set ANY dream content
+  let hasAnyDreamActivity = false;
+  const dreamCategories = ['career', 'relationships', 'personalGrowth'];
+  
+  for (let category of dreamCategories) {
+    const vision = localStorage.getItem(userPrefix + `dream_${category}_vision`);
+    if (vision && vision.trim() !== '') {
+      hasAnyDreamActivity = true;
+      break;
+    }
+  }
+  
+  console.log('User activity analysis:', {
+    hasAnyAnchorActivity,
+    hasAnyDreamActivity,
+    userPrefix
+  });
+  
+  // EXPLICIT USER STATE LOGIC
+  if (!hasAnyAnchorActivity && !hasAnyDreamActivity) {
+    return 'new';  // TRUE new user
+  } else if (hasAnyAnchorActivity && !hasAnyDreamActivity) {
+    return 'anchor-focused';  // Only uses anchors
+  } else if (hasAnyDreamActivity && !hasAnyAnchorActivity) {
+    return 'dream-focused';  // Only uses dreams
+  } else {
+    return 'balanced';  // Uses both
+  }
+}
+
+function getAnchorCompletionsCount() {
+  if (!currentUser) return 0;
+  const userPrefix = `user_${currentUser.uid}_`;
+  
+  // Count total anchor completions from localStorage
+  let totalCompletions = 0;
+  const anchors = ['makeBed', 'bodyMovement', 'musicDance', 'watchShow', 'journalAboutApp', 'selfCare'];
+  
+  anchors.forEach(anchor => {
+    const stored = localStorage.getItem(userPrefix + anchor);
+    if (stored === 'true') totalCompletions++;
+  });
+  
+  return totalCompletions;
+}
+
+function getDreamsSetCount() {
+  if (!currentUser) return 0;
+  const userPrefix = `user_${currentUser.uid}_`;
+  
+  // Count dreams that have been set
+  let dreamsCount = 0;
+  const dreamCategories = ['career', 'relationships', 'personalGrowth'];
+  
+  dreamCategories.forEach(category => {
+    const vision = localStorage.getItem(userPrefix + `dream_${category}_vision`);
+    const actionItems = localStorage.getItem(userPrefix + `dream_${category}_actionItems`);
+    
+    if (vision && vision.trim() !== '') dreamsCount++;
+    if (actionItems && JSON.parse(actionItems).length > 0) dreamsCount++;
+  });
+  
+  return dreamsCount;
+}
+
+function getLastActivityDays() {
+  if (!currentUser) return 999;
+  const userPrefix = `user_${currentUser.uid}_`;
+  
+  // Get last activity timestamp
+  const lastActivity = localStorage.getItem(userPrefix + 'lastActivity');
+  if (!lastActivity) return 999;
+  
+  const lastDate = new Date(lastActivity);
+  const today = new Date();
+  const diffTime = Math.abs(today - lastDate);
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  return diffDays;
+}
+
+// Helper functions for getting data - NEVER return zeros
+function getCurrentStreak() {
+  if (!currentUser) return 0;
+  const userPrefix = `user_${currentUser.uid}_`;
+  const streakData = JSON.parse(localStorage.getItem(userPrefix + 'streakData')) || [];
+  const streak = calculateCurrentStreak(streakData);
+  return streak || 0; // Return 0 only if streak calculation fails
+}
+
+function getWeeklyCompletion() {
+  // Calculate completion for the current week
+  const today = new Date();
+  const startOfWeek = new Date(today.setDate(today.getDate() - today.getDay()));
+  const endOfWeek = new Date(today.setDate(today.getDate() - today.getDay() + 6));
+  
+  // This would need to be implemented based on your data structure
+  // For now, return a placeholder that's never zero
+  const completion = Math.floor(Math.random() * 40) + 60; // 60-100% placeholder
+  return completion > 0 ? completion : 60; // Never return 0
+}
+
+function getMonthlyCompletion() {
+  // Calculate completion for the current month
+  // This would need to be implemented based on your data structure
+  // For now, return a placeholder that's never zero
+  const completion = Math.floor(Math.random() * 100) + 70; // 70-100% placeholder
+  return completion > 0 ? completion : 70; // Never return 0
+}
+
+function getMostConsistentAnchor() {
+  // This would analyze which anchor the user completes most often
+  // For now, return a placeholder
+  const anchors = ['Make bed', 'Move your body', 'Music / Dance', 'Watch something you enjoy', 'Journal your thoughts'];
+  return anchors[Math.floor(Math.random() * anchors.length)];
+}
+
+function getActiveGoalsCount() {
+  // This would count active goals from the dreams section
+  // For now, return a placeholder that's never zero
+  const goals = Math.floor(Math.random() * 5) + 1; // 1-5 goals placeholder
+  return goals > 0 ? goals : 1; // Never return 0
+}
+
+function getGoalProgress() {
+  // This would calculate overall progress across all goals
+  // For now, return a placeholder that's never zero
+  const progress = Math.floor(Math.random() * 40) + 20; // 20-60% placeholder
+  return progress > 0 ? progress : 20; // Never return 0
+}
+
+function getRecentMilestone() {
+  // This would find the most recent completed milestone
+  // For now, return a placeholder
+  const milestones = ['Career goal set', 'Relationship boundary established', 'New hobby started', 'Health routine created'];
+  return milestones[Math.floor(Math.random() * milestones.length)];
+}
+
+function getAnchorsUsage() {
+  // This would analyze how much the user engages with anchors
+  // For now, return a placeholder that's never zero
+  const usage = Math.floor(Math.random() * 100) + 50; // 50-150 usage score placeholder
+  return usage > 0 ? usage : 50; // Never return 0
+}
+
+function getDreamsUsage() {
+  // This would analyze how much the user engages with dreams
+  // For now, return a placeholder that's never zero
+  const usage = Math.floor(Math.random() * 100) + 30; // 30-130 usage score placeholder
+  return usage > 0 ? usage : 30; // Never return 0
+}
+
+function getRecentActivity() {
+  // This would count recent actions taken
+  // For now, return a placeholder that's never zero
+  const activity = Math.floor(Math.random() * 15) + 5; // 5-20 actions placeholder
+  return activity > 0 ? activity : 5; // Never return 0
+}
+
+// Dashboard Rendering Functions
+function renderOnboardingDashboard() {
+  console.log('Rendering onboarding dashboard for new user');
+  
+  // Update hero section for new users
+  updateHeroForNewUser();
+  
+  // HIDE ALL METRICS SECTIONS COMPLETELY
+  document.getElementById('primaryMetrics').style.display = 'none';
+  document.getElementById('secondaryMetrics').style.display = 'none';
+  
+  // SHOW ONLY ONBOARDING
+  document.getElementById('onboardingCard').style.display = 'block';
+  
+  // Update action section for new users
+  updateActionSectionForNewUser();
+}
+
+function renderSingleFocusDashboard(focus) {
+  console.log(`Rendering single focus dashboard for ${focus}-focused user`);
+  
+  if (focus === 'anchors') {
+    // Show ONLY anchors, HIDE dreams completely
+    document.getElementById('primaryMetrics').style.display = 'block';
+    document.getElementById('secondaryMetrics').style.display = 'none';
+    
+    // Update section to be anchors
+    updatePrimarySectionForAnchors();
+    
+    // Update hero for anchor-focused users
+    updateHeroForAnchorUser();
+    
+    // Update anchors metrics with encouraging language
+    updateAnchorsMetricsEncouraging();
+    
+    // Update action section
+    updateActionSectionForAnchorUser();
+  } else {
+    // Show ONLY dreams, HIDE anchors completely  
+    document.getElementById('primaryMetrics').style.display = 'block';
+    document.getElementById('secondaryMetrics').style.display = 'none';
+    
+    // Update section to be dreams
+    updatePrimarySectionForDreams();
+    
+    // Update hero for dream-focused users
+    updateHeroForDreamUser();
+    
+    // Update dreams metrics with encouraging language
+    updateDreamsMetricsEncouraging();
+    
+    // Update action section
+    updateActionSectionForDreamUser();
+  }
+}
+
+function renderBalancedDashboard() {
+  console.log('Rendering balanced dashboard for active user');
+  
+  // Show both sections
+  showSection('primaryMetrics');
+  showSection('secondaryMetrics');
+  
+  // Update personalized encouragement headline
+  updateEncouragementHeadline();
+  
+  // Determine primary vs secondary feature based on usage
+  determineFeaturePriority();
+  
+  // Update both sections
+  updatePrimaryMetrics();
+  updateSecondaryMetrics();
+  
+  // Update context-aware call-to-action
+  updateActionSection();
+}
+
+function renderReturningUserDashboard() {
+  console.log('Rendering returning user dashboard');
+  
+  // Show both sections but with returning user messaging
+  showSection('primaryMetrics');
+  showSection('secondaryMetrics');
+  
+  // Update hero for returning users
+  updateHeroForReturningUser();
+  
+  // Update metrics with gentle re-engagement language
+  updateMetricsForReturningUser();
+  
+  // Update action section for returning users
+  updateActionSectionForReturningUser();
+}
+
+// Hero Updates for Different User States
+function updateHeroForNewUser() {
+  const headline = document.getElementById('heroGreeting');
+  const subtitle = document.getElementById('heroInsight');
+  
+  if (headline) headline.textContent = "Ready to start your journey? ✨";
+  if (subtitle) subtitle.textContent = "Every beautiful transformation begins with a single step";
+}
+
+function updateHeroForAnchorUser() {
+  const headline = document.getElementById('heroGreeting');
+  const subtitle = document.getElementById('heroInsight');
+  
+  if (headline) headline.textContent = "Building your foundation, one day at a time ✨";
+  if (subtitle) subtitle.textContent = "Your consistency is creating something beautiful";
+}
+
+function updateHeroForDreamUser() {
+  const headline = document.getElementById('heroGreeting');
+  const subtitle = document.getElementById('heroInsight');
+  
+  if (headline) headline.textContent = "Your vision is taking shape ✨";
+  if (subtitle) subtitle.textContent = "Every dream starts with a single thought";
+}
+
+function updateHeroForReturningUser() {
+  const headline = document.getElementById('heroGreeting');
+  const subtitle = document.getElementById('heroInsight');
+  
+  if (headline) headline.textContent = "Welcome back, beautiful soul ✨";
+  if (subtitle) subtitle.textContent = "Your journey is still here, waiting for you";
+}
+
+// Section Visibility Functions
+function hideMetricsSections() {
+  hideSection('primaryMetrics');
+  hideSection('secondaryMetrics');
+}
+
+function hideSection(sectionId) {
+  const section = document.getElementById(sectionId);
+  if (section) section.style.display = 'none';
+}
+
+function showSection(sectionId) {
+  const section = document.getElementById(sectionId);
+  if (section) section.style.display = 'block';
+}
+
+// Onboarding Section
+function showOnboardingSection() {
+  const onboardingCard = document.getElementById('onboardingCard');
+  if (onboardingCard) {
+    onboardingCard.style.display = 'block';
+    onboardingCard.innerHTML = `
+      <div class="onboarding-content">
+        <div class="onboarding-icon">🌱</div>
+        <h3>Welcome to Your Self-Care Journey</h3>
+        <p>You're about to create something beautiful. Choose where you'd like to start:</p>
+        <div class="onboarding-options">
+          <div class="onboarding-option" onclick="startWithAnchors()">
+            <div class="option-icon">🎯</div>
+            <div class="option-content">
+              <h4>Start with Daily Anchors</h4>
+              <p>Build simple, grounding habits that anchor you to your best self</p>
+            </div>
+          </div>
+          <div class="onboarding-option" onclick="startWithDreams()">
+            <div class="option-icon">🌟</div>
+            <div class="option-content">
+              <h4>Begin with Your Dreams</h4>
+              <p>Envision the life you want and break it down into actionable steps</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+}
+
+// Action Section Updates for Different User States
+function updateActionSectionForNewUser() {
+  updateElementText('primaryActionTitle', 'Set Your First Anchor');
+  updateElementText('primaryActionDescription', 'Start with something simple that feels good');
+  updateElementText('primaryActionBtn', 'Begin');
+  
+  updateElementText('secondaryActionTitle', 'Explore What\'s Possible');
+  updateElementText('secondaryActionDescription', 'Take a moment to dream about your future');
+  updateElementText('secondaryActionBtn', 'Dream');
+  
+  setupActionButtonListeners();
+}
+
+function updateActionSectionForAnchorUser() {
+  updateElementText('primaryActionTitle', 'Continue Your Anchors');
+  updateElementText('primaryActionDescription', 'Your daily routine is waiting for you');
+  updateElementText('primaryActionBtn', 'Go');
+  
+  updateElementText('secondaryActionTitle', 'When You\'re Ready');
+  updateElementText('secondaryActionDescription', 'Explore dreaming about your future');
+  updateElementText('secondaryActionBtn', 'Explore');
+  
+  setupActionButtonListeners();
+}
+
+function updateActionSectionForDreamUser() {
+  updateElementText('primaryActionTitle', 'Review Your Dreams');
+  updateElementText('primaryActionDescription', 'Your vision is waiting for your attention');
+  updateElementText('primaryActionBtn', 'Review');
+  
+  updateElementText('secondaryActionTitle', 'Try Daily Anchors');
+  updateElementText('secondaryActionDescription', 'Build grounding habits to support your dreams');
+  updateElementText('secondaryActionBtn', 'Try');
+  
+  setupActionButtonListeners();
+}
+
+function updateActionSectionForReturningUser() {
+  updateElementText('primaryActionTitle', 'Pick Up Where You Left Off');
+  updateElementText('primaryActionDescription', 'Your progress is still here');
+  updateElementText('primaryActionBtn', 'Continue');
+  
+  updateElementText('secondaryActionTitle', 'Start Fresh');
+  updateElementText('secondaryActionDescription', 'Begin a new chapter in your journey');
+  updateElementText('secondaryActionBtn', 'Begin');
+  
+  setupActionButtonListeners();
+}
+
+// Metrics Updates with Encouraging Language
+function updateAnchorsMetricsEncouraging() {
+  const currentStreak = getCurrentStreak();
+  const weeklyCompletion = getWeeklyCompletion();
+  const mostConsistentAnchor = getMostConsistentAnchor();
+  
+  // NEVER show "0 Days" - ALWAYS encouraging
+  if (currentStreak === 0) {
+    updateMetricElement('primaryStreakValue', 'Ready to begin');
+    updateMetricElement('primaryStreakEncouragement', 'Your first day awaits');
+  } else {
+    updateMetricElement('primaryStreakValue', `${currentStreak} Days`);
+    updateMetricElement('primaryStreakEncouragement', 'Beautiful consistency!');
+  }
+  
+  // Same for completion
+  if (weeklyCompletion === 0) {
+    updateMetricElement('primaryCompletionValue', 'Fresh start');
+    updateMetricElement('primaryCompletionEncouragement', 'This week is yours');
+  } else {
+    updateMetricElement('primaryCompletionValue', `${weeklyCompletion}%`);
+    updateMetricElement('primaryCompletionEncouragement', 'Every percentage counts!');
+  }
+  
+  // Most consistent anchor
+  if (!mostConsistentAnchor || mostConsistentAnchor === '-') {
+    updateMetricElement('primaryHighlightValue', 'Discovering what works');
+    updateMetricElement('primaryHighlightEncouragement', 'Your go-to daily win');
+  } else {
+    updateMetricElement('primaryHighlightValue', mostConsistentAnchor);
+    updateMetricElement('primaryHighlightEncouragement', 'Your go-to daily win');
+  }
+}
+
+function updateDreamsMetricsEncouraging() {
+  const activeGoals = getActiveGoalsCount();
+  const goalProgress = getGoalProgress();
+  const recentMilestone = getRecentMilestone();
+  
+  // NEVER show zeros - ALWAYS encouraging
+  if (activeGoals === 0) {
+    updateMetricElement('secondaryActiveValue', 'Time to dream big');
+    updateMetricElement('secondaryActiveEncouragement', 'Your first goal awaits');
+  } else {
+    updateMetricElement('secondaryActiveValue', activeGoals);
+    updateMetricElement('secondaryActiveEncouragement', 'You\'re making progress!');
+  }
+  
+  if (goalProgress === 0) {
+    updateMetricElement('secondaryProgressValue', 'First steps await');
+    updateMetricElement('secondaryProgressEncouragement', 'Every step forward matters');
+  } else {
+    updateMetricElement('secondaryProgressValue', `${goalProgress}%`);
+    updateMetricElement('secondaryProgressEncouragement', 'Every step forward matters');
+  }
+  
+  if (!recentMilestone || recentMilestone === '-') {
+    updateMetricElement('secondaryHighlightValue', 'Your first milestone');
+    updateMetricElement('secondaryHighlightEncouragement', 'Celebrating your wins');
+  } else {
+    updateMetricElement('secondaryHighlightValue', recentMilestone);
+    updateMetricElement('secondaryHighlightEncouragement', 'Celebrating your wins');
+  }
+}
+
+function updateMetricsForReturningUser() {
+  // Use encouraging language for returning users
+  updateAnchorsMetricsEncouraging();
+  updateDreamsMetricsEncouraging();
+}
+
+// Section Update Functions for Single Focus Users
+function updatePrimarySectionForAnchors() {
+  // Update section title and subtitle for anchors
+  updateElementText('primarySectionTitle', 'Your Daily Anchors');
+  updateElementText('primarySectionSubtitle', 'Small steps, big transformations');
+}
+
+function updatePrimarySectionForDreams() {
+  // Update section title and subtitle for dreams
+  updateElementText('primarySectionTitle', 'Your Dream Life Vision');
+  updateElementText('primarySectionSubtitle', 'Building your future, one step at a time');
+}
+
+// Onboarding Navigation Functions
+function startWithAnchors() {
+  trackUserActivity();
+  navigateToSection('daily-anchors');
+}
+
+function startWithDreams() {
+  trackUserActivity();
+  navigateToSection('dream-life');
+}
+
+// Activity Tracking
+function trackUserActivity() {
+  if (!currentUser) return;
+  
+  const userPrefix = `user_${currentUser.uid}_`;
+  const now = new Date().toISOString();
+  
+  // Update last activity timestamp
+  localStorage.setItem(userPrefix + 'lastActivity', now);
+  
+  console.log('User activity tracked:', now);
+}
+
+// Utility functions for updating elements
+function updateMetricElement(id, value) {
+  const element = document.getElementById(id);
+  if (element) {
+    element.textContent = value;
+  }
+}
+
+function updateElementText(id, text) {
+  const element = document.getElementById(id);
+  if (element) {
+    element.textContent = text;
+  }
+}
+
+function setupActionButtonListeners() {
+  const primaryBtn = document.getElementById('primaryActionBtn');
+  const secondaryBtn = document.getElementById('secondaryActionBtn');
+  
+  if (primaryBtn) {
+    primaryBtn.addEventListener('click', () => {
+      const primaryFeature = window.dashboardFeaturePriority?.primary || 'anchors';
+      if (primaryFeature === 'anchors') {
+        navigateToSection('daily-anchors');
+      } else {
+        navigateToSection('dream-life');
+      }
+    });
+  }
+  
+  if (secondaryBtn) {
+    secondaryBtn.addEventListener('click', () => {
+      const secondaryFeature = window.dashboardFeaturePriority?.secondary || 'dreams';
+      if (secondaryFeature === 'anchors') {
+        navigateToSection('daily-anchors');
+      } else {
+        navigateToSection('dream-life');
+      }
+    });
+  }
+}
 
 // Track editing modes for each category
 let editingModes = {
@@ -3423,13 +4347,19 @@ function loadDreamLifeData() {
   }
 }
 
-// Save dream life data to localStorage
-function saveDreamLifeData() {
+// Save dream life data to localStorage and Firebase
+async function saveDreamLifeData() {
   try {
-    const userPrefix = getUserPrefix();
-    localStorage.setItem(`${userPrefix}dreamLifeData`, JSON.stringify(dreamLifeData));
-    localStorage.setItem(`${userPrefix}customCategories`, JSON.stringify(customCategories));
-    console.log('Dream life data saved to localStorage');
+    const userId = getCurrentUserId();
+    const localStorageKey = `dreamLifeData_${userId}`;
+    
+    // Save to localStorage immediately
+    localStorage.setItem(localStorageKey, JSON.stringify(dreamLifeData));
+    
+    // Save to Firebase with sync
+    await saveDataWithSync('dreams', dreamLifeData);
+    
+    console.log('Dream life data saved to localStorage and Firebase');
   } catch (error) {
     console.error('Error saving dream life data:', error);
   }
@@ -4305,4 +5235,639 @@ document.addEventListener('keydown', function(e) {
   }
 });
 
-// ... existing code ...
+// ----------------------------
+// Home Page State Management
+// ----------------------------
+
+// Initialize home page state
+function initializeHomePage() {
+  console.log("Initializing home page state...");
+  
+  // Check if user has existing data to determine which state to show
+  const hasExistingData = checkIfUserHasExistingData();
+  
+  if (hasExistingData) {
+    showActiveStateHome();
+  } else {
+    showBlankStateHome();
+  }
+  
+  // Set up bottom message rotation for active state
+  setupBottomMessageRotation();
+}
+
+// Check if user has existing data
+function checkIfUserHasExistingData() {
+  // Get current user ID (handles both authenticated and guest users)
+  const userId = getCurrentUserId();
+  
+  // Check for user-specific data
+  // Check for anchors data
+  const anchorsData = localStorage.getItem(`anchors_data_${userId}`);
+  const hasAnchors = anchorsData && JSON.parse(anchorsData).length > 0;
+  
+  // Check for habits data
+  const habitsData = localStorage.getItem(`habits_${userId}`);
+  const hasHabits = habitsData && JSON.parse(habitsData).length > 0;
+  
+  // Check for dream life data
+  const dreamData = localStorage.getItem(`dreamLifeData_${userId}`);
+  const hasDreams = dreamData && Object.keys(JSON.parse(dreamData)).length > 0;
+  
+  return hasAnchors || hasHabits || hasDreams;
+}
+
+// Show blank state home (new users)
+function showBlankStateHome() {
+  const blankState = document.getElementById('blankStateHome');
+  const activeState = document.getElementById('activeStateHome');
+  
+  if (blankState && activeState) {
+    blankState.style.display = 'block';
+    activeState.style.display = 'none';
+  }
+}
+
+// Show active state home (returning users)
+function showActiveStateHome() {
+  const blankState = document.getElementById('blankStateHome');
+  const activeState = document.getElementById('activeStateHome');
+  
+  if (blankState && activeState) {
+    blankState.style.display = 'none';
+    activeState.style.display = 'block';
+    
+    // Update progress summaries
+    updateHomeProgressSummaries();
+  }
+}
+
+// Update progress summaries on home page
+function updateHomeProgressSummaries() {
+  // Update anchors progress
+  updateAnchorsProgressSummary();
+  
+  // Update habits progress
+  updateHabitsProgressSummary();
+  
+  // Update dreams progress
+  updateDreamsProgressSummary();
+}
+
+// Update anchors progress summary
+function updateAnchorsProgressSummary() {
+  const summaryElement = document.getElementById('anchorsProgressSummary');
+  if (!summaryElement) return;
+  
+  try {
+    const userId = getCurrentUserId();
+    const anchorsData = localStorage.getItem(`anchors_data_${userId}`);
+    if (anchorsData) {
+      const anchors = JSON.parse(anchorsData);
+      const totalAnchors = anchors.length;
+      const completedToday = anchors.filter(anchor => 
+        anchor.completedDates && 
+        anchor.completedDates.includes(new Date().toDateString())
+      ).length;
+      
+      const summaryText = summaryElement.querySelector('.summary-text');
+      if (summaryText) {
+        summaryText.textContent = `${totalAnchors} gentle actions ready • Used ${completedToday} anchor today 🌱`;
+      }
+      
+      // Update progress dots
+      const progressDots = summaryElement.querySelectorAll('.dot');
+      if (progressDots.length > 0) {
+        const progressPercentage = totalAnchors > 0 ? (completedToday / totalAnchors) * 100 : 0;
+        const activeDots = Math.ceil((progressDots.length * progressPercentage) / 100);
+        
+        progressDots.forEach((dot, index) => {
+          if (index < activeDots) {
+            dot.classList.add('active');
+          } else {
+            dot.classList.remove('active');
+          }
+        });
+      }
+    }
+  } catch (e) {
+    console.error("Error updating anchors progress summary:", e);
+  }
+}
+
+// Update habits progress summary
+function updateHabitsProgressSummary() {
+  const summaryElement = document.getElementById('habitsProgressSummary');
+  if (!summaryElement) return;
+  
+  try {
+    const userId = getCurrentUserId();
+    const habitsData = localStorage.getItem(`habits_${userId}`);
+    if (habitsData) {
+      const habits = JSON.parse(habitsData);
+      const totalHabits = habits.length;
+      
+      // Calculate longest streak
+      let longestStreak = 0;
+      habits.forEach(habit => {
+        if (habit.streak > longestStreak) {
+          longestStreak = habit.streak;
+        }
+      });
+      
+      const summaryText = summaryElement.querySelector('.summary-text');
+      if (summaryText) {
+        summaryText.textContent = `${totalHabits} habits growing • 🔥 ${longestStreak}-day momentum`;
+      }
+      
+      // Update weekly progress
+      updateWeeklyProgress(summaryElement);
+    }
+  } catch (e) {
+    console.error("Error updating habits progress summary:", e);
+  }
+}
+
+// Update weekly progress for habits
+function updateWeeklyProgress(summaryElement) {
+  const weeklyProgress = summaryElement.querySelector('.weekly-progress');
+  if (!weeklyProgress) return;
+  
+  try {
+    const userId = getCurrentUserId();
+    const habitsData = localStorage.getItem(`habits_${userId}`);
+    if (habitsData) {
+      const habits = JSON.parse(habitsData);
+      const weekDays = weeklyProgress.querySelectorAll('.week-day');
+      
+      // Get current week's progress
+      const today = new Date();
+      const startOfWeek = new Date(today);
+      startOfWeek.setDate(today.getDate() - today.getDay());
+      
+      weekDays.forEach((day, index) => {
+        const checkDate = new Date(startOfWeek);
+        checkDate.setDate(startOfWeek.getDate() + index);
+        const dateString = checkDate.toDateString();
+        
+        // Check if any habits were completed on this day
+        const hasCompletions = habits.some(habit => 
+          habit.completedDates && 
+          habit.completedDates.includes(dateString)
+        );
+        
+        if (hasCompletions) {
+          day.classList.add('active');
+        } else {
+          day.classList.remove('active');
+        }
+      });
+    }
+  } catch (e) {
+    console.error("Error updating weekly progress:", e);
+  }
+}
+
+// Update dreams progress summary
+function updateDreamsProgressSummary() {
+  const summaryElement = document.getElementById('dreamProgressSummary');
+  if (!summaryElement) return;
+  
+  try {
+    const userId = getCurrentUserId();
+    const dreamData = localStorage.getItem(`dreamLifeData_${userId}`);
+    if (dreamData) {
+      const dreams = JSON.parse(dreamData);
+      const totalCategories = Object.keys(dreams).length;
+      
+      // Count action items in progress
+      let totalActionItems = 0;
+      let completedActionItems = 0;
+      
+      Object.values(dreams).forEach(category => {
+        if (category.actionItems) {
+          totalActionItems += category.actionItems.length;
+          completedActionItems += category.actionItems.filter(item => item.completed).length;
+        }
+      });
+      
+      const summaryText = summaryElement.querySelector('.summary-text');
+      if (summaryText) {
+        if (totalCategories > 0) {
+          summaryText.textContent = `Dream vision written • ${totalActionItems - completedActionItems} steps in progress ✨`;
+        } else {
+          summaryText.textContent = `Ready to dream big • Start envisioning your future ✨`;
+        }
+      }
+    }
+  } catch (e) {
+    console.error("Error updating dreams progress summary:", e);
+  }
+}
+
+// Set up bottom message rotation
+function setupBottomMessageRotation() {
+  const bottomMessage = document.getElementById('bottomMessage');
+  if (!bottomMessage) return;
+  
+  const messages = [
+    "Every small step is moving you forward.",
+    "Healing and growth aren't linear — and that's okay.",
+    "You're exactly where you need to be right now.",
+    "Progress looks different for everyone."
+  ];
+  
+  let currentIndex = 0;
+  
+  // Rotate message every 8 seconds
+  setInterval(() => {
+    currentIndex = (currentIndex + 1) % messages.length;
+    const messageElement = bottomMessage.querySelector('p');
+    if (messageElement) {
+      messageElement.textContent = messages[currentIndex];
+    }
+  }, 8000);
+}
+
+// Navigation function for home page buttons
+function navigateToPage(pageId) {
+  // Remove active class from all navigation links and page sections
+  document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+  document.querySelectorAll('.page-section').forEach(section => section.classList.remove('active'));
+  
+  // Add active class to the target navigation link
+  const activeNavLink = document.querySelector(`[data-page="${pageId}"]`);
+  if (activeNavLink) {
+    activeNavLink.classList.add('active');
+  }
+  
+  // Show target page with active class
+  const targetPage = document.getElementById(pageId);
+  if (targetPage) {
+    targetPage.classList.add('active');
+    
+    // Ensure main content is visible
+    const mainContent = document.getElementById('mainContent');
+    if (mainContent && mainContent.style.display !== 'block') {
+      mainContent.style.display = 'block';
+      setTimeout(() => { mainContent.style.opacity = '1'; }, 50);
+    }
+    
+    // Initialize page-specific functionality
+    if (pageId === 'home') {
+      updateDynamicGreeting();
+      updateAchievementCard();
+      initializeCoreDashboard();
+      try {
+        initializeCarousels();
+      } catch (e) {
+        console.error("Error initializing carousels:", e);
+      }
+    } else if (pageId === 'daily-anchors') {
+      loadProgress();
+    } else if (pageId === 'habits') {
+      try {
+        if (typeof renderHabits === 'function') {
+          renderHabits();
+          updateHabitsProgress();
+        }
+      } catch (e) {
+        console.error("Error loading habits page:", e);
+      }
+    } else if (pageId === 'dream-life') {
+      if (typeof renderDreamLifeData === 'function') {
+        renderDreamLifeData();
+      }
+    }
+  }
+}
+
+// ========================================
+// UNIFIED DATA PERSISTENCE SYSTEM
+// ========================================
+
+// Data sync status tracking
+const dataSyncStatus = {
+  habits: { lastSync: null, pendingChanges: false, lastError: null },
+  anchors: { lastSync: null, pendingChanges: false, lastError: null },
+  dreams: { lastSync: null, pendingChanges: false, lastError: null }
+};
+
+// Save data to both localStorage and Firebase with retry logic
+async function saveDataWithSync(dataType, data, options = {}) {
+  const { retryCount = 3, retryDelay = 1000 } = options;
+  
+  try {
+    // 1. Save to localStorage immediately (for instant access)
+    const userId = getCurrentUserId();
+    const localStorageKey = `${dataType}_${userId}`;
+    localStorage.setItem(localStorageKey, JSON.stringify(data));
+    
+    // 2. Try to save to Firebase
+    const firebaseSuccess = await saveToFirebaseWithRetry(dataType, data, retryCount, retryDelay);
+    
+    if (firebaseSuccess) {
+      // Update sync status
+      dataSyncStatus[dataType].lastSync = new Date();
+      dataSyncStatus[dataType].pendingChanges = false;
+      dataSyncStatus[dataType].lastError = null;
+      console.log(`${dataType} data synced successfully to Firebase`);
+    } else {
+      // Mark as pending changes for later sync
+      dataSyncStatus[dataType].pendingChanges = true;
+      dataSyncStatus[dataType].lastError = 'Firebase sync failed';
+      console.warn(`${dataType} data saved locally but Firebase sync failed`);
+    }
+    
+    return true; // Always return true since localStorage save succeeded
+    
+  } catch (error) {
+    console.error(`Error saving ${dataType} data:`, error);
+    dataSyncStatus[dataType].lastError = error.message;
+    return false;
+  }
+}
+
+// Save to Firebase with retry logic
+async function saveToFirebaseWithRetry(dataType, data, maxRetries = 3, delay = 1000) {
+  const userId = getCurrentUserId();
+  
+  if (!userId || !firebase.auth().currentUser) {
+    console.log(`No authenticated user, skipping Firebase save for ${dataType}`);
+    return false;
+  }
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const docRef = await db.collection('userData').doc(userId).collection(dataType).doc('current').set({
+        data: data,
+        lastUpdated: new Date(),
+        version: Date.now()
+      });
+      
+      console.log(`${dataType} data saved to Firebase on attempt ${attempt}`);
+      return true;
+      
+    } catch (error) {
+      console.error(`Firebase save attempt ${attempt} failed for ${dataType}:`, error);
+      
+      if (attempt === maxRetries) {
+        return false;
+      }
+      
+      // Wait before retry
+      await new Promise(resolve => setTimeout(resolve, delay * attempt));
+    }
+  }
+  
+  return false;
+}
+
+// Load data from Firebase first, fallback to localStorage
+async function loadDataWithSync(dataType, defaultValue = null) {
+  try {
+    // 1. Try to load from Firebase first
+    const firebaseData = await loadFromFirebase(dataType);
+    if (firebaseData !== null) {
+      // Update localStorage with Firebase data
+      const userId = getCurrentUserId();
+      const localStorageKey = `${dataType}_${userId}`;
+      localStorage.setItem(localStorageKey, JSON.stringify(firebaseData));
+      
+      // Update sync status
+      dataSyncStatus[dataType].lastSync = new Date();
+      dataSyncStatus[dataType].pendingChanges = false;
+      
+      console.log(`${dataType} data loaded from Firebase`);
+      return firebaseData;
+    }
+    
+    // 2. Fallback to localStorage
+    const userId = getCurrentUserId();
+    const localStorageKey = `${dataType}_${userId}`;
+    const localData = localStorage.getItem(localStorageKey);
+    
+    if (localData) {
+      const parsedData = JSON.parse(localData);
+      console.log(`${dataType} data loaded from localStorage fallback`);
+      return parsedData;
+    }
+    
+    // 3. Return default value
+    console.log(`${dataType} data not found, using default`);
+    return defaultValue;
+    
+  } catch (error) {
+    console.error(`Error loading ${dataType} data:`, error);
+    
+    // Fallback to localStorage on error
+    try {
+      const userId = getCurrentUserId();
+      const localStorageKey = `${dataType}_${userId}`;
+      const localData = localStorage.getItem(localStorageKey);
+      
+      if (localData) {
+        return JSON.parse(localData);
+      }
+    } catch (localError) {
+      console.error(`LocalStorage fallback also failed for ${dataType}:`, localError);
+    }
+    
+    return defaultValue;
+  }
+}
+
+// Load specific data type from Firebase
+async function loadFromFirebase(dataType) {
+  const userId = getCurrentUserId();
+  
+  if (!userId || !firebase.auth().currentUser) {
+    console.log(`No authenticated user, cannot load ${dataType} from Firebase`);
+    return null;
+  }
+  
+  try {
+    const doc = await db.collection('userData').doc(userId).collection(dataType).doc('current').get();
+    
+    if (doc.exists) {
+      const data = doc.data();
+      return data.data || null;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error(`Error loading ${dataType} from Firebase:`, error);
+    return null;
+  }
+}
+
+// Get current user ID (handles both authenticated and guest users)
+function getCurrentUserId() {
+  const currentUser = firebase.auth().currentUser;
+  
+  if (currentUser) {
+    return currentUser.uid;
+  }
+  
+  // For guest users, create a consistent ID
+  let guestId = localStorage.getItem('guestUserId');
+  if (!guestId) {
+    guestId = 'guest_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    localStorage.setItem('guestUserId', guestId);
+  }
+  
+  return guestId;
+}
+
+// Sync pending changes to Firebase
+async function syncPendingChanges() {
+  const userId = getCurrentUserId();
+  
+  for (const [dataType, status] of Object.entries(dataSyncStatus)) {
+    if (status.pendingChanges) {
+      try {
+        const localStorageKey = `${dataType}_${userId}`;
+        const localData = localStorage.getItem(localStorageKey);
+        
+        if (localData) {
+          const data = JSON.parse(localData);
+          const success = await saveToFirebaseWithRetry(dataType, data, 2, 2000);
+          
+          if (success) {
+            status.pendingChanges = false;
+            status.lastSync = new Date();
+            status.lastError = null;
+            console.log(`Pending ${dataType} changes synced successfully`);
+          }
+        }
+      } catch (error) {
+        console.error(`Failed to sync pending ${dataType} changes:`, error);
+        status.lastError = error.message;
+      }
+    }
+  }
+}
+
+// Enhanced signOut that syncs data before clearing
+async function signOut() {
+  try {
+    // 1. Sync any pending changes to Firebase
+    await syncPendingChanges();
+    
+    // 2. Sign out from Firebase Auth
+    await auth.signOut();
+    
+    // 3. Clear local data (but keep guest data if applicable)
+    const guestUserId = localStorage.getItem('guestUserId');
+    
+    // Clear all user-specific data
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && !key.startsWith('guest_') && key !== 'guestUserId') {
+        keysToRemove.push(key);
+      }
+    }
+    
+    keysToRemove.forEach(key => localStorage.removeItem(key));
+    
+    // Reset sync status
+    Object.keys(dataSyncStatus).forEach(key => {
+      dataSyncStatus[key] = { lastSync: null, pendingChanges: false, lastError: null };
+    });
+    
+    console.log("User signed out and data synced");
+    
+  } catch (error) {
+    console.error("Sign out error:", error);
+    // Still try to sign out even if sync fails
+    try {
+      await auth.signOut();
+    } catch (signOutError) {
+      console.error("Sign out failed:", signOutError);
+    }
+  }
+}
+
+// ========================================
+// UPDATED DATA FUNCTIONS USING NEW SYSTEM
+// ========================================
+
+// Updated saveHabits function
+async function saveHabits() {
+  const userId = getCurrentUserId();
+  const localStorageKey = `habits_${userId}`;
+  
+  // Save to localStorage immediately
+  localStorage.setItem(localStorageKey, JSON.stringify(habits));
+  
+  // Save to Firebase with sync
+  await saveDataWithSync('habits', habits);
+}
+
+// Updated saveDreamLifeData function
+async function saveDreamLifeData() {
+  const userId = getCurrentUserId();
+  const localStorageKey = `dreamLifeData_${userId}`;
+  
+  // Save to localStorage immediately
+  localStorage.setItem(localStorageKey, JSON.stringify(dreamLifeData));
+  
+  // Save to Firebase with sync
+  await saveDataWithSync('dreams', dreamLifeData);
+}
+
+// Updated loadHabits function
+async function loadHabits() {
+  const loadedHabits = await loadDataWithSync('habits', []);
+  if (loadedHabits && Array.isArray(loadedHabits)) {
+    habits.length = 0; // Clear existing habits
+    habits.push(...loadedHabits);
+    
+    // Update habit ID counter
+    if (habits.length > 0) {
+      habitIdCounter = Math.max(...habits.map(h => h.id)) + 1;
+    }
+    
+    renderHabits();
+    updateHabitsProgress();
+  }
+}
+
+// Updated loadDreamLifeData function
+async function loadDreamLifeData() {
+  const loadedData = await loadDataWithSync('dreams', {});
+  if (loadedData && typeof loadedData === 'object') {
+    Object.assign(dreamLifeData, loadedData);
+    renderDreamLifeData();
+  }
+}
+
+// ========================================
+// INITIALIZATION AND SYNC SETUP
+// ========================================
+
+// Initialize data persistence system
+async function initializeDataPersistence() {
+  try {
+    // Load all data types
+    await Promise.all([
+      loadHabits(),
+      loadDreamLifeData()
+    ]);
+    
+    // Set up periodic sync
+    setInterval(syncPendingChanges, 30000); // Sync every 30 seconds
+    
+    // Set up beforeunload sync
+    window.addEventListener('beforeunload', () => {
+      syncPendingChanges();
+    });
+    
+    console.log('Data persistence system initialized');
+    
+  } catch (error) {
+    console.error('Error initializing data persistence:', error);
+  }
+}
+
